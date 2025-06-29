@@ -34,6 +34,34 @@ pip install -r requirements.txt
 3. **Model Training**: Train your models using the `Trainer` class in `src/training/trainer.py`.
 4. **Model Inference**: Make predictions with your trained models using the `Predictor` class in `src/inference/predictor.py`.
 
+## Data Preprocessing Pipeline
+
+The `src/data/preprocessors.py` module provides a robust, production-ready preprocessing pipeline for your datasets. It includes:
+
+- **Imputation**: Fill missing values with mean, median, or mode.
+- **Outlier Removal**: Remove rows with outliers based on z-score.
+- **Categorical Encoding**: One-hot encode categorical columns.
+- **Normalization**: Standardize numeric columns to zero mean and unit variance.
+- **Pipeline**: Chain all steps with `preprocess_pipeline`.
+
+### Example Usage
+
+```python
+import pandas as pd
+from src.data.preprocessors import preprocess_pipeline, split_data
+
+# Load your data
+# df = pd.read_csv('your_data.csv')
+
+# Preprocess the data
+processed_df = preprocess_pipeline(df, impute_strategy='mean', normalize=True, encode=True, outlier_removal=True)
+
+# Split into train/validation sets
+train_df, val_df = split_data(processed_df, train_size=0.8)
+```
+
+See the function docstrings in `src/data/preprocessors.py` for more details and customization options.
+
 ## Experiment Tracking
 Track your experiments using MLflow or Weights & Biases as specified in the training scripts.
 
