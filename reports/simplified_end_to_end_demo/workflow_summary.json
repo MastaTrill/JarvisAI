@@ -1,0 +1,45 @@
+{
+  "timestamp": "2025-06-26T19:42:15.277570",
+  "dataset": {
+    "original_size": [
+      800,
+      15
+    ],
+    "augmented_size": [
+      630,
+      15
+    ],
+    "class_distribution": [
+      454,
+      346
+    ],
+    "data_quality_score": 100
+  },
+  "model": {
+    "type": "AdvancedNeuralNetwork",
+    "architecture": [
+      48,
+      24,
+      12
+    ],
+    "parameters": 2270,
+    "activation": "relu",
+    "optimizer": "adam"
+  },
+  "validation": {
+    "cv_results": {
+      "accuracy": 0.5573822616242098
+    },
+    "best_metric": "accuracy",
+    "best_score": 0.5573822616242098
+  },
+  "bias_analysis": {
+    "accuracy_disparity": 0.2979214175250976
+  },
+  "robustness": {
+    "baseline_score": {
+      "accuracy": 0.57
+    },
+    "max_degradation": 0.0
+  }
+}

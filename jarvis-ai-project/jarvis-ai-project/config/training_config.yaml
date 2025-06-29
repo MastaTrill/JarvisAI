@@ -1,0 +1,14 @@
+batch_size: 32
+learning_rate: 0.001
+num_epochs: 50
+optimizer: "adam"
+loss_function: "categorical_crossentropy"
+validation_split: 0.2
+early_stopping:
+  patience: 5
+  monitor: "val_loss"
+  mode: "min"
+  restore_best_weights: true
+checkpoint:
+  save_best_only: true
+  filepath: "models/best_model.h5"

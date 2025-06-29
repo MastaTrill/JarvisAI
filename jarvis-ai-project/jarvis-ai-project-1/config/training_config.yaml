@@ -1,0 +1,12 @@
+batch_size: 32
+learning_rate: 0.001
+num_epochs: 50
+validation_split: 0.2
+optimizer: "adam"
+loss_function: "categorical_crossentropy"
+metrics:
+  - "accuracy"
+checkpointing:
+  save_best_only: true
+  monitor: "val_loss"
+  filepath: "checkpoints/model-{epoch:02d}-{val_loss:.2f}.h5"

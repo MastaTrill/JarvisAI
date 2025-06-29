@@ -1,0 +1,19 @@
+# Configuration for Jarvis training with scikit-learn
+data:
+  path: "data/processed/dataset.csv"
+  target_column: "target"
+  test_size: 0.2
+
+model:
+  hidden_sizes: [64, 32]
+  output_size: 1
+  task_type: "regression"
+  alpha: 0.0001
+
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  epochs: 200
+  seed: 42
+  preprocessor_path: "artifacts/preprocessor.pkl"
+  model_path: "models/trained_model.pkl"

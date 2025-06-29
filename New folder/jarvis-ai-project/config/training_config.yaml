@@ -1,0 +1,16 @@
+batch_size: 32
+learning_rate: 0.001
+num_epochs: 50
+optimizer: "adam"
+loss_function: "cross_entropy"
+validation_split: 0.2
+early_stopping:
+  enabled: true
+  patience: 5
+logging:
+  log_interval: 10
+  save_model: true
+  model_save_path: "models/checkpoints/"
+  metrics:
+    - accuracy
+    - loss

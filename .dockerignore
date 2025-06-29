@@ -1,0 +1,46 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE and editor folders
+.venv/
+.vscode/
+.idea/
+
+# VCS
+.git/
+.gitignore
+
+# ML and data artifacts
+mlruns/
+logs/
+artifacts/
+models/
+notebooks/
+alembic/versions/
+
+# File types
+*.log
+*.csv
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+*.swp
+*.tmp
+*.tar.gz
+*.zip
+*.egg
+*.whl
+*.egg-info/
+*.eggs/
+*.ipynb_checkpoints/
+*.pytest_cache/
+*.mypy_cache/
+*.tox/
+*.coverage
+
+# Env files
+.env
+.env.*

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aetheron AI Platform - Interactive Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0f1c 0%, #1a1f3a 50%, #2a2f4a 100%);
+            color: #e0e6ff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Animated Background */
+        .space-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .stars {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 2rem 0;
+            background: rgba(10, 15, 28, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid rgba(0, 162, 255, 0.3);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #00a2ff, #0051ff, #8a2be2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 30px rgba(0, 162, 255, 0.5);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #b0c4de;
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(26, 31, 58, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab {
+            padding: 0.8rem 1.5rem;
+            background: rgba(0, 162, 255, 0.1);
+            border: 1px solid rgba(0, 162, 255, 0.3);
+            border-radius: 25px;
+            color: #e0e6ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: rgba(0, 162, 255, 0.3);
+            border-color: rgba(0, 162, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 162, 255, 0.3);
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: rgba(26, 31, 58, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 162, 255, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 162, 255, 0.2);
+            border-color: rgba(0, 162, 255, 0.5);
+        }
+
+        .card h3 {
+            color: #00a2ff;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .card p {
+            color: #b0c4de;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(45deg, #00a2ff, #0051ff);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 162, 255, 0.4);
+            background: linear-gradient(45deg, #0051ff, #8a2be2);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            background: rgba(26, 31, 58, 0.9);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border: 1px solid rgba(0, 162, 255, 0.3);
+        }
+
+        /* Status Indicators */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem;
+            background: rgba(26, 31, 58, 0.6);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 162, 255, 0.2);
+        }
+
+        .status-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff00;
+            animation: pulse 2s infinite;
+        }
+
+        .status-icon.warning {
+            background: #ffa500;
+        }
+
+        .status-icon.error {
+            background: #ff4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Feature Demo */
+        .demo-container {
+            background: rgba(26, 31, 58, 0.8);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border: 1px solid rgba(0, 162, 255, 0.3);
+        }
+
+        .demo-output {
+            background: #0a0f1c;
+            color: #00ff41;
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            border: 1px solid rgba(0, 255, 65, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="space-background" id="spaceBackground"></div>
+
+    <header class="header">
+        <h1>🚀 AETHERON AI PLATFORM</h1>
+        <p>Advanced AI/ML Development Environment - Production Ready</p>
+    </header>
+
+    <nav class="nav-tabs">
+        <a href="#overview" class="nav-tab active" onclick="switchTab('overview')">🏠 Overview</a>
+        <a href="#features" class="nav-tab" onclick="switchTab('features')">⚡ Features</a>
+        <a href="#demos" class="nav-tab" onclick="switchTab('demos')">🎭 Live Demos</a>
+        <a href="#analytics" class="nav-tab" onclick="switchTab('analytics')">📊 Analytics</a>
+        <a href="#experiments" class="nav-tab" onclick="switchTab('experiments')">🧪 Experiments</a>
+    </nav>
+
+    <!-- Overview Section -->
+    <section id="overview" class="content-section active">
+        <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Platform Status Dashboard</h2>
+        
+        <div class="status-grid">
+            <div class="status-item">
+                <div class="status-icon"></div>
+                <span>Neural Networks: Online</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon"></div>
+                <span>Data Pipeline: Ready</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon"></div>
+                <span>Augmentation: Active</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon"></div>
+                <span>Validation: Operational</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon"></div>
+                <span>Experiments: Tracking</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon"></div>
+                <span>API Server: Running</span>
+            </div>
+        </div>
+
+        <div class="card-grid">
+            <div class="card">
+                <h3>🧠 Neural Networks</h3>
+                <p>Advanced neural network architectures with modern activation functions, regularization, and optimization techniques.</p>
+                <button class="btn" onclick="runDemo('neural_network')">Test Neural Network</button>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Data Pipeline</h3>
+                <p>Comprehensive data processing with quality validation, feature engineering, and versioning capabilities.</p>
+                <button class="btn" onclick="runDemo('data_pipeline')">Test Data Pipeline</button>
+            </div>
+            
+            <div class="card">
+                <h3>🎭 Data Augmentation</h3>
+                <p>Sophisticated augmentation techniques including SMOTE, Mixup, Cutmix, and noise injection for robust models.</p>
+                <button class="btn" onclick="runDemo('augmentation')">Test Augmentation</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="content-section">
+        <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Platform Features</h2>
+        
+        <div class="card-grid">
+            <div class="card">
+                <h3>🏗️ Advanced Neural Networks</h3>
+                <p>• Modern activation functions (ReLU, Sigmoid, Tanh, Leaky ReLU, Swish, GELU)<br>
+                • Regularization techniques (L1/L2, Dropout, Batch Normalization)<br>
+                • Optimizers (SGD with momentum, Adam)<br>
+                • Automatic differentiation and backpropagation</p>
+            </div>
+            
+            <div class="card">
+                <h3>📈 Data Processing Pipeline</h3>
+                <p>• Multi-format data connectors (CSV, JSON, Database)<br>
+                • Data quality validation and scoring<br>
+                • Feature engineering and selection<br>
+                • Data versioning and lineage tracking</p>
+            </div>
+            
+            <div class="card">
+                <h3>🎯 Model Validation</h3>
+                <p>• Cross-validation techniques (K-fold, Stratified)<br>
+                • Bias and fairness analysis<br>
+                • Robustness testing against adversarial inputs<br>
+                • Performance metrics and reporting</p>
+            </div>
+            
+            <div class="card">
+                <h3>🔬 Experiment Tracking</h3>
+                <p>• Comprehensive experiment management<br>
+                • Hyperparameter optimization (Grid/Random Search)<br>
+                • Learning rate scheduling<br>
+                • Metrics visualization and comparison</p>
+            </div>
+            
+            <div class="card">
+                <h3>🎭 Data Augmentation</h3>
+                <p>• SMOTE for class balancing<br>
+                • Mixup and Cutmix techniques<br>
+                • Noise injection (Gaussian, Uniform)<br>
+                • Time series augmentation</p>
+            </div>
+            
+            <div class="card">
+                <h3>🌐 Web Interface</h3>
+                <p>• Interactive 3D humanoid robot<br>
+                • Real-time training visualization<br>
+                • Voice-activated commands<br>
+                • Responsive space-themed design</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demos Section -->
+    <section id="demos" class="content-section">
+        <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Live Feature Demonstrations</h2>
+        
+        <div class="demo-container">
+            <h3>🚀 Quick Demo Launcher</h3>
+            <p>Select a demo to run and see the results in real-time:</p>
+            
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0;">
+                <button class="btn" onclick="runFullDemo('simplified')">Simplified Demo</button>
+                <button class="btn" onclick="runFullDemo('advanced')">Advanced Demo</button>
+                <button class="btn" onclick="runFullDemo('integration')">Integration Demo</button>
+                <button class="btn" onclick="runFullDemo('end_to_end')">End-to-End Workflow</button>
+            </div>
+            
+            <div id="demoOutput" class="demo-output" style="display: none;">
+                <div id="demoText">Demo output will appear here...</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics Section -->
+    <section id="analytics" class="content-section">
+        <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Performance Analytics</h2>
+        
+        <div class="chart-container">
+            <h3>Training Metrics</h3>
+            <canvas id="trainingChart" width="400" height="200"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Model Performance</h3>
+            <div id="performanceChart" style="height: 400px;"></div>
+        </div>
+    </section>
+
+    <!-- Experiments Section -->
+    <section id="experiments" class="content-section">
+        <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Experiment Management</h2>
+        
+        <div class="card-grid">
+            <div class="card">
+                <h3>📊 Recent Experiments</h3>
+                <div id="experimentsList">
+                    <p>Loading experiments...</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🎯 Model Registry</h3>
+                <div id="modelsList">
+                    <p>Loading models...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Create animated background
+        function createStars() {
+            const container = document.getElementById('spaceBackground');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'stars';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected section and activate tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load specific content based on tab
+            if (tabName === 'analytics') {
+                loadAnalytics();
+            } else if (tabName === 'experiments') {
+                loadExperiments();
+            }
+        }
+
+        // Demo functions
+        function runDemo(demoType) {
+            const output = document.getElementById('demoOutput');
+            const text = document.getElementById('demoText');
+            
+            output.style.display = 'block';
+            text.innerHTML = `🚀 Running ${demoType} demo...\n`;
+            
+            // Simulate demo output
+            setTimeout(() => {
+                text.innerHTML += `✅ ${demoType.charAt(0).toUpperCase() + demoType.slice(1)} demo completed successfully!\n`;
+                text.innerHTML += `📊 Generated synthetic data: 800 samples\n`;
+                text.innerHTML += `🎯 Model accuracy: 87.5%\n`;
+                text.innerHTML += `⚡ Training time: 0.3s\n`;
+            }, 1000);
+        }
+
+        function runFullDemo(demoType) {
+            const output = document.getElementById('demoOutput');
+            const text = document.getElementById('demoText');
+            
+            output.style.display = 'block';
+            text.innerHTML = `🚀 Launching ${demoType} demonstration...\n`;
+            
+            // Make API call to run actual demo
+            fetch(`/api/run-demo/${demoType}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                text.innerHTML += `✅ Demo completed!\n`;
+                text.innerHTML += `📊 Results: ${JSON.stringify(data, null, 2)}\n`;
+            })
+            .catch(error => {
+                text.innerHTML += `❌ Error: ${error.message}\n`;
+            });
+        }
+
+        // Analytics
+        function loadAnalytics() {
+            // Training metrics chart
+            const ctx = document.getElementById('trainingChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Epoch 1', 'Epoch 5', 'Epoch 10', 'Epoch 15', 'Epoch 20'],
+                    datasets: [{
+                        label: 'Training Loss',
+                        data: [0.8, 0.6, 0.4, 0.3, 0.25],
+                        borderColor: '#00a2ff',
+                        backgroundColor: 'rgba(0, 162, 255, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Validation Loss',
+                        data: [0.85, 0.65, 0.45, 0.35, 0.28],
+                        borderColor: '#8a2be2',
+                        backgroundColor: 'rgba(138, 43, 226, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e0e6ff'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#e0e6ff' },
+                            grid: { color: 'rgba(224, 230, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#e0e6ff' },
+                            grid: { color: 'rgba(224, 230, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+
+            // Performance chart with Plotly
+            const performanceData = [{
+                x: ['Accuracy', 'Precision', 'Recall', 'F1-Score'],
+                y: [0.875, 0.823, 0.891, 0.856],
+                type: 'bar',
+                marker: {
+                    color: ['#00a2ff', '#0051ff', '#8a2be2', '#00ff41'],
+                }
+            }];
+
+            const layout = {
+                title: {
+                    text: 'Model Performance Metrics',
+                    font: { color: '#e0e6ff' }
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#e0e6ff' },
+                xaxis: { gridcolor: 'rgba(224, 230, 255, 0.1)' },
+                yaxis: { gridcolor: 'rgba(224, 230, 255, 0.1)' }
+            };
+
+            Plotly.newPlot('performanceChart', performanceData, layout);
+        }
+
+        // Load experiments
+        function loadExperiments() {
+            // Simulate loading experiments
+            const experimentsList = document.getElementById('experimentsList');
+            const modelsList = document.getElementById('modelsList');
+            
+            experimentsList.innerHTML = `
+                <div style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 162, 255, 0.1); border-radius: 5px;">
+                    <strong>Experiment #1</strong><br>
+                    Status: Completed ✅<br>
+                    Accuracy: 87.5%
+                </div>
+                <div style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 162, 255, 0.1); border-radius: 5px;">
+                    <strong>Experiment #2</strong><br>
+                    Status: Running 🏃<br>
+                    Progress: 60%
+                </div>
+            `;
+            
+            modelsList.innerHTML = `
+                <div style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 162, 255, 0.1); border-radius: 5px;">
+                    <strong>Advanced Neural Net v1.0</strong><br>
+                    Type: Classification<br>
+                    Accuracy: 87.5%
+                </div>
+                <div style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 162, 255, 0.1); border-radius: 5px;">
+                    <strong>Optimized Model v2.1</strong><br>
+                    Type: Regression<br>
+                    MSE: 0.025
+                </div>
+            `;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            createStars();
+            loadAnalytics();
+        });
+    </script>
+</body>
+</html>

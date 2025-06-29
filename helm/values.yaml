@@ -1,0 +1,8 @@
+replicaCount: 1
+image:
+  repository: jarvis-ai
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8000

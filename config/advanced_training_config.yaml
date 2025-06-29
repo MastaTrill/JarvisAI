@@ -1,0 +1,278 @@
+# Advanced Training Configuration for Jarvis AI Platform
+# This configuration demonstrates the new advanced features
+
+# Data Pipeline Configuration
+data_pipelines:
+  advanced_demo:
+    source:
+      type: "csv"
+      filepath: "data/processed/dataset.csv"
+      encoding: "utf-8"
+      separator: ","
+    
+    processing:
+      validate: true
+      
+      feature_engineering:
+        temporal_features: false
+        date_columns: []
+        
+        polynomial_features: true
+        numeric_columns: ["feature1", "feature2", "feature3"]
+        polynomial_degree: 2
+        
+        interaction_features: true
+        
+        categorical_features: false
+        categorical_columns: []
+      
+      cleaning:
+        remove_duplicates: true
+        handle_missing: true
+        missing_strategy: "fill_mean"  # drop, fill_mean, fill_median, fill_mode
+
+# Model Configurations
+models:
+  advanced_neural_network:
+    layers:
+      - type: "dense"
+        input_size: 8  # Will be updated based on data
+        output_size: 64
+        activation: "relu"
+        dropout: 0.3
+        batch_norm: true
+      
+      - type: "dense"
+        input_size: 64
+        output_size: 32
+        activation: "leaky_relu"
+        dropout: 0.2
+        batch_norm: true
+      
+      - type: "dense"
+        input_size: 32
+        output_size: 16
+        activation: "gelu"
+        dropout: 0.1
+        batch_norm: false
+      
+      - type: "dense"
+        input_size: 16
+        output_size: 1
+        activation: "sigmoid"
+        dropout: 0.0
+        batch_norm: false
+    
+    regularization:
+      l1_lambda: 0.0001
+      l2_lambda: 0.0001
+      dropout_schedule: "constant"  # constant, decay
+    
+    ensemble:
+      enabled: true
+      num_models: 3
+      voting: "soft"  # soft, hard
+
+# Training Configurations
+training_configs:
+  advanced_training:
+    epochs: 100
+    batch_size: 32
+    learning_rate: 0.001
+    
+    optimizer: "adamw"  # adam, adamw, rmsprop, sgd
+    optimizer_params:
+      beta1: 0.9
+      beta2: 0.999
+      epsilon: 1e-8
+      weight_decay: 0.01
+    
+    lr_scheduler:
+      type: "cosine"  # constant, exponential, cosine, step, warmup_cosine
+      decay_rate: 0.95
+      min_lr: 0.00001
+      epochs_drop: 20
+      warmup_steps: 10
+    
+    early_stopping:
+      enabled: true
+      patience: 15
+      metric: "val_loss"
+      mode: "min"  # min, max
+    
+    validation:
+      split: 0.2
+      shuffle: true
+      stratify: false
+
+# Hyperparameter Optimization
+hyperparameter_optimization:
+  random_search:
+    type: "random"
+    max_trials: 25
+    metric: "val_accuracy"
+    
+    parameter_space:
+      model:
+        # Layer configurations will be dynamically updated
+        learning_rate:
+          type: "log_uniform"
+          low: 0.0001
+          high: 0.01
+        
+        dropout_rate:
+          type: "uniform"
+          low: 0.1
+          high: 0.5
+        
+        batch_size:
+          type: "choice"
+          choices: [16, 32, 64, 128]
+        
+        hidden_size:
+          type: "int"
+          low: 32
+          high: 128
+      
+      training:
+        optimizer:
+          type: "choice"
+          choices: ["adam", "adamw", "rmsprop"]
+        
+        weight_decay:
+          type: "log_uniform"
+          low: 0.0001
+          high: 0.01
+  
+  grid_search:
+    type: "grid"
+    metric: "val_accuracy"
+    
+    parameter_grid:
+      model:
+        learning_rate: [0.001, 0.003, 0.01]
+        dropout_rate: [0.2, 0.3, 0.4]
+        batch_size: [32, 64]
+      
+      training:
+        optimizer: ["adam", "adamw"]
+
+# Experiment Configurations
+experiments:
+  # Basic experiment with default settings
+  basic_advanced_experiment:
+    model: "advanced_neural_network"
+    training: "advanced_training"
+    data:
+      pipeline: "advanced_demo"
+      target_column: "target"
+      train_split: 0.8
+      shuffle: true
+    
+    metadata:
+      description: "Basic experiment with advanced neural network"
+      tags: ["baseline", "advanced_nn"]
+  
+  # Hyperparameter optimization experiment
+  hyperparameter_search_experiment:
+    model: "advanced_neural_network"
+    training: "advanced_training"
+    data:
+      pipeline: "advanced_demo"
+      target_column: "target"
+      train_split: 0.8
+      shuffle: true
+    
+    hyperparameter_optimization:
+      type: "random"
+      max_trials: 20
+      metric: "val_accuracy"
+      
+      parameter_space:
+        model:
+          learning_rate:
+            type: "log_uniform"
+            low: 0.0001
+            high: 0.01
+          
+          dropout_rate:
+            type: "uniform"
+            low: 0.1
+            high: 0.5
+        
+        training:
+          batch_size:
+            type: "choice"
+            choices: [16, 32, 64]
+          
+          optimizer:
+            type: "choice"
+            choices: ["adam", "adamw"]
+    
+    metadata:
+      description: "Hyperparameter optimization experiment"
+      tags: ["hyperopt", "advanced_nn"]
+  
+  # Ensemble experiment
+  ensemble_experiment:
+    model: "advanced_neural_network"
+    training: "advanced_training"
+    data:
+      pipeline: "advanced_demo"
+      target_column: "target"
+      train_split: 0.8
+      shuffle: true
+    
+    ensemble:
+      enabled: true
+      num_models: 5
+      diversity_methods: ["dropout", "data_sampling", "architecture_variation"]
+    
+    metadata:
+      description: "Ensemble learning experiment"
+      tags: ["ensemble", "advanced_nn"]
+
+# Monitoring and Logging
+monitoring:
+  metrics:
+    track_gradients: true
+    track_weights: true
+    track_activations: false
+    save_frequency: 10  # Save metrics every N epochs
+  
+  checkpoints:
+    enabled: true
+    save_best: true
+    save_frequency: 25  # Save checkpoint every N epochs
+    keep_last_n: 3
+  
+  logging:
+    level: "INFO"
+    file: "logs/training.log"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Resource Management
+resources:
+  memory_limit: "8GB"
+  parallel_training: false
+  num_workers: 4
+  seed: 42
+  deterministic: true
+
+# Advanced Features
+advanced_features:
+  gradient_clipping:
+    enabled: true
+    max_norm: 1.0
+  
+  mixed_precision:
+    enabled: false  # Would require specific hardware support
+  
+  distributed_training:
+    enabled: false
+    backend: "nccl"
+  
+  model_compression:
+    quantization: false
+    pruning: false
+    distillation: false

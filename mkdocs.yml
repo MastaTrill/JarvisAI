@@ -1,0 +1,9 @@
+site_name: Jarvis AI Documentation
+nav:
+  - Home: index.md
+  - API: api.md
+  - Tutorials: tutorials.md
+  - Plugins: plugins.md
+  - Community: community.md
+theme:
+  name: material

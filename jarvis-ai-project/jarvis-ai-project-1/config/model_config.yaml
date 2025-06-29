@@ -1,0 +1,35 @@
+model:
+  name: NeuralNetwork
+  architecture:
+    layers:
+      - type: Dense
+        units: 128
+        activation: relu
+      - type: Dense
+        units: 64
+        activation: relu
+      - type: Dense
+        units: 10
+        activation: softmax
+  input_shape: [None, 784]  # Example for flattened 28x28 images
+  output_shape: [None, 10]   # Example for 10 classes
+
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  epochs: 50
+  optimizer: Adam
+  loss_function: categorical_crossentropy
+
+regularization:
+  dropout_rate: 0.5
+  l2_regularization: 0.01
+
+callbacks:
+  early_stopping:
+    monitor: val_loss
+    patience: 5
+  model_checkpoint:
+    filepath: "models/best_model.h5"
+    monitor: val_loss
+    save_best_only: true

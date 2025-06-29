@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aetheron AI Platform - Advanced ML Workbench</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist@2.26.0/plotly.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f093fb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --info-color: #3b82f6;
+            --dark-color: #1f2937;
+            --light-color: #f8fafc;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-gradient: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            --border-radius: 20px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: var(--dark-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+          /* Enhanced Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d2b 100%);
+        }
+        
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 160px 30px, #fff, transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: starsMove 120s linear infinite;
+        }
+        
+        .bg-animation::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(1px 1px at 25px 25px, rgba(0,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 75px 75px, rgba(255,0,255,0.6), transparent),
+                radial-gradient(2px 2px at 125px 25px, rgba(255,255,0,0.4), transparent);
+            background-repeat: repeat;
+            background-size: 150px 150px;
+            animation: starsMove 200s linear infinite reverse;
+        }
+        
+        @keyframes starsMove {
+            from { transform: translateY(0); }
+            to { transform: translateY(-100px); }
+        }
+        
+        /* Floating Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Nebula Effect */
+        .nebula {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(119, 198, 255, 0.3) 0%, transparent 50%);
+            animation: nebulaShift 30s ease-in-out infinite alternate;
+        }
+        
+        @keyframes nebulaShift {
+            0% {
+                filter: hue-rotate(0deg) brightness(0.8);
+                transform: scale(1) rotate(0deg);
+            }
+            50% {
+                filter: hue-rotate(60deg) brightness(1.2);
+                transform: scale(1.1) rotate(2deg);
+            }
+            100% {
+                filter: hue-rotate(120deg) brightness(0.9);
+                transform: scale(1.05) rotate(-1deg);
+            }
+        }
+        
+        /* Space Grid */
+        .space-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 60s linear infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        /* Enhanced Card Animations */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: 
+                var(--card-shadow),
+                0 0 40px rgba(120, 119, 198, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: left 0.6s;
+        }
+        
+        .card:hover::before {
+            left: 100%;
+        }
+        
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 
+                0 25px 60px rgba(0, 0, 0, 0.3),
+                0 0 60px rgba(120, 119, 198, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+        
+        /* Enhanced Navigation */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--border-radius);
+            padding: 8px;
+            backdrop-filter: blur(10px);
+            flex-wrap: wrap;
+        }
+        
+        .nav-tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+            z-index: -1;
+        }
+        
+        .nav-tab:hover::before,
+        .nav-tab.active::before {
+            transform: scaleX(1);
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* Enhanced Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 8px 20px rgba(102, 126, 234, 0.3),
+                0 0 20px rgba(102, 126, 234, 0.1);
+            animation: buttonFloat 4s ease-in-out infinite;
+        }
+        
+        @keyframes buttonFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 
+                0 15px 35px rgba(102, 126, 234, 0.4),
+                0 0 30px rgba(102, 126, 234, 0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(-2px) scale(1.02);
+        }
+        
+        /* Pulsing Elements */
+        .training-metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            animation: pulse 2s ease-in-out infinite;
+            text-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            }
+            50% {
+                transform: scale(1.05);
+                text-shadow: 0 0 30px rgba(102, 126, 234, 0.6);
+            }
+        }
+        
+        /* Status and Progress */
+        .status {
+            margin-top: 20px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border-color: var(--error-color);
+        }
+        
+        .status.info {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--info-color);
+            border-color: var(--info-color);
+        }
+        
+        .status.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+        
+        .progress-container {
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .progress-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255,255,255,0.3) 50%,
+                transparent 100%
+            );
+            animation: progressShine 2s ease-in-out infinite;
+        }
+        
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Enhanced Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 0.9rem;
+        }
+        
+        input, select, textarea {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 
+                0 0 0 3px rgba(102, 126, 234, 0.1),
+                0 8px 20px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .advanced-config {
+            margin-top: 25px;
+            padding: 25px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .advanced-config h4 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        
+        /* Chart Containers */
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chart-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: var(--transition);
+        }
+        
+        .chart-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .chart-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        /* Notification Enhancements */
+        .notification {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                0 0 30px rgba(102, 126, 234, 0.1);
+            animation: notificationSlide 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes notificationSlide {
+            from {
+                transform: translateX(100%) scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* Enhanced Glow Effects */
+        .glow-effect {
+            position: relative;
+        }
+        
+        .glow-effect::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color), var(--secondary-color));
+            border-radius: inherit;
+            z-index: -1;
+            filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .glow-effect:hover::after {
+            opacity: 0.7;
+        }
+        
+        /* Aurora Effect */
+        .aurora {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -3;
+            background: 
+                linear-gradient(90deg, 
+                    transparent 0%, 
+                    rgba(0, 255, 150, 0.1) 25%, 
+                    rgba(0, 150, 255, 0.1) 50%, 
+                    rgba(150, 0, 255, 0.1) 75%, 
+                    transparent 100%);
+            animation: auroraMove 15s ease-in-out infinite alternate;
+            transform: skewY(2deg);
+        }
+        
+        @keyframes auroraMove {
+            0% {
+                transform: skewY(2deg) translateX(-100%);
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: skewY(-2deg) translateX(100%);
+                opacity: 0.3;
+            }
+        }
+        
+        /* Constellation Effect */
+        .constellation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
+        }
+        
+        .constellation-line {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            height: 1px;
+            animation: constellationPulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes constellationPulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Enhanced Form Animations */
+        .form-group {
+            position: relative;
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            font-size: 14px;
+            color: var(--dark-color);
+            pointer-events: none;
+            transition: all 0.3s ease;
+            background: white;
+            padding: 0 4px;
+        }
+        
+        .form-group input:focus + label,
+        .form-group input:not(:placeholder-shown) + label,
+        .form-group select:focus + label {
+            top: -8px;
+            left: 12px;
+            font-size: 12px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input::placeholder {
+            color: transparent;
+        }
+        
+        /* Quantum Loading Effect */
+        .quantum-loader {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            margin: 20px auto;
+        }
+        
+        .quantum-loader::before,
+        .quantum-loader::after {
+            content: '';
+            position: absolute;
+            border: 2px solid transparent;
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: quantumSpin 1s linear infinite;
+        }
+        
+        .quantum-loader::before {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .quantum-loader::after {
+            width: 40px;
+            height: 40px;
+            top: 10px;
+            left: 10px;
+            animation-direction: reverse;
+            border-top-color: var(--accent-color);
+        }
+        
+        @keyframes quantumSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Data Visualization Enhancements */
+        .metric-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                transparent 30%, 
+                rgba(255, 255, 255, 0.1) 50%, 
+                transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        
+        .metric-card:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            border-color: var(--primary-color);
+        }
+        
+        /* Enhanced Tab System */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 8px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-tabs::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.1) 50%, 
+                transparent 100%);
+            animation: tabShine 3s ease-in-out infinite;
+        }
+        
+        @keyframes tabShine {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+        
+        /* Status Indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            position: relative;
+        }
+        
+        .status-indicator.online {
+            background: var(--success-color);
+            box-shadow: 0 0 10px var(--success-color);
+        }
+        
+        .status-indicator.training {
+            background: var(--warning-color);
+            animation: statusPulse 1s ease-in-out infinite;
+        }
+        
+        .status-indicator.error {
+            background: var(--error-color);
+            box-shadow: 0 0 10px var(--error-color);
+        }
+        
+        @keyframes statusPulse {
+            0%, 100% { 
+                transform: scale(1); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: scale(1.2); 
+                opacity: 0.7; 
+            }
+        }
+        
+        /* Chart Container Glow */
+        .chart-container {
+            position: relative;
+        }
+        
+        .chart-container::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            background: linear-gradient(45deg, 
+                var(--primary-color), 
+                var(--accent-color), 
+                var(--secondary-color), 
+                var(--primary-color));
+            border-radius: inherit;
+            z-index: -1;
+            opacity: 0;
+            filter: blur(4px);
+            transition: opacity 0.3s ease;
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+        
+        .chart-container:hover::after {
+            opacity: 0.5;
+        }
+        
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Enhanced Space Background Effects -->
+    <div class="aurora"></div>
+    <div class="nebula"></div>
+    <div class="constellation" id="constellation"></div>
+    <div class="space-grid"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- 3D Ultra-Advanced Iron Man Style Flying Robot Jarvis Avatar -->
+    <div id="hologram3d">
+        <div class="holo-base">
+            <div class="base-energy-ring"></div>
+            <div class="base-scanlines"></div>
+        </div>
+        
+        <div class="holo-avatar">
+            <!-- Ultra-Advanced Helmet/Head Assembly -->
+            <div class="holo-head">
+                <div class="holo-helmet">
+                    <div class="helmet-main-shell"></div>
+                    <div class="helmet-visor">
+                        <div class="visor-hud-display"></div>
+                        <div class="visor-targeting-reticle"></div>
+                    </div>
+                    <div class="helmet-chin-guard">
+                        <div class="chin-vents"></div>
+                    </div>
+                    <div class="helmet-side-panel left">
+                        <div class="side-panel-detail"></div>
+                    </div>
+                    <div class="helmet-side-panel right">
+                        <div class="side-panel-detail"></div>
+                    </div>
+                    <div class="helmet-antenna"></div>
+                </div>
+                <div class="holo-face">
+                    <div class="holo-eye left">
+                        <div class="eye-pupil"></div>
+                        <div class="eye-glow"></div>
+                        <div class="eye-scanner"></div>
+                    </div>
+                    <div class="holo-eye right">
+                        <div class="eye-pupil"></div>
+                        <div class="eye-glow"></div>
+                        <div class="eye-scanner"></div>
+                    </div>
+                    <div class="face-scanner"></div>
+                    <div class="face-hud-elements"></div>
+                </div>
+            </div>
+            
+            <!-- Ultra-Advanced Torso Assembly -->
+            <div class="holo-torso">
+                <div class="holo-chest">
+                    <div class="arc-reactor">
+                        <div class="reactor-core">
+                            <div class="core-inner-ring"></div>
+                            <div class="core-middle-ring"></div>
+                            <div class="core-outer-ring"></div>
+                        </div>
+                        <div class="reactor-ring">
+                            <div class="ring-segment seg-1"></div>
+                            <div class="ring-segment seg-2"></div>
+                            <div class="ring-segment seg-3"></div>
+                            <div class="ring-segment seg-4"></div>
+                            <div class="ring-segment seg-5"></div>
+                            <div class="ring-segment seg-6"></div>
+                        </div>
+                        <div class="reactor-pulse"></div>
+                        <div class="reactor-energy-field"></div>
+                    </div>
+                    <div class="chest-plate-left">
+                        <div class="plate-detail-lines"></div>
+                        <div class="plate-vent-system"></div>
+                    </div>
+                    <div class="chest-plate-right">
+                        <div class="plate-detail-lines"></div>
+                        <div class="plate-vent-system"></div>
+                    </div>
+                    <div class="chest-armor-segments"></div>
+                </div>
+                <div class="holo-abdomen">
+                    <div class="abdominal-plate">
+                        <div class="abdominal-joints"></div>
+                        <div class="abdominal-flex-lines"></div>
+                    </div>
+                    <div class="core-stabilizers"></div>
+                </div>
+            </div>
+            
+            <!-- Ultra-Advanced Arms Assembly -->
+            <div class="holo-arm-assembly left">
+                <div class="shoulder-joint">
+                    <div class="shoulder-ball-joint"></div>
+                    <div class="shoulder-armor-plate"></div>
+                </div>
+                <div class="upper-arm">
+                    <div class="upper-arm-armor"></div>
+                    <div class="upper-arm-details"></div>
+                    <div class="arm-power-conduits"></div>
+                </div>
+                <div class="elbow-joint">
+                    <div class="elbow-mechanics"></div>
+                    <div class="elbow-pistons"></div>
+                </div>
+                <div class="forearm">
+                    <div class="forearm-detail"></div>
+                    <div class="forearm-armor-plating"></div>
+                    <div class="forearm-weapon-systems"></div>
+                </div>
+                <div class="holo-hand">
+                    <div class="palm">
+                        <div class="palm-repulsor-core"></div>
+                        <div class="palm-energy-channels"></div>
+                    </div>
+                    <div class="finger finger-1">
+                        <div class="finger-joint"></div>
+                        <div class="finger-tip"></div>
+                    </div>
+                    <div class="finger finger-2">
+                        <div class="finger-joint"></div>
+                        <div class="finger-tip"></div>
+                    </div>
+                    <div class="finger finger-3">
+                        <div class="finger-joint"></div>
+                        <div class="finger-tip"></div>
+                    </div>
+                    <div class="finger finger-4">
+                        <div class="finger-joint"></div>
+                        <div class="finger-tip"></div>
+                    </div>
+                    <div class="thumb">
+                        <div class="thumb-joint"></div>
+                        <div class="thumb-tip"></div>
+                    </div>
+                    <div class="repulsors">
+                        <div class="repulsor-core-glow"></div>
+                        <div class="repulsor-energy-field"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="holo-arm-assembly right">
+                <div class="shoulder-joint">
+                    <div class="shoulder-ball-joint"></div>
+                    <div class="shoulder-armor-plate"></div>
+                </div>
+                <div class="upper-arm">
+                    <div class="upper-arm-armor"></div>
+                    <div class="upper-arm-details"></div>
+                    <div class="arm-power-conduits"></div>
+                </div>
+                <div class="elbow-joint">
+                    <div class="elbow-mechanics"></div>
+                    <div class="elbow-pistons"></div>
+                </div>
+                <div class="forearm">
+                    <div class="forearm-detail"></div>
+                    <div class="forearm-armor-plating"></div>
+                    <div class="forearm-weapon-systems"></div>
+                </div>
+                <div class="holo-hand">
+                    <div class="palm">
+                        <div class="palm-repulsor-core"></div>
+                        <div class="palm-energy-channels"></div>
+                    </div>
+                    <div class="finger finger-1">
+                        <div class="finger-joint"></div>
+                        <div class="finger-tip"></div>
+                    </div>
+                    <div class="finger finger-2">
+                        <div class="finger-joint"></div>
+                        <div class="finger-tip"></div>
+                    </div>
+                    <div class="finger finger-3">
+                        <div class="finger-joint"></div>
+                        <div class="finger-tip"></div>
+                    </div>
+                    <div class="finger finger-4">
+                        <div class="finger-joint"></div>
+                        <div class="finger-tip"></div>
+                    </div>
+                    <div class="thumb">
+                        <div class="thumb-joint"></div>
+                        <div class="thumb-tip"></div>
+                    </div>
+                    <div class="repulsors">
+                        <div class="repulsor-core-glow"></div>
+                        <div class="repulsor-energy-field"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ultra-Advanced Legs Assembly -->
+            <div class="holo-leg-assembly left">
+                <div class="hip-joint">
+                    <div class="hip-ball-joint"></div>
+                    <div class="hip-armor-plating"></div>
+                </div>
+                <div class="thigh">
+                    <div class="thigh-armor">
+                        <div class="thigh-armor-segments"></div>
+                        <div class="thigh-power-routing"></div>
+                    </div>
+                    <div class="thigh-mechanical-details"></div>
+                </div>
+                <div class="knee-joint">
+                    <div class="knee-cap-armor"></div>
+                    <div class="knee-pistons"></div>
+                    <div class="knee-mechanics"></div>
+                </div>
+                <div class="shin">
+                    <div class="shin-armor">
+                        <div class="shin-plating"></div>
+                        <div class="shin-vents"></div>
+                    </div>
+                    <div class="shin-stabilizers"></div>
+                </div>
+                <div class="holo-foot">
+                    <div class="foot-sole">
+                        <div class="sole-grip-pattern"></div>
+                        <div class="sole-shock-absorbers"></div>
+                    </div>
+                    <div class="foot-thrusters">
+                        <div class="thruster-core"></div>
+                        <div class="thruster-nozzle"></div>
+                        <div class="thruster-energy-field"></div>
+                    </div>
+                    <div class="foot-armor-plating"></div>
+                </div>
+            </div>
+            
+            <div class="holo-leg-assembly right">
+                <div class="hip-joint">
+                    <div class="hip-ball-joint"></div>
+                    <div class="hip-armor-plating"></div>
+                </div>
+                <div class="thigh">
+                    <div class="thigh-armor">
+                        <div class="thigh-armor-segments"></div>
+                        <div class="thigh-power-routing"></div>
+                    </div>
+                    <div class="thigh-mechanical-details"></div>
+                </div>
+                <div class="knee-joint">
+                    <div class="knee-cap-armor"></div>
+                    <div class="knee-pistons"></div>
+                    <div class="knee-mechanics"></div>
+                </div>
+                <div class="shin">
+                    <div class="shin-armor">
+                        <div class="shin-plating"></div>
+                        <div class="shin-vents"></div>
+                    </div>
+                    <div class="shin-stabilizers"></div>
+                </div>
+                <div class="holo-foot">
+                    <div class="foot-sole">
+                        <div class="sole-grip-pattern"></div>
+                        <div class="sole-shock-absorbers"></div>
+                    </div>
+                    <div class="foot-thrusters">
+                        <div class="thruster-core"></div>
+                        <div class="thruster-nozzle"></div>
+                        <div class="thruster-energy-field"></div>
+                    </div>
+                    <div class="foot-armor-plating"></div>
+                </div>
+            </div>
+            
+            <!-- Ultra-Advanced Flight Systems -->
+            <div class="flight-stabilizers">
+                <div class="back-thruster">
+                    <div class="main-thruster-core"></div>
+                    <div class="thruster-exhaust-nozzles"></div>
+                    <div class="thruster-energy-corona"></div>
+                </div>
+                <div class="side-thruster left">
+                    <div class="side-thruster-nozzle"></div>
+                    <div class="side-thruster-energy"></div>
+                </div>
+                <div class="side-thruster right">
+                    <div class="side-thruster-nozzle"></div>
+                    <div class="side-thruster-energy"></div>
+                </div>
+                <div class="flight-control-fins"></div>
+                <div class="anti-gravity-stabilizers"></div>
+            </div>
+            
+            <!-- Ultra-Advanced Energy Systems -->
+            <div class="energy-aura">
+                <div class="primary-energy-field"></div>
+                <div class="secondary-energy-field"></div>
+                <div class="energy-particles-system"></div>
+            </div>
+            
+            <!-- Advanced Weapon Systems -->
+            <div class="weapon-systems">
+                <div class="shoulder-mounted-weapons"></div>
+                <div class="chest-beam-emitter"></div>
+                <div class="targeting-systems"></div>
+            </div>
+            
+            <!-- HUD and Interface Elements -->
+            <div class="hud-overlay">
+                <div class="status-indicators"></div>
+                <div class="power-level-display"></div>
+                <div class="targeting-reticles"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="floating-shapes" id="floatingShapes"></div>
+    </div>
+
+    <div class="container">
+        <!-- Enhanced Header -->
+        <div class="header">
+            <h1>⚡ Aetheron AI Platform</h1>
+            <p>Advanced Machine Learning Workbench with Real-time Analytics</p>
+        </div>
+        
+        <!-- Enhanced Navigation -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('train')">🚀 Train Models</button>
+            <button class="nav-tab" onclick="switchTab('analyze')">📊 Analytics Dashboard</button>
+            <button class="nav-tab" onclick="switchTab('compare')">⚖️ Model Comparison</button>
+            <button class="nav-tab" onclick="switchTab('deploy')">🌐 Deploy & Monitor</button>
+            <button class="nav-tab" onclick="switchTab('data')">📁 Data Management</button>
+        </div>
+        
+        <!-- Real-time System Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value" id="activeModels">0</div>
+                <div class="metric-label">Active Models</div>
+                <div class="metric-change positive" id="activeModelsChange">+0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="totalPredictions">0</div>
+                <div class="metric-label">Total Predictions</div>
+                <div class="metric-change positive" id="predictionsChange">+0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="avgAccuracy">0%</div>
+                <div class="metric-label">Avg Accuracy</div>
+                <div class="metric-change positive" id="accuracyChange">+0%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="cpuUsage">0%</div>
+                <div class="metric-label">CPU Usage</div>
+                <div class="metric-change" id="cpuChange">0%</div>
+            </div>
+        </div>
+
+        <!-- Training Tab -->
+        <div id="train" class="tab-content active">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>🚀 Advanced Model Configuration</h3>
+                    <form id="trainForm">
+                        <div class="form-group">
+                            <label for="modelName">Model Name:</label>
+                            <input type="text" id="modelName" name="modelName" required 
+                                   placeholder="e.g., sentiment_analyzer_v1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modelType">Model Architecture:</label>
+                            <select id="modelType" name="modelType" onchange="toggleAdvancedConfig()">
+                                <option value="basic">Basic Neural Network</option>
+                                <option value="advanced">Advanced Neural Network</option>
+                                <option value="transformer">Transformer (Coming Soon)</option>
+                                <option value="cnn">CNN (Coming Soon)</option>
+                                <option value="ensemble">Ensemble Methods</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hiddenSizes">Hidden Layer Architecture:</label>
+                            <input type="text" id="hiddenSizes" name="hiddenSizes" value="128,64,32" 
+                                   placeholder="e.g., 128,64,32">
+                        </div>
+                        
+                        <div class="config-grid">
+                            <div class="form-group">
+                                <label for="epochs">Epochs:</label>
+                                <input type="number" id="epochs" name="epochs" value="100" min="1" max="1000">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="learningRate">Learning Rate:</label>
+                                <input type="number" id="learningRate" name="learningRate" 
+                                       value="0.001" step="0.0001" min="0.0001" max="1">
+                            </div>
+                        </div>
+                        
+                        <div id="advancedConfig" class="advanced-config hidden">
+                            <h4>🔧 Advanced Configuration</h4>
+                            <div class="config-grid">
+                                <div class="form-group">
+                                    <label for="activation">Activation Function:</label>
+                                    <select id="activation" name="activation">
+                                        <option value="relu">ReLU</option>
+                                        <option value="leaky_relu">Leaky ReLU</option>
+                                        <option value="sigmoid">Sigmoid</option>
+                                        <option value="tanh">Tanh</option>
+                                        <option value="swish">Swish</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="optimizer">Optimizer:</label>
+                                    <select id="optimizer" name="optimizer">
+                                        <option value="adam">Adam</option>
+                                        <option value="sgd">SGD</option>
+                                        <option value="rmsprop">RMSprop</option>
+                                        <option value="adamw">AdamW</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="dropoutRate">Dropout Rate:</label>
+                                    <input type="number" id="dropoutRate" name="dropoutRate" 
+                                           value="0.1" step="0.05" min="0" max="0.9">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="l1Reg">L1 Regularization:</label>
+                                    <input type="number" id="l1Reg" name="l1Reg" 
+                                           value="0.0" step="0.001" min="0" max="1">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="l2Reg">L2 Regularization:</label>
+                                    <input type="number" id="l2Reg" name="l2Reg" 
+                                           value="0.01" step="0.001" min="0" max="1">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="batchSize">Batch Size:</label>
+                                    <input type="number" id="batchSize" name="batchSize" 
+                                           value="32" min="1" max="256">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn" id="trainBtn">
+                            <span id="trainBtnText">🚀 Start Training</span>
+                            <span id="trainBtnLoading" class="loading hidden"></span>
+                        </button>
+                    </form>
+                    
+                    <div id="trainStatus" class="status hidden"></div>
+                    <div id="trainingProgress" class="progress-container hidden">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">Training: 0%</div>
+                    </div>
+                </div>
+                
+                <!-- Real-time Training Visualization -->
+                <div class="card">
+                    <h3>📈 Live Training Metrics</h3>
+                    <div class="training-metrics">
+                        <div class="training-metric">
+                            <div class="training-metric-value" id="currentEpoch">0</div>
+                            <div class="training-metric-label">Current Epoch</div>
+                        </div>
+                        <div class="training-metric">
+                            <div class="training-metric-value" id="trainLoss">0.000</div>
+                            <div class="training-metric-label">Train Loss</div>
+                        </div>
+                        <div class="training-metric">
+                            <div class="training-metric-value" id="valLoss">0.000</div>
+                            <div class="training-metric-label">Val Loss</div>
+                        </div>
+                        <div class="training-metric">
+                            <div class="training-metric-value" id="trainAccuracy">0%</div>
+                            <div class="training-metric-label">Train Accuracy</div>
+                        </div>
+                    </div>
+                    <div class="training-viz">
+                        <canvas id="trainingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Dashboard Tab -->
+        <div id="analyze" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>📊 Performance Analytics</h3>
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">Model Performance Over Time</div>
+                            <div class="chart-controls">
+                                <button class="chart-btn active" onclick="updateChart('accuracy')">Accuracy</button>
+                                <button class="chart-btn" onclick="updateChart('loss')">Loss</button>
+                                <button class="chart-btn" onclick="updateChart('speed')">Speed</button>
+                            </div>
+                        </div>
+                        <div id="performanceChart" style="height: 400px;"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🎯 Prediction Distribution</h3>
+                    <div class="chart-container">
+                        <div id="distributionChart" style="height: 350px;"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>⚡ System Resources</h3>
+                    <div class="chart-container">
+                        <div id="resourceChart" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Comparison Tab -->
+        <div id="compare" class="tab-content">
+            <div class="card">
+                <h3>⚖️ Model Comparison Dashboard</h3>
+                <div id="modelComparison" class="model-comparison">
+                    <!-- Dynamic model cards will be inserted here -->
+                </div>
+                <div class="chart-container mt-20">
+                    <div class="chart-header">
+                        <div class="chart-title">Model Performance Comparison</div>
+                    </div>
+                    <div id="comparisonChart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deploy & Monitor Tab -->
+        <div id="deploy" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>🌐 Model Deployment</h3>
+                    <div class="form-group">
+                        <label for="deployModel">Select Model to Deploy:</label>
+                        <select id="deployModel" name="deployModel">
+                            <option value="">Choose a trained model...</option>
+                        </select>
+                    </div>
+                    <div class="config-grid">
+                        <div class="form-group">
+                            <label for="deployEnvironment">Environment:</label>
+                            <select id="deployEnvironment" name="deployEnvironment">
+                                <option value="local">Local Server</option>
+                                <option value="docker">Docker Container</option>
+                                <option value="cloud">Cloud Deployment</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="apiEndpoint">API Endpoint:</label>
+                            <input type="text" id="apiEndpoint" name="apiEndpoint" 
+                                   placeholder="/api/v1/predict" readonly>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="deployModel()">🚀 Deploy Model</button>
+                </div>
+                
+                <div class="card">
+                    <h3>📡 Live Monitoring</h3>
+                    <div class="chart-container">
+                        <div id="monitoringChart" style="height: 350px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Management Tab -->
+        <div id="data" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>📁 Data Pipeline Management</h3>
+                    <div class="form-group">
+                        <label for="dataSource">Data Source:</label>
+                        <select id="dataSource" name="dataSource">
+                            <option value="upload">Upload File</option>
+                            <option value="database">Database Connection</option>
+                            <option value="api">API Endpoint</option>
+                            <option value="stream">Real-time Stream</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dataFile">Upload Data File:</label>
+                        <input type="file" id="dataFile" name="dataFile" 
+                               accept=".csv,.json,.xlsx" onchange="handleFileUpload(event)">
+                    </div>
+                    <button class="btn" onclick="processData()">⚡ Process Data</button>
+                </div>
+                
+                <div class="card">
+                    <h3>🔍 Data Exploration</h3>
+                    <div class="chart-container">
+                        <div id="dataExplorationChart" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    <script src="/static/flying_jarvis_system.js"></script>
+</body>
+</html>

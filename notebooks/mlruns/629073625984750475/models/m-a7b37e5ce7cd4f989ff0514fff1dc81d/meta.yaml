@@ -1,0 +1,10 @@
+artifact_location: file:///c:/Users/willi/Jarvis/notebooks/mlruns/629073625984750475/models/m-a7b37e5ce7cd4f989ff0514fff1dc81d/artifacts
+creation_timestamp: 1749959274571
+experiment_id: '629073625984750475'
+last_updated_timestamp: 1749959283182
+model_id: m-a7b37e5ce7cd4f989ff0514fff1dc81d
+model_type: null
+name: model
+source_run_id: 036da642f15b428982c0a4c3d029e3c1
+status: 2
+status_message: null

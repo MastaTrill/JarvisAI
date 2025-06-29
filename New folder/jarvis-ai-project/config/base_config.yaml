@@ -1,0 +1,22 @@
+base_config:
+  project_name: "Jarvis AI Project"
+  version: "1.0"
+  description: "A comprehensive AI/ML project focused on machine learning and deep learning development."
+  data:
+    input_path: "data/input/"
+    output_path: "data/output/"
+    log_path: "logs/"
+  logging:
+    level: "INFO"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  model:
+    save_path: "models/"
+    checkpoint_frequency: 5
+  training:
+    epochs: 50
+    batch_size: 32
+    learning_rate: 0.001
+    validation_split: 0.2
+  experiment_tracking:
+    enabled: true
+    tracking_uri: "http://localhost:5000"

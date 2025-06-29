@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jarvis Admin Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        h1 { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+        th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
+        th { background: #f4f4f4; }
+        .admin { color: #27ae60; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Jarvis Admin Dashboard</h1>
+    <p>Welcome, {{ current_user.username }} (Role: <span class="admin">{{ current_user.role.name }}</span>)</p>
+    <h2>Users</h2>
+    <table>
+        <tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th></tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.role.name if user.role else 'N/A' }}</td>
+            <td>{{ 'Active' if user.is_active else 'Inactive' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <!-- TODO: Add model/job management, user CRUD, etc. -->
+</body>
+</html>

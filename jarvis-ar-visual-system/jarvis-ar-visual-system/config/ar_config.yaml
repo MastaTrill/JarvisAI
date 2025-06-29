@@ -1,0 +1,19 @@
+ar_settings:
+  camera:
+    resolution: [1920, 1080]
+    frame_rate: 30
+    field_of_view: 90
+  object_detection:
+    enabled: true
+    confidence_threshold: 0.5
+    model_path: "assets/models/object_detection_model.h5"
+  pose_estimation:
+    enabled: true
+    model_path: "assets/models/pose_estimation_model.h5"
+  tracking:
+    smoothing_factor: 0.5
+    max_tracking_distance: 5.0
+  ui:
+    show_hud: true
+    hud_position: [10, 10]
+    hud_opacity: 0.8

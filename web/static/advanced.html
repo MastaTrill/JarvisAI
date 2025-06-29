@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis AI - Advanced ML Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist@2.26.0/plotly.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --info-color: #3b82f6;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            --border-radius: 16px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            font-weight: 800;
+        }
+        
+        .header p {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--border-radius);
+            padding: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0 4px;
+        }
+        
+        .nav-tab.active {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: 0 4px 16px rgba(255,255,255,0.2);
+        }
+        
+        .nav-tab:hover:not(.active) {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        
+        .card h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            background: var(--bg-gradient);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 8px 24px rgba(107, 114, 128, 0.4);
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status.success {
+            background-color: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .status.error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+        .status.info {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        
+        .status.warning {
+            background-color: #fffbeb;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+        
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .model-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .model-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 45px rgba(0,0,0,0.1);
+        }
+        
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .model-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .model-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .model-status.trained {
+            background-color: #ecfdf5;
+            color: #065f46;
+        }
+        
+        .model-status.training {
+            background-color: #fffbeb;
+            color: #92400e;
+        }
+        
+        .model-status.failed {
+            background-color: #fef2f2;
+            color: #991b1b;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .metric-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block;
+        }
+        
+        .metric-label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--bg-gradient);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .advanced-config {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f9fafb;
+        }
+        
+        .advanced-config h4 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .prediction-results {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .prediction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0f2fe;
+        }
+        
+        .prediction-item:last-child {
+            border-bottom: none;
+        }
+        
+        .data-preview {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Jarvis AI</h1>
+            <p>Advanced Machine Learning Platform</p>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('dashboard')">🏠 Dashboard</button>
+            <button class="nav-tab" onclick="switchTab('train')">🚀 Train Models</button>
+            <button class="nav-tab" onclick="switchTab('predict')">🎯 Predictions</button>
+            <button class="nav-tab" onclick="switchTab('data')">📊 Data</button>
+            <button class="nav-tab" onclick="switchTab('analytics')">📈 Analytics</button>
+        </div>
+        
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>📊 Platform Overview</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <span class="metric-value" id="totalModels">0</span>
+                            <span class="metric-label">Models</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value" id="trainedModels">0</span>
+                            <span class="metric-label">Trained</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value" id="trainingModels">0</span>
+                            <span class="metric-label">Training</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value" id="avgAccuracy">0%</span>
+                            <span class="metric-label">Avg R²</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>⚡ Quick Actions</h3>
+                    <button class="btn" onclick="switchTab('train')" style="margin-bottom: 10px;">
+                        🚀 Train New Model
+                    </button>
+                    <button class="btn btn-secondary" onclick="switchTab('predict')">
+                        🎯 Make Prediction
+                    </button>
+                </div>
+            </div>
+            
+            <div class="models-grid" id="dashboardModels">
+                <!-- Models will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Train Tab -->
+        <div id="train" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>🚀 Basic Configuration</h3>
+                    <form id="trainForm">
+                        <div class="form-group">
+                            <label for="modelName">Model Name:</label>
+                            <input type="text" id="modelName" name="modelName" required 
+                                   placeholder="e.g., sentiment_analyzer_v1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modelType">Model Type:</label>
+                            <select id="modelType" name="modelType" onchange="toggleAdvancedConfig()">
+                                <option value="basic">Basic Neural Network</option>
+                                <option value="advanced">Advanced Neural Network</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hiddenSizes">Hidden Layer Architecture:</label>
+                            <input type="text" id="hiddenSizes" name="hiddenSizes" value="128,64,32" 
+                                   placeholder="e.g., 128,64,32">
+                        </div>
+                        
+                        <div class="config-grid">
+                            <div class="form-group">
+                                <label for="epochs">Epochs:</label>
+                                <input type="number" id="epochs" name="epochs" value="100" min="1" max="1000">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="learningRate">Learning Rate:</label>
+                                <input type="number" id="learningRate" name="learningRate" 
+                                       value="0.001" step="0.0001" min="0.0001" max="1">
+                            </div>
+                        </div>
+                        
+                        <div id="advancedConfig" class="advanced-config hidden">
+                            <h4>🔧 Advanced Configuration</h4>
+                            <div class="config-grid">
+                                <div class="form-group">
+                                    <label for="activation">Activation Function:</label>
+                                    <select id="activation" name="activation">
+                                        <option value="relu">ReLU</option>
+                                        <option value="leaky_relu">Leaky ReLU</option>
+                                        <option value="sigmoid">Sigmoid</option>
+                                        <option value="tanh">Tanh</option>
+                                        <option value="swish">Swish</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="optimizer">Optimizer:</label>
+                                    <select id="optimizer" name="optimizer">
+                                        <option value="adam">Adam</option>
+                                        <option value="sgd">SGD</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="dropoutRate">Dropout Rate:</label>
+                                    <input type="number" id="dropoutRate" name="dropoutRate" 
+                                           value="0.1" step="0.05" min="0" max="0.9">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="l1Reg">L1 Regularization:</label>
+                                    <input type="number" id="l1Reg" name="l1Reg" 
+                                           value="0.0" step="0.001" min="0" max="1">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="l2Reg">L2 Regularization:</label>
+                                    <input type="number" id="l2Reg" name="l2Reg" 
+                                           value="0.01" step="0.001" min="0" max="1">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="batchSize">Batch Size:</label>
+                                    <input type="number" id="batchSize" name="batchSize" 
+                                           value="32" min="1" max="256">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn" id="trainBtn">
+                            <span id="trainBtnText">🚀 Start Training</span>
+                            <span id="trainBtnLoading" class="loading hidden"></span>
+                        </button>
+                    </form>
+                    
+                    <div id="trainStatus" class="status hidden"></div>
+                    <div id="trainingProgress" class="hidden">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <div id="progressText">Training: 0%</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📈 Training Visualization</h3>
+                    <div class="chart-container">
+                        <canvas id="trainingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Predict Tab -->
+        <div id="predict" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>🎯 Model Predictions</h3>
+                    <form id="predictForm">
+                        <div class="form-group">
+                            <label for="predModelName">Select Model:</label>
+                            <select id="predModelName" name="predModelName" required>
+                                <option value="">Choose a trained model...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="inputMethod">Input Method:</label>
+                            <select id="inputMethod" onchange="toggleInputMethod()">
+                                <option value="manual">Manual Input</option>
+                                <option value="file">File Upload</option>
+                                <option value="sample">Sample Data</option>
+                            </select>
+                        </div>
+                        
+                        <div id="manualInput" class="form-group">
+                            <label for="inputData">Input Data (JSON format):</label>
+                            <textarea id="inputData" name="inputData" rows="4" 
+                                      placeholder='[[1.5, 2.3, 0.8, ...], [2.1, 1.7, 1.2, ...]]'></textarea>
+                        </div>
+                        
+                        <div id="fileInput" class="form-group hidden">
+                            <label for="predictionFile">Upload CSV File:</label>
+                            <input type="file" id="predictionFile" accept=".csv">
+                        </div>
+                        
+                        <button type="submit" class="btn" id="predictBtn">
+                            <span id="predictBtnText">🎯 Make Prediction</span>
+                            <span id="predictBtnLoading" class="loading hidden"></span>
+                        </button>
+                    </form>
+                    
+                    <div id="predictStatus" class="status hidden"></div>
+                    <div id="predictResults" class="prediction-results hidden"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 Prediction Visualization</h3>
+                    <div class="chart-container">
+                        <div id="predictionChart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Tab -->
+        <div id="data" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>📊 Data Upload & Validation</h3>
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="dataFile">Select Data File:</label>
+                            <input type="file" id="dataFile" name="dataFile" accept=".csv,.json" required>
+                        </div>
+                        
+                        <button type="submit" class="btn" id="uploadBtn">
+                            <span id="uploadBtnText">📤 Upload & Validate</span>
+                            <span id="uploadBtnLoading" class="loading hidden"></span>
+                        </button>
+                    </form>
+                    
+                    <div id="uploadStatus" class="status hidden"></div>
+                    <div id="dataPreview" class="data-preview hidden"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>🔍 Data Quality Report</h3>
+                    <div id="qualityReport">
+                        <p style="text-align: center; color: #6b7280; padding: 40px;">
+                            Upload a data file to see quality metrics
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>📈 Model Performance Comparison</h3>
+                    <div class="chart-container">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🕒 Training History</h3>
+                    <div class="chart-container">
+                        <div id="historyChart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for detailed model info -->
+    <div id="modelModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalModelName">Model Details</h2>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        const API_BASE = '';
+        let currentTab = 'dashboard';
+        let trainingChart = null;
+        let comparisonChart = null;
+        let models = [];
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            currentTab = tabName;
+            
+            // Load data for specific tabs
+            if (tabName === 'dashboard') {
+                loadDashboard();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+        
+        // Toggle advanced configuration
+        function toggleAdvancedConfig() {
+            const modelType = document.getElementById('modelType').value;
+            const advancedConfig = document.getElementById('advancedConfig');
+            
+            if (modelType === 'advanced') {
+                advancedConfig.classList.remove('hidden');
+            } else {
+                advancedConfig.classList.add('hidden');
+            }
+        }
+        
+        // Toggle input method for predictions
+        function toggleInputMethod() {
+            const method = document.getElementById('inputMethod').value;
+            const manualInput = document.getElementById('manualInput');
+            const fileInput = document.getElementById('fileInput');
+            
+            manualInput.classList.add('hidden');
+            fileInput.classList.add('hidden');
+            
+            if (method === 'manual') {
+                manualInput.classList.remove('hidden');
+            } else if (method === 'file') {
+                fileInput.classList.remove('hidden');
+            } else if (method === 'sample') {
+                manualInput.classList.remove('hidden');
+                document.getElementById('inputData').value = '[[1.5, 2.3, 0.8, 1.2, -0.5, 0.9, 1.1, -1.3, 2.1, 0.7]]';
+            }
+        }
+        
+        // Utility functions
+        function showStatus(elementId, message, type = 'info') {
+            const statusEl = document.getElementById(elementId);
+            statusEl.innerHTML = `<span>${getStatusIcon(type)}</span> ${message}`;
+            statusEl.className = `status ${type}`;
+            statusEl.classList.remove('hidden');
+        }
+        
+        function getStatusIcon(type) {
+            const icons = {
+                'success': '✅',
+                'error': '❌',
+                'info': 'ℹ️',
+                'warning': '⚠️'
+            };
+            return icons[type] || 'ℹ️';
+        }
+        
+        function hideStatus(elementId) {
+            document.getElementById(elementId).classList.add('hidden');
+        }
+        
+        function showLoading(buttonId, loadingId, textId) {
+            document.getElementById(buttonId).disabled = true;
+            document.getElementById(loadingId).classList.remove('hidden');
+            document.getElementById(textId).classList.add('hidden');
+        }
+        
+        function hideLoading(buttonId, loadingId, textId) {
+            document.getElementById(buttonId).disabled = false;
+            document.getElementById(loadingId).classList.add('hidden');
+            document.getElementById(textId).classList.remove('hidden');
+        }
+        
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                await loadModels();
+                updateDashboardStats();
+                displayDashboardModels();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+        
+        // Update dashboard statistics
+        function updateDashboardStats() {
+            const totalModels = models.length;
+            const trainedModels = models.filter(m => m.status === 'trained').length;
+            const trainingModels = models.filter(m => m.status === 'training').length;
+            
+            let avgAccuracy = 0;
+            const trainedWithMetrics = models.filter(m => m.status === 'trained' && m.metrics?.test_r2);
+            if (trainedWithMetrics.length > 0) {
+                avgAccuracy = trainedWithMetrics.reduce((sum, m) => sum + m.metrics.test_r2, 0) / trainedWithMetrics.length;
+            }
+            
+            document.getElementById('totalModels').textContent = totalModels;
+            document.getElementById('trainedModels').textContent = trainedModels;
+            document.getElementById('trainingModels').textContent = trainingModels;
+            document.getElementById('avgAccuracy').textContent = `${(avgAccuracy * 100).toFixed(1)}%`;
+        }
+        
+        // Display models on dashboard
+        function displayDashboardModels() {
+            const container = document.getElementById('dashboardModels');
+            
+            if (models.length === 0) {
+                container.innerHTML = `
+                    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px;">
+                        <h3 style="color: #6b7280; margin-bottom: 20px;">🤖 No Models Yet</h3>
+                        <p style="color: #9ca3af; margin-bottom: 30px;">Train your first model to get started!</p>
+                        <button class="btn" onclick="switchTab('train')" style="max-width: 200px; margin: 0 auto;">
+                            🚀 Train First Model
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = models.map(model => `
+                <div class="model-card" onclick="showModelDetails('${model.name}')">
+                    <div class="model-header">
+                        <div class="model-name">${model.name}</div>
+                        <div class="model-status ${model.status}">${model.status}</div>
+                    </div>
+                    <p style="color: #6b7280; margin-bottom: 12px;">
+                        Type: ${model.type} | Created: ${new Date(model.created_at).toLocaleDateString()}
+                    </p>
+                    ${model.metrics ? `
+                        <div class="metrics-grid">
+                            <div class="metric">
+                                <span class="metric-value">${(model.metrics.test_r2 || 0).toFixed(3)}</span>
+                                <span class="metric-label">R² Score</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-value">${(model.metrics.test_mse || 0).toFixed(3)}</span>
+                                <span class="metric-label">MSE</span>
+                            </div>
+                        </div>
+                    ` : '<p style="text-align: center; color: #9ca3af; font-style: italic;">No metrics available</p>'}
+                </div>
+            `).join('');
+        }
+        
+        // Continue in next part due to length...
+        
+        // Page initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+            setupEventListeners();
+        });
+        
+        // The rest of the JavaScript will be in the next response...
+    </script>
+</body>
+</html>

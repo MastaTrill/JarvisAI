@@ -1,0 +1,14 @@
+artifact_uri: file:///c:/Users/willi/Jarvis/notebooks/mlruns/629073625984750475/036da642f15b428982c0a4c3d029e3c1/artifacts
+end_time: 1749959283198
+entry_point_name: ''
+experiment_id: '629073625984750475'
+lifecycle_stage: active
+run_id: 036da642f15b428982c0a4c3d029e3c1
+run_name: enthused-snake-374
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749959270275
+status: 3
+tags: []
+user_id: willi

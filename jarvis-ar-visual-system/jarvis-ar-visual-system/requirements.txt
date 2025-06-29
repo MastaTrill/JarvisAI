@@ -1,0 +1,12 @@
+numpy
+opencv-python
+tensorflow
+torch
+scikit-learn
+matplotlib
+Pillow
+pyglet
+pyqt5
+mlflow
+wandb
+pyyaml

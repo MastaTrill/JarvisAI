@@ -1,0 +1,1 @@
+# This file marks the graphics directory as a Python package.
