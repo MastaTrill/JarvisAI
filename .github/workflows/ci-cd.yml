@@ -41,17 +41,18 @@ jobs:
       - name: Build and push Docker image
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/jarvis-ai:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/jarvis-ai:latest
+          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+          docker build -t "${DOCKER_USERNAME}/jarvis-ai:latest" .
+          docker push "${DOCKER_USERNAME}/jarvis-ai:latest"
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       - name: Deploy to Kubernetes (Helm)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.KUBECONFIG != ''
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.KUBECONFIG != ''
         run: |
           echo "$KUBECONFIG" > kubeconfig
           export KUBECONFIG=$(pwd)/kubeconfig
-          helm upgrade --install jarvis-ai ./helm --set image.repository=${{ secrets.DOCKER_USERNAME }}/jarvis-ai --set image.tag=latest
+          helm upgrade --install jarvis-ai ./helm --set image.repository="${DOCKER_USERNAME}/jarvis-ai" --set image.tag=latest
         env:
           KUBECONFIG: ${{ secrets.KUBECONFIG }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
