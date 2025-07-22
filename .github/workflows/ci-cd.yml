@@ -41,18 +41,15 @@ jobs:
       - name: Build and push Docker image
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-          docker build -t "${DOCKER_USERNAME}/jarvis-ai:latest" .
-          docker push "${DOCKER_USERNAME}/jarvis-ai:latest"
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          echo "Noahwade0819!" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+          docker build -t "MastaTriLL/jarvis-ai:latest" .
+          docker push "MastaTriLL/jarvis-ai:latest"
+        # No secrets needed, password is hardcoded
       - name: Deploy to Kubernetes (Helm)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.KUBECONFIG != ''
         run: |
           echo "$KUBECONFIG" > kubeconfig
           export KUBECONFIG=$(pwd)/kubeconfig
-          helm upgrade --install jarvis-ai ./helm --set image.repository="${DOCKER_USERNAME}/jarvis-ai" --set image.tag=latest
+          helm upgrade --install jarvis-ai ./helm --set image.repository="MastaTriLL/jarvis-ai" --set image.tag=latest
         env:
           KUBECONFIG: ${{ secrets.KUBECONFIG }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
