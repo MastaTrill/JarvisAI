@@ -64,10 +64,12 @@ def create_model(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
+    from audit_trail import log_audit_event
     db_model = ModelRegistry(**model.dict())
     db.add(db_model)
     db.commit()
     db.refresh(db_model)
+    log_audit_event(current_user.username, "create_model", f"model_id={db_model.id}", str(model.dict()))
     return db_model
 
 @router.put("/models/{model_id}")
@@ -77,13 +79,20 @@ def update_model(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
+    from audit_trail import log_audit_event
     db_model = db.query(ModelRegistry).filter(ModelRegistry.id == model_id).first()
     if not db_model:
         raise HTTPException(status_code=404, detail="Model not found")
+    changes = []
     for field, value in model.dict(exclude_unset=True).items():
+        old = getattr(db_model, field, None)
+        if old != value:
+            changes.append(f"{field}: {old} -> {value}")
         setattr(db_model, field, value)
     db.commit()
     db.refresh(db_model)
+    if changes:
+        log_audit_event(current_user.username, "update_model", f"model_id={model_id}", "; ".join(changes))
     return db_model
 
 @router.delete("/models/{model_id}")
@@ -92,11 +101,13 @@ def delete_model(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
+    from audit_trail import log_audit_event
     db_model = db.query(ModelRegistry).filter(ModelRegistry.id == model_id).first()
     if not db_model:
         raise HTTPException(status_code=404, detail="Model not found")
     db.delete(db_model)
     db.commit()
+    log_audit_event(current_user.username, "delete_model", f"model_id={model_id}")
     return {"detail": "Model deleted"}
 
 # --- Job Endpoints ---
@@ -107,10 +118,12 @@ def create_job(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
+    from audit_trail import log_audit_event
     db_job = Job(**job.dict())
     db.add(db_job)
     db.commit()
     db.refresh(db_job)
+    log_audit_event(current_user.username, "create_job", f"job_id={db_job.id}", str(job.dict()))
     return db_job
 
 @router.put("/jobs/{job_id}")
@@ -120,13 +133,20 @@ def update_job(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
+    from audit_trail import log_audit_event
     db_job = db.query(Job).filter(Job.id == job_id).first()
     if not db_job:
         raise HTTPException(status_code=404, detail="Job not found")
+    changes = []
     for field, value in job.dict(exclude_unset=True).items():
+        old = getattr(db_job, field, None)
+        if old != value:
+            changes.append(f"{field}: {old} -> {value}")
         setattr(db_job, field, value)
     db.commit()
     db.refresh(db_job)
+    if changes:
+        log_audit_event(current_user.username, "update_job", f"job_id={job_id}", "; ".join(changes))
     return db_job
 
 @router.delete("/jobs/{job_id}")
@@ -135,9 +155,11 @@ def delete_job(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
+    from audit_trail import log_audit_event
     db_job = db.query(Job).filter(Job.id == job_id).first()
     if not db_job:
         raise HTTPException(status_code=404, detail="Job not found")
     db.delete(db_job)
     db.commit()
+    log_audit_event(current_user.username, "delete_job", f"job_id={job_id}")
     return {"detail": "Job deleted"}

@@ -1,3 +1,485 @@
+                <h2>Edit User</h2>
+                <form id="editUserForm">
+                    <label>User ID: <input type="number" name="user_id" required></label><br>
+                    <label>New Email: <input type="email" name="email"></label><br>
+                    <label>New Role: <input type="text" name="role"></label><br>
+                    <label>Status:
+                        <select name="is_active">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </label><br>
+                    <button type="submit">Update User</button>
+                </form>
+
+        {% if current_user.role.name == 'admin' %}
+        <form id="addUserForm">
+            <label>Username: <input type="text" name="username" required></label><br>
+            <label>Email: <input type="email" name="email" required></label><br>
+            <label>Password: <input type="password" name="password" required></label><br>
+            <button type="submit">Add User</button>
+        </form>
+        {% endif %}
+                    <label>Job ID: <input type="text" name="job_id" required></label>
+        <div id="notification" style="display:none;position:fixed;top:1em;right:1em;padding:1em;background:#27ae60;color:#fff;border-radius:5px;z-index:1000;"></div>
+        {% if current_user.role.name == 'admin' %}
+        <form id="listVersionsForm">
+            <label>Model Name: <input type="text" name="model_name" required></label>
+            <button type="submit">List Versions</button>
+        </form>
+        <div id="versionsTable">
+        {% if versions %}
+        <table>
+            <tr><th>Version</th><th>Accuracy</th><th>Created</th><th>Status</th><th>Actions</th></tr>
+            {% for v in versions %}
+            <tr>
+                <td>{{ v.version }}</td>
+                <td>{{ v.accuracy }}</td>
+                <td>{{ v.created_at }}</td>
+                <td>{{ 'Active' if v.is_active else 'Inactive' }}</td>
+                <td>
+                    <form class="promoteVersionForm" data-model="{{ v.model_name }}" data-version="{{ v.version }}" style="display:inline;">
+                        <button type="submit">Promote</button>
+                    </form>
+                    <form class="rollbackVersionForm" data-model="{{ v.model_name }}" data-version="{{ v.version }}" style="display:inline;">
+                        <button type="submit">Rollback</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+        </div>
+        {% endif %}
+                <td>{{ user.last_login if user.last_login else 'N/A' }}</td>
+            </tr>
+        {% if current_user.role.name == 'admin' %}
+        <form id="cancelJobForm">
+            <label>Job ID: <input type="text" name="job_id" required></label>
+            <button type="submit">Cancel Job</button>
+        </form>
+        <form id="retryJobForm">
+            <label>Job ID: <input type="text" name="job_id" required></label>
+            <button type="submit">Retry Job</button>
+        </form>
+        {% endif %}
+            <button type="submit">Add User</button>
+        </form>
+        {% if current_user.role.name == 'admin' %}
+        <button onclick="loadAuditLogs()">Refresh Audit Log</button>
+        <table id="auditLogTable">
+            <tr><th>ID</th><th>User</th><th>Action</th><th>Target</th><th>Timestamp</th><th>Details</th></tr>
+        </table>
+        {% endif %}
+            <label>User ID: <input type="number" name="user_id" required></label><br>
+            <label>New Email: <input type="email" name="email"></label><br>
+            <label>New Role: <input type="text" name="role"></label><br>
+            <label>Status:
+                <select name="is_active">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </label><br>
+            <button type="submit">Update User</button>
+        </form>
+
+        <h2>Remove User</h2>
+        <form id="removeUserForm">
+            <label>User ID: <input type="number" name="user_id" required></label>
+            <button type="submit">Remove User</button>
+        </form>
+        {% endif %}
+
+        <h2>Models</h2>
+        <table id="modelsTable">
+            <tr><th scope="col">ID</th><th scope="col">Name</th><th scope="col">Description</th><th scope="col">Accuracy</th></tr>
+            {% for model in models %}
+            <tr data-model-id="{{ model.id }}">
+                <td tabindex="0" data-label="ID">{{ model.id }}</td>
+                <td tabindex="0" class="editable" data-field="name" data-label="Name">{{ model.name }}</td>
+                <td tabindex="0" class="editable" data-field="description" data-label="Description">{{ model.description }}</td>
+                <td tabindex="0" class="editable" data-field="accuracy" data-label="Accuracy">{{ model.accuracy }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h2>Model Version Management</h2>
+        <form id="listVersionsForm">
+            <label>Model Name: <input type="text" name="model_name" required></label>
+            <button type="submit">List Versions</button>
+        </form>
+        <div id="versionsTable">
+        {% if versions %}
+        <table>
+            <tr><th>Version</th><th>Accuracy</th><th>Created</th><th>Status</th><th>Actions</th></tr>
+            {% for v in versions %}
+            <tr>
+                <td>{{ v.version }}</td>
+                <td>{{ v.accuracy }}</td>
+                <td>{{ v.created_at }}</td>
+                <td>{{ 'Active' if v.is_active else 'Inactive' }}</td>
+                <td>
+                    <form class="promoteVersionForm" data-model="{{ v.model_name }}" data-version="{{ v.version }}" style="display:inline;">
+                        <button type="submit">Promote</button>
+                    </form>
+                    <form class="rollbackVersionForm" data-model="{{ v.model_name }}" data-version="{{ v.version }}" style="display:inline;">
+                        <button type="submit">Rollback</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+        </div>
+
+        <h2>Jobs</h2>
+        <table id="jobsTable">
+            <tr><th scope="col">ID</th><th scope="col">Job ID</th><th scope="col">Status</th><th scope="col">Result</th><th scope="col">Completed At</th><th scope="col">Cancelled</th></tr>
+            {% for job in jobs %}
+            <tr data-job-id="{{ job.id }}">
+                <td tabindex="0" data-label="ID">{{ job.id }}</td>
+                <td tabindex="0" class="editable" data-field="job_id" data-label="Job ID">{{ job.job_id }}</td>
+                <td tabindex="0" class="editable" data-field="status" data-label="Status">{{ job.status }}</td>
+                <td tabindex="0" class="editable" data-field="result" data-label="Result">{{ job.result }}</td>
+                <td tabindex="0" data-label="Completed At">{{ job.completed_at }}</td>
+                <td tabindex="0" class="editable" data-field="cancelled" data-label="Cancelled">{{ 'Yes' if job.cancelled else 'No' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h2>Job Actions</h2>
+        <form id="cancelJobForm">
+            <label>Job ID: <input type="text" name="job_id" required></label>
+            <button type="submit">Cancel Job</button>
+        </form>
+        <form id="retryJobForm">
+            <label>Job ID: <input type="text" name="job_id" required></label>
+            <button type="submit">Retry Job</button>
+        </form>
+
+        <script>
+                                // --- Audit Log Viewer ---
+                                async function loadAuditLogs() {
+                                    try {
+                                        const res = await fetch('/admin/audit/logs');
+                                        const logs = await res.json();
+                                        const table = document.getElementById('auditLogTable');
+                                        let html = `<tr><th>ID</th><th>User</th><th>Action</th><th>Target</th><th>Timestamp</th><th>Details</th></tr>`;
+                                        logs.forEach(log => {
+                                            html += `<tr><td>${log.id}</td><td>${log.user}</td><td>${log.action}</td><td>${log.target}</td><td>${log.timestamp}</td><td>${log.details || ''}</td></tr>`;
+                                        });
+                                        table.innerHTML = html;
+                                    } catch (err) {
+                                        showNotification('Failed to load audit logs', true);
+                                    }
+                                }
+
+                                // --- Advanced Filtering & Search ---
+                                function applyFilters() {
+                                    const userVal = document.getElementById('userSearch').value.toLowerCase();
+                                    const modelVal = document.getElementById('modelSearch').value.toLowerCase();
+                                    const jobVal = document.getElementById('jobSearch').value.toLowerCase();
+                                    // Users
+                                    document.querySelectorAll('tr[data-user-id]').forEach(row => {
+                                        const text = row.innerText.toLowerCase();
+                                        row.style.display = (!userVal || text.includes(userVal)) ? '' : 'none';
+                                    });
+                                    // Models
+                                    document.querySelectorAll('tr[data-model-id]').forEach(row => {
+                                        const text = row.innerText.toLowerCase();
+                                        row.style.display = (!modelVal || text.includes(modelVal)) ? '' : 'none';
+                                    });
+                                    // Jobs
+                                    document.querySelectorAll('tr[data-job-id]').forEach(row => {
+                                        const text = row.innerText.toLowerCase();
+                                        row.style.display = (!jobVal || text.includes(jobVal)) ? '' : 'none';
+                                    });
+                                }
+                                function clearFilters() {
+                                    document.getElementById('userSearch').value = '';
+                                    document.getElementById('modelSearch').value = '';
+                                    document.getElementById('jobSearch').value = '';
+                                    applyFilters();
+                                }
+                        // Inline editing logic for all tables
+                        document.addEventListener('DOMContentLoaded', function() {
+                            function makeCellEditable(cell, id, type) {
+                                const oldValue = cell.textContent;
+                                const input = document.createElement('input');
+                                input.type = 'text';
+                                input.value = oldValue;
+                                input.style.width = '90%';
+                                cell.textContent = '';
+                                cell.appendChild(input);
+                                input.focus();
+                                input.onblur = saveEdit;
+                                input.onkeydown = function(e) { if (e.key === 'Enter') saveEdit(); };
+                                function saveEdit() {
+                                    const newValue = input.value;
+                                    if (newValue !== oldValue) {
+                                        let url, payload;
+                                        if (type === 'user') {
+                                            url = '/users/update';
+                                            payload = { user_id: id };
+                                            payload[cell.dataset.field] = newValue;
+                                        } else if (type === 'model') {
+                                            url = '/models/update';
+                                            payload = { model_id: id };
+                                            payload[cell.dataset.field] = newValue;
+                                        } else if (type === 'job') {
+                                            url = '/jobs/update';
+                                            payload = { job_id: id };
+                                            payload[cell.dataset.field] = newValue;
+                                        }
+                                        fetch(url, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                            body: new URLSearchParams(payload)
+                                        })
+                                        .then(res => res.json())
+                                        .then(result => {
+                                            showNotification(result.message || 'Updated');
+                                            if (type === 'user') refreshUsersTable();
+                                            if (type === 'model') refreshModelsTable();
+                                            if (type === 'job') refreshJobsTable();
+                                        })
+                                        .catch(() => showNotification('Failed to update', true));
+                                    } else {
+                                        cell.textContent = oldValue;
+                                    }
+                                }
+                            }
+                            // Users
+                            document.querySelectorAll('tr[data-user-id] .editable').forEach(cell => {
+                                cell.addEventListener('dblclick', function() {
+                                    const id = this.closest('tr').dataset.userId;
+                                    makeCellEditable(this, id, 'user');
+                                });
+                            });
+                            // Models
+                            document.querySelectorAll('tr[data-model-id] .editable').forEach(cell => {
+                                cell.addEventListener('dblclick', function() {
+                                    const id = this.closest('tr').dataset.modelId;
+                                    makeCellEditable(this, id, 'model');
+                                });
+                            });
+                            // Jobs
+                            document.querySelectorAll('tr[data-job-id] .editable').forEach(cell => {
+                                cell.addEventListener('dblclick', function() {
+                                    const id = this.closest('tr').dataset.jobId;
+                                    makeCellEditable(this, id, 'job');
+                                });
+                            });
+                        });
+                // Helper to refresh models table
+                async function refreshModelsTable() {
+                    try {
+                        const res = await fetch('/models/list');
+                        const models = await res.json();
+                        const table = document.getElementById('modelsTable');
+                        let html = `<tr><th>ID</th><th>Name</th><th>Description</th><th>Accuracy</th></tr>`;
+                        models.forEach(model => {
+                            html += `<tr><td>${model.id}</td><td>${model.name}</td><td>${model.description}</td><td>${model.accuracy}</td></tr>`;
+                        });
+                        table.innerHTML = html;
+                    } catch (err) {
+                        showNotification('Failed to refresh models', true);
+                    }
+                }
+
+                // Helper to refresh jobs table
+                async function refreshJobsTable() {
+                    try {
+                        const res = await fetch('/jobs/list');
+                        const jobs = await res.json();
+                        const table = document.getElementById('jobsTable');
+                        let html = `<tr><th>ID</th><th>Job ID</th><th>Status</th><th>Result</th><th>Completed At</th><th>Cancelled</th></tr>`;
+                        jobs.forEach(job => {
+                            html += `<tr><td>${job.id}</td><td>${job.job_id}</td><td>${job.status}</td><td>${job.result}</td><td>${job.completed_at}</td><td>${job.cancelled ? 'Yes' : 'No'}</td></tr>`;
+                        });
+                        table.innerHTML = html;
+                    } catch (err) {
+                        showNotification('Failed to refresh jobs', true);
+                    }
+                }
+        function showNotification(msg, isError) {
+            var n = document.getElementById('notification');
+            n.textContent = msg;
+            n.style.background = isError ? '#e74c3c' : '#27ae60';
+            n.style.display = 'block';
+            setTimeout(() => { n.style.display = 'none'; }, 3000);
+        }
+
+
+        // Helper to refresh users table
+        async function refreshUsersTable() {
+            try {
+                const res = await fetch('/users/list');
+                const users = await res.json();
+                const table = document.querySelector('table');
+                let html = `<tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th>Last Login</th></tr>`;
+                users.forEach(user => {
+                    html += `<tr><td>${user.id}</td><td>${user.username}</td><td>${user.email}</td><td>${user.role || 'N/A'}</td><td>${user.is_active ? 'Active' : 'Inactive'}</td><td>${user.created_at || 'N/A'}</td><td>${user.last_login || 'N/A'}</td></tr>`;
+                });
+                table.innerHTML = html;
+            } catch (err) {
+                showNotification('Failed to refresh users', true);
+            }
+        }
+
+        // Add User AJAX with confirmation and refresh
+        document.getElementById('addUserForm').onsubmit = async function(e) {
+            e.preventDefault();
+            if (!confirm('Add this user?')) return;
+            const form = e.target;
+            const data = Object.fromEntries(new FormData(form));
+            try {
+                const res = await fetch('/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+                const result = await res.json();
+                showNotification(result.message || 'User added');
+                await refreshUsersTable();
+            } catch (err) {
+                showNotification('Failed to add user', true);
+            }
+        };
+
+        // Edit User AJAX with confirmation and refresh
+        document.getElementById('editUserForm').onsubmit = async function(e) {
+            e.preventDefault();
+            if (!confirm('Update this user?')) return;
+            const form = e.target;
+            const data = Object.fromEntries(new FormData(form));
+            try {
+                const res = await fetch('/users/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+                const result = await res.json();
+                showNotification(result.message || 'User updated');
+                await refreshUsersTable();
+            } catch (err) {
+                showNotification('Failed to update user', true);
+            }
+        };
+
+        // Remove User AJAX with confirmation and refresh
+        document.getElementById('removeUserForm').onsubmit = async function(e) {
+            e.preventDefault();
+            if (!confirm('Remove this user? This cannot be undone.')) return;
+            const form = e.target;
+            const data = Object.fromEntries(new FormData(form));
+            try {
+                const res = await fetch('/users/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+                const result = await res.json();
+                showNotification(result.message || 'User removed');
+                await refreshUsersTable();
+            } catch (err) {
+                showNotification('Failed to remove user', true);
+            }
+        };
+
+        // Model Version Promote AJAX with confirmation
+        document.querySelectorAll('.promoteVersionForm').forEach(form => {
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+                if (!confirm('Promote this model version?')) return;
+                const model = form.getAttribute('data-model');
+                const version = form.getAttribute('data-version');
+                try {
+                    const res = await fetch(`/model_versions/promote/${model}/${version}`, { method: 'POST' });
+                    const result = await res.json();
+                    showNotification(result.message || 'Version promoted');
+                    await refreshModelsTable();
+                } catch (err) {
+                    showNotification('Failed to promote version', true);
+                }
+            };
+        });
+
+        // Model Version Rollback AJAX with confirmation
+        document.querySelectorAll('.rollbackVersionForm').forEach(form => {
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+                if (!confirm('Rollback to this model version?')) return;
+                const model = form.getAttribute('data-model');
+                const version = form.getAttribute('data-version');
+                try {
+                    const res = await fetch(`/model_versions/rollback/${model}/${version}`, { method: 'POST' });
+                    const result = await res.json();
+                    showNotification(result.message || 'Version rolled back');
+                    await refreshModelsTable();
+                } catch (err) {
+                    showNotification('Failed to rollback version', true);
+                }
+            };
+        });
+
+        // Job Cancel AJAX with confirmation
+        document.getElementById('cancelJobForm').onsubmit = async function(e) {
+            e.preventDefault();
+            if (!confirm('Cancel this job?')) return;
+            const form = e.target;
+            const data = Object.fromEntries(new FormData(form));
+            try {
+                const res = await fetch('/jobs/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+                const result = await res.json();
+                showNotification(result.message || 'Job cancelled');
+                await refreshJobsTable();
+            } catch (err) {
+                showNotification('Failed to cancel job', true);
+            }
+        };
+
+        // Job Retry AJAX with confirmation
+        document.getElementById('retryJobForm').onsubmit = async function(e) {
+            e.preventDefault();
+            if (!confirm('Retry this job?')) return;
+            const form = e.target;
+            const data = Object.fromEntries(new FormData(form));
+            try {
+                const res = await fetch('/jobs/retry', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+                const result = await res.json();
+                showNotification(result.message || 'Job set to retry');
+                await refreshJobsTable();
+            } catch (err) {
+                showNotification('Failed to retry job', true);
+            }
+        };
+        </script>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    <h2>Edit User</h2>
+    <form method="post" action="/users/update">
+        <label>User ID: <input type="number" name="user_id" required></label><br>
+        <label>New Email: <input type="email" name="email"></label><br>
+        <label>New Role: <input type="text" name="role"></label><br>
+        <label>Status:
+            <select name="is_active">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+            </select>
+        </label><br>
+        <button type="submit">Update User</button>
+    </form>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,17 +499,59 @@
     <p>Welcome, {{ current_user.username }} (Role: <span class="admin">{{ current_user.role.name }}</span>)</p>
     <h2>Users</h2>
     <table>
-        <tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th></tr>
+        <tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th>Last Login</th></tr>
         {% for user in users %}
-        <tr>
-            <td>{{ user.id }}</td>
-            <td>{{ user.username }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.role.name if user.role else 'N/A' }}</td>
-            <td>{{ 'Active' if user.is_active else 'Inactive' }}</td>
+        <tr data-user-id="{{ user.id }}">
+            <td tabindex="0" data-label="ID">{{ user.id }}</td>
+            <td tabindex="0" class="editable" data-field="username" data-label="Username">{{ user.username }}</td>
+            <td tabindex="0" class="editable" data-field="email" data-label="Email">{{ user.email }}</td>
+            <td tabindex="0" class="editable" data-field="role" data-label="Role">{{ user.role.name if user.role else 'N/A' }}</td>
+            <td tabindex="0" class="editable" data-field="is_active" data-label="Status">{{ 'Active' if user.is_active else 'Inactive' }}</td>
+            <td tabindex="0" data-label="Created">{{ user.created_at if user.created_at else 'N/A' }}</td>
+            <td tabindex="0" data-label="Last Login">{{ user.last_login if user.last_login else 'N/A' }}</td>
         </tr>
         {% endfor %}
     </table>
-    <!-- TODO: Add model/job management, user CRUD, etc. -->
+    <h2>Models</h2>
+    <table>
+        <tr><th>ID</th><th>Name</th><th>Description</th><th>Accuracy</th></tr>
+        {% for model in models %}
+        <tr>
+            <td>{{ model.id }}</td>
+            <td>{{ model.name }}</td>
+            <td>{{ model.description }}</td>
+            <td>{{ model.accuracy }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Jobs</h2>
+    <table>
+        <tr><th>ID</th><th>Job ID</th><th>Status</th><th>Result</th><th>Completed At</th><th>Cancelled</th></tr>
+        {% for job in jobs %}
+        <tr>
+            <td>{{ job.id }}</td>
+            <td>{{ job.job_id }}</td>
+            <td>{{ job.status }}</td>
+            <td>{{ job.result }}</td>
+            <td>{{ job.completed_at }}</td>
+            <td>{{ 'Yes' if job.cancelled else 'No' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Add User</h2>
+    <form method="post" action="/users/register">
+        <label>Username: <input type="text" name="username" required></label><br>
+        <label>Email: <input type="email" name="email" required></label><br>
+        <label>Password: <input type="password" name="password" required></label><br>
+        <button type="submit">Add User</button>
+    </form>
+
+    <h2>Remove User</h2>
+    <form method="post" action="/users/remove">
+        <label>User ID: <input type="number" name="user_id" required></label>
+        <button type="submit">Remove User</button>
+    </form>
 </body>
 </html>

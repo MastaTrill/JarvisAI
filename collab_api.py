@@ -45,4 +45,24 @@ def list_annotations(model_id: int, current_user: User = Depends(get_current_use
     with open(ann_path, "r") as f:
         return [json.loads(line) for line in f]
 
-# TODO: Add WebSocket endpoint for live collaboration
+
+from fastapi import WebSocket, WebSocketDisconnect
+
+# In-memory set of active connections (for demo purposes)
+active_connections = set()
+
+@router.websocket("/ws/collab")
+async def websocket_collaboration(websocket: WebSocket):
+    await websocket.accept()
+    active_connections.add(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # Broadcast to all connected clients
+            for conn in active_connections:
+                if conn != websocket:
+                    await conn.send_text(data)
+    except WebSocketDisconnect:
+        active_connections.remove(websocket)
+    except Exception:
+        active_connections.remove(websocket)

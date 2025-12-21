@@ -1,0 +1,35 @@
+# Docker Compose for JarvisAI Platform
+version: '3.8'
+
+services:
+  jarvis-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - JARVIS_ENV=production
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    command: python api_enhanced.py
+    restart: unless-stopped
+
+  jarvis-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+      - JARVIS_ENV=production
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    command: python -c "print('Jarvis Worker Ready'); import time; time.sleep(3600)"
+    restart: unless-stopped
+
+volumes:
+  data:
+  models:

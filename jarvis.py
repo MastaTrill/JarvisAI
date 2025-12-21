@@ -10,21 +10,43 @@ import argparse
 import subprocess
 
 def install_dependencies():
-    """Install required dependencies"""
+    """
+    Install required dependencies.
+    """
     print("🔧 Installing dependencies...")
     try:
-        subprocess.check_call([
-            sys.executable, "-m", "pip", "install", 
-            "numpy", "pandas", "matplotlib", "seaborn", "pyyaml", "pytest", "tqdm", "joblib"
+        # Uninstall existing torch (if any)
+        subprocess.call([
+            sys.executable,
+            "-m", "pip", "uninstall", "-y",
+            "torch", "torchvision", "torchaudio"
         ])
-        print("✅ Dependencies installed successfully!")
+        # Install core dependencies
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install",
+            "numpy", "pandas", "matplotlib",
+            "seaborn", "pyyaml", "pytest",
+            "tqdm", "joblib"
+        ])
+        # Install CPU-only torch for Windows
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install",
+            "torch==2.1.2+cpu",
+            "torchvision==0.16.2+cpu",
+            "torchaudio==2.1.2+cpu",
+            "--index-url",
+            "https://download.pytorch.org/whl/cpu"
+        ])
+        print("✅ Dependencies (including CPU-only PyTorch) installed successfully!")
         return True
     except subprocess.CalledProcessError:
         print("❌ Failed to install dependencies")
         return False
 
 def train_model():
-    """Train a new model"""
+    """
+    Train a new model.
+    """
     print("🚀 Starting model training...")
     try:
         subprocess.check_call([
@@ -38,7 +60,9 @@ def train_model():
         return False
 
 def run_inference():
-    """Run inference with trained model"""
+    """
+    Run inference with trained model.
+    """
     print("🔮 Running model inference...")
     try:
         subprocess.check_call([
@@ -51,7 +75,9 @@ def run_inference():
         return False
 
 def run_tests():
-    """Run the test suite"""
+    """
+    Run the test suite.
+    """
     print("🧪 Running tests...")
     try:
         subprocess.check_call([
@@ -64,20 +90,29 @@ def run_tests():
         return False
 
 def main():
+    """
+    Main entry point for Jarvis AI script.
+    """
     print("=" * 60)
     print("🤖 Welcome to Jarvis AI!")
     print("=" * 60)
-    
-    parser = argparse.ArgumentParser(description="Jarvis AI - Easy Launch Script")
-    parser.add_argument("action", choices=["install", "train", "predict", "test"], 
-                       help="Action to perform")
-    
+
+    parser = argparse.ArgumentParser(
+        description="Jarvis AI - Easy Launch Script"
+    )
+    parser.add_argument(
+        "action",
+        choices=["install", "train", "predict", "test"],
+        help="Action to perform"
+    )
+
     args = parser.parse_args()
-    
+
     # Change to project directory
     project_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(project_dir)
-    
+
+    success = False
     if args.action == "install":
         success = install_dependencies()
     elif args.action == "train":
@@ -90,28 +125,40 @@ def main():
     elif args.action == "test":
         print("🔍 This will run the test suite to verify everything works.")
         success = run_tests()
-    
+
     print("\n" + "=" * 60)
     if success:
         print("🎉 Operation completed successfully!")
-        
         if args.action == "train":
             print("\n📁 Generated files:")
-            print("   - models/trained_model.pkl (trained neural network)")
-            print("   - artifacts/preprocessor.pkl (data preprocessor)")
-            print("   - data/processed/dataset.csv (training data)")
-            print("\n➡️  Next step: Run 'python jarvis.py predict' to test predictions")
-            
+            print(
+                "   - models/trained_model.pkl "
+                "(trained neural network)"
+            )
+            print(
+                "   - data/processed/dataset.csv "
+                "(training data)"
+            )
+            print(
+                "\n➡️  Next step: Run 'python jarvis.py predict' "
+                "to test predictions"
+            )
         elif args.action == "predict":
             print("\n🎯 Predictions generated successfully!")
-            print("➡️  Check the output above for prediction results")
-            
+            print(
+                "➡️  Check the output above "
+                "for prediction results"
+            )
         elif args.action == "install":
-            print("\n➡️  Next step: Run 'python jarvis.py train' to train a model")
-            
+            print(
+                "\n➡️  Next step: Run 'python jarvis.py train' "
+                "to train a model"
+            )
     else:
-        print("❌ Operation failed. Please check the error messages above.")
-    
+        print(
+            "❌ Operation failed. "
+            "Please check the error messages above."
+        )
     print("=" * 60)
 
 if __name__ == "__main__":

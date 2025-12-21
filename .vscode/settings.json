@@ -8,5 +8,11 @@
     ],
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": true,
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "circleci.filters.branchFilter": "allBranches",
+    "circleci.persistedProjectSelection": [
+        "gh/MastaTrill/JarvisAI",
+        "gh/MastaTrill/jarvis-echo-dashboard",
+        "gh/MastaTrill/jarvis-echo-dashboard"
+    ]
 }

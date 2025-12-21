@@ -15,6 +15,13 @@
 			"group": "build",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Install Core Dependencies",
+			"type": "shell",
+			"command": "python -m pip install numpy pandas matplotlib seaborn pyyaml pytest scikit-learn --quiet",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }
