@@ -464,4 +464,30 @@ with st.sidebar:
     st.image("https://via.placeholder.com/150x150.png?text=JarvisAI", use_container_width=True)
     st.title("🌌 JarvisAI")
     st.caption("Quantum Consciousness Platform")
-    
+    
+    st.divider()
+    
+    st.subheader("Navigation")
+    page = st.radio(
+        "Select Page:",
+        ["Main Dashboard", "Documentation", "Settings"],
+        label_visibility="collapsed"
+    )
+    
+    st.divider()
+    
+    st.subheader("Quick Stats")
+    st.metric("Features", "5/5", "100%")
+    st.metric("Phase", "6")
+    st.metric("Status", "OPTIMAL")
+    
+    st.divider()
+    
+
+    st.caption(
+        f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
+
+# Main execution
+if __name__ == "__main__":
+    main_dashboard()
