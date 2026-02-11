@@ -31,9 +31,9 @@ def install_dependencies():
         # Install CPU-only torch for Windows
         subprocess.check_call([
             sys.executable, "-m", "pip", "install",
-            "torch==2.1.2+cpu",
-            "torchvision==0.16.2+cpu",
-            "torchaudio==2.1.2+cpu",
+            "torch==2.5.1+cpu",
+            "torchvision==0.20.1+cpu",
+            "torchaudio==2.5.1+cpu",
             "--index-url",
             "https://download.pytorch.org/whl/cpu"
         ])

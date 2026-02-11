@@ -8,10 +8,13 @@ This module provides enhanced neural network implementations with modern feature
 - Ensemble methods
 """
 
-import numpy as np
 import logging
-from typing import List, Optional, Dict, Any
 import pickle
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+
+# pylint: disable=too-few-public-methods,too-many-instance-attributes,too-many-arguments,too-many-positional-arguments,too-many-locals
 
 logger = logging.getLogger(__name__)
 
@@ -21,45 +24,55 @@ class ActivationFunction:
     
     @staticmethod
     def relu(x: np.ndarray) -> np.ndarray:
+        """Apply the ReLU activation function."""
         return np.maximum(0, x)
     
     @staticmethod
     def relu_derivative(x: np.ndarray) -> np.ndarray:
+        """Compute the derivative of the ReLU activation."""
         return (x > 0).astype(float)
     
     @staticmethod
     def leaky_relu(x: np.ndarray, alpha: float = 0.01) -> np.ndarray:
+        """Apply the leaky ReLU activation function."""
         return np.where(x > 0, x, alpha * x)
     
     @staticmethod
     def leaky_relu_derivative(x: np.ndarray, alpha: float = 0.01) -> np.ndarray:
+        """Compute the derivative of the leaky ReLU activation."""
         return np.where(x > 0, 1.0, alpha)
     
     @staticmethod
     def sigmoid(x: np.ndarray) -> np.ndarray:
+        """Apply the sigmoid activation function."""
         # Clip to prevent overflow
         x = np.clip(x, -500, 500)
         return 1 / (1 + np.exp(-x))
     
     @staticmethod
     def sigmoid_derivative(x: np.ndarray) -> np.ndarray:
+        """Compute the derivative of the sigmoid activation."""
         s = ActivationFunction.sigmoid(x)
         return s * (1 - s)
     
     @staticmethod
     def tanh(x: np.ndarray) -> np.ndarray:
+        """Apply the hyperbolic tangent activation function."""
         return np.tanh(x)
     
     @staticmethod
     def tanh_derivative(x: np.ndarray) -> np.ndarray:
+        """Compute the derivative of the hyperbolic tangent activation."""
         return 1 - np.tanh(x) ** 2
     
     @staticmethod
     def swish(x: np.ndarray) -> np.ndarray:
+        """Apply the swish activation function."""
         return x * ActivationFunction.sigmoid(x)
     
     @staticmethod
     def swish_derivative(x: np.ndarray) -> np.ndarray:
+        """Compute the derivative of the swish activation."""
         s = ActivationFunction.sigmoid(x)
         return s + x * s * (1 - s)
     
@@ -131,6 +144,7 @@ class Optimizer:
     
     def update(self, weights: np.ndarray, gradients: np.ndarray) -> np.ndarray:
         """Update weights based on gradients. Override in subclasses."""
+        del weights, gradients  # parameters are defined for interface compatibility
         raise NotImplementedError("Subclasses must implement update()")
 
 
@@ -153,7 +167,7 @@ class SGDOptimizer(Optimizer):
 class AdamOptimizer(Optimizer):
     """Adam optimizer implementation."""
     
-    def __init__(self, learning_rate: float = 0.001, beta1: float = 0.9, 
+    def __init__(self, learning_rate: float = 0.001, beta1: float = 0.9,
                  beta2: float = 0.999, epsilon: float = 1e-8):
         super().__init__(learning_rate)
         self.beta1 = beta1
@@ -270,7 +284,10 @@ class AdvancedNeuralNetwork:
         }
         
         self.activation_func, self.activation_derivative = activation_map[self.activation_name]
-        self.output_activation_func, self.output_activation_derivative = activation_map[self.output_activation_name]
+        (
+            self.output_activation_func,
+            self.output_activation_derivative,
+        ) = activation_map[self.output_activation_name]
     
     def _initialize_optimizer(self, optimizer: str, learning_rate: float):
         """Initialize the optimizer."""
@@ -317,15 +334,15 @@ class AdvancedNeuralNetwork:
             return x * dropout_mask / (1 - self.dropout_rate)
         return x
     
-    def forward(self, X: np.ndarray, training: bool = False) -> tuple:
+    def forward(self, x_data: np.ndarray, training: bool = False) -> tuple:
         """
         Forward propagation with dropout support.
         
         Returns:
             output, activations for backpropagation
         """
-        activations = [X]
-        current_input = X
+        activations = [x_data]
+        current_input = x_data
         
         # Hidden layers
         for i in range(len(self.weights) - 1):
@@ -353,7 +370,7 @@ class AdvancedNeuralNetwork:
     
     def fit(
         self,
-        X: np.ndarray,
+        x_data: np.ndarray,
         y: np.ndarray,
         epochs: int = 100,
         batch_size: int = 32,
@@ -374,12 +391,12 @@ class AdvancedNeuralNetwork:
             history['val_loss'] = []
             history['val_mse'] = []
         
-        n_samples = X.shape[0]
+        n_samples = x_data.shape[0]
         
         for epoch in range(epochs):
             # Shuffle data
             indices = np.random.permutation(n_samples)
-            X_shuffled = X[indices]
+            x_shuffled = x_data[indices]
             y_shuffled = y[indices]
             
             epoch_loss = 0.0
@@ -387,11 +404,11 @@ class AdvancedNeuralNetwork:
             
             # Mini-batch training
             for i in range(0, n_samples, batch_size):
-                batch_X = X_shuffled[i:i + batch_size]
+                batch_x = x_shuffled[i:i + batch_size]
                 batch_y = y_shuffled[i:i + batch_size]
                 
                 # Forward pass
-                predictions, activations = self.forward(batch_X, training=True)
+                predictions, activations = self.forward(batch_x, training=True)
                 
                 # Compute loss
                 mse_loss = np.mean((predictions - batch_y) ** 2)
@@ -413,10 +430,10 @@ class AdvancedNeuralNetwork:
             
             # Validation
             if validation_data is not None:
-                X_val, y_val = validation_data
+                x_val, y_val = validation_data
                 if len(y_val.shape) == 1:
                     y_val = y_val.reshape(-1, 1)
-                val_pred, _ = self.forward(X_val, training=False)
+                val_pred, _ = self.forward(x_val, training=False)
                 val_mse = np.mean((val_pred - y_val) ** 2)
                 val_loss = val_mse + self._compute_regularization_loss()
                 
@@ -437,9 +454,15 @@ class AdvancedNeuralNetwork:
         logger.info("Training completed successfully!")
         return history
     
-    def _backward(self, X: np.ndarray, y: np.ndarray, predictions: np.ndarray, activations: List[np.ndarray]):
+    def _backward(
+        self,
+        x_data: np.ndarray,
+        y: np.ndarray,
+        predictions: np.ndarray,
+        activations: List[np.ndarray],
+    ):
         """Backward propagation with regularization."""
-        batch_size = X.shape[0]
+        batch_size = x_data.shape[0]
         
         # Ensure y has the correct shape
         if len(y.shape) == 1:
@@ -478,15 +501,21 @@ class AdvancedNeuralNetwork:
             weight_optimizer_idx = i * 2      # Even indices for weights
             bias_optimizer_idx = i * 2 + 1    # Odd indices for biases
             
-            self.weights[i] = self.optimizers[weight_optimizer_idx].update(self.weights[i], weight_gradient)
-            self.biases[i] = self.optimizers[bias_optimizer_idx].update(self.biases[i], bias_gradient)
+            self.weights[i] = self.optimizers[weight_optimizer_idx].update(
+                self.weights[i],
+                weight_gradient,
+            )
+            self.biases[i] = self.optimizers[bias_optimizer_idx].update(
+                self.biases[i],
+                bias_gradient,
+            )
     
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, x_data: np.ndarray) -> np.ndarray:
         """Make predictions on new data."""
         if not self.is_trained:
             raise ValueError("Model must be trained before making predictions")
         
-        predictions, _ = self.forward(X, training=False)
+        predictions, _ = self.forward(x_data, training=False)
         return predictions.flatten() if predictions.shape[1] == 1 else predictions
     
     def train_step(self, x: np.ndarray, y: np.ndarray) -> float:
@@ -525,7 +554,11 @@ class AdvancedNeuralNetwork:
             "l1_regularization": self.l1_reg,
             "l2_regularization": self.l2_reg,
             "is_trained": self.is_trained,
-            "architecture": f"{self.input_size} -> {' -> '.join(map(str, self.hidden_sizes))} -> {self.output_size}"
+            "architecture": (
+                f"{self.input_size} -> "
+                f"{' -> '.join(map(str, self.hidden_sizes))} -> "
+                f"{self.output_size}"
+            ),
         }
     
     def save_model(self, filepath: str):
@@ -577,4 +610,10 @@ class AdvancedNeuralNetwork:
 
 
 # Export the new model for use
-__all__ = ['AdvancedNeuralNetwork', 'ActivationFunction', 'Regularizer', 'SGDOptimizer', 'AdamOptimizer']
+__all__ = [
+    'AdvancedNeuralNetwork',
+    'ActivationFunction',
+    'Regularizer',
+    'SGDOptimizer',
+    'AdamOptimizer',
+]

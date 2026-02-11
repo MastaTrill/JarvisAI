@@ -131,15 +131,15 @@ Enables:
 
 ### Deep Learning (Optional)
 ```bash
-# PyTorch (CUDA 11.8)
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+# PyTorch (CUDA 12.4)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 
 # TensorFlow
-pip install tensorflow>=2.13.0
+pip install tensorflow>=2.18.0
 
 # Alternative: CPU-only versions
-pip install torch torchvision  # CPU version
-pip install tensorflow-cpu
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install tensorflow-cpu>=2.18.0
 ```
 
 ### Experiment Tracking (Optional)
