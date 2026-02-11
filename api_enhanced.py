@@ -21,14 +21,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
 import numpy as np
-
-# Import cv2 dynamically to avoid Pylance false positives about missing members
-try:
-    opencv: Any = __import__("cv2")
-    OPENCV_AVAILABLE: bool = True
-except ImportError:
-    opencv = None  # type: ignore[assignment]
-    OPENCV_AVAILABLE: bool = False
 import pandas as pd
 import psutil
 from fastapi import (FastAPI, File, HTTPException, UploadFile, WebSocket,
@@ -38,6 +30,14 @@ from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
+
+# Import cv2 dynamically to avoid Pylance false positives about missing members
+try:
+    OPENCV: Any = __import__("cv2")
+    OPENCV_AVAILABLE: bool = True
+except ImportError:
+    OPENCV = None  # type: ignore[assignment]
+    OPENCV_AVAILABLE = False
 
 # Pylint style overrides for this large API module
 # - C0302: too-many-lines
@@ -1349,10 +1349,10 @@ async def analyze_image_api(file: UploadFile = File(...)):
 
         # Load image as numpy array
         try:
-            image = opencv.imdecode(np.frombuffer(content, np.uint8), opencv.IMREAD_COLOR)
+            image = OPENCV.imdecode(np.frombuffer(content, np.uint8), OPENCV.IMREAD_COLOR)
             if image is None:
                 # Fallback for some environments
-                image = opencv.imread(temp_path)
+                image = OPENCV.imread(temp_path)
                 if image is None:
                     raise ValueError("Could not load image")
 
@@ -1425,9 +1425,9 @@ async def style_transfer_api(
             buffer.write(content)
 
         try:
-            image = opencv.imdecode(np.frombuffer(content, np.uint8), opencv.IMREAD_COLOR)
+            image = OPENCV.imdecode(np.frombuffer(content, np.uint8), OPENCV.IMREAD_COLOR)
             if image is None:
-                image = opencv.imread(temp_path)
+                image = OPENCV.imread(temp_path)
                 if image is None:
                     raise ValueError("Could not load image")
 
