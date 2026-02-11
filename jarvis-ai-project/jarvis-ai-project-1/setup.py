@@ -1,3 +1,4 @@
+from pathlib import Path
 from setuptools import setup, find_packages
 
 setup(
@@ -6,7 +7,7 @@ setup(
     author='MastaTrill',
     author_email='contact@jarvisai.dev',
     description='A comprehensive AI/ML project focused on machine learning and deep learning development.',
-    long_description=open('README.md').read(),
+    long_description=Path('README.md').read_text(encoding='utf-8'),
     long_description_content_type='text/markdown',
     url='https://github.com/MastaTrill/JarvisAI',
     packages=find_packages(where='src'),

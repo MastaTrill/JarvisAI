@@ -1,23 +1,26 @@
 # 🚀 JarvisAI Deployment Guide
+
 **Version**: Phase 6 - Quantum Consciousness Edition  
 **Date**: December 21, 2025  
 **Status**: Production Ready
 
 ## 📋 Table of Contents
-- [Quick Start](#quick-start)
-- [Environment Setup](#environment-setup)
-- [Dependencies Installation](#dependencies-installation)
-- [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-- [Testing & Validation](#testing--validation)
-- [Production Deployment](#production-deployment)
-- [Troubleshooting](#troubleshooting)
+
+- [Quick Start](#-quick-start)
+- [Environment Setup](#-environment-setup)
+- [Dependencies Installation](#-dependencies-installation)
+- [Configuration](#️-configuration)
+- [Running the Application](#-running-the-application)
+- [Testing & Validation](#-testing--validation)
+- [Production Deployment](#-production-deployment)
+- [Troubleshooting](#-troubleshooting)
 
 ---
 
 ## 🚀 Quick Start
 
 ### Minimal Setup (5 minutes)
+
 ```bash
 # Clone repository
 git clone https://github.com/MastaTrill/JarvisAI.git
@@ -34,6 +37,7 @@ python simple_train.py
 ```
 
 ### Full Setup (15 minutes)
+
 ```bash
 # Create virtual environment
 python -m venv .venv
@@ -57,12 +61,14 @@ python demo_quantum_consciousness_complete.py
 ### System Requirements
 
 **Minimum**:
+
 - Python 3.8+
 - 4GB RAM
 - 5GB disk space
 - CPU with AVX support
 
 **Recommended**:
+
 - Python 3.11+
 - 16GB RAM
 - 20GB disk space
@@ -78,7 +84,8 @@ python demo_quantum_consciousness_complete.py
 
 ### Python Environment
 
-**Option 1: Virtual Environment (Recommended)**
+#### Option 1: Virtual Environment (Recommended)
+
 ```bash
 # Windows
 python -m venv .venv
@@ -89,13 +96,15 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-**Option 2: Conda Environment**
+#### Option 2: Conda Environment
+
 ```bash
 conda create -n jarvis python=3.11
 conda activate jarvis
 ```
 
-**Option 3: System Python**
+#### Option 3: System Python
+
 ```bash
 # Not recommended for production
 # May conflict with system packages
@@ -107,11 +116,13 @@ pip install --user -r requirements.txt
 ## 📦 Dependencies Installation
 
 ### Core Dependencies (Required)
+
 ```bash
 pip install numpy pandas matplotlib seaborn pyyaml pytest
 ```
 
 These provide:
+
 - Numerical computing (numpy)
 - Data manipulation (pandas)
 - Visualization (matplotlib, seaborn)
@@ -119,17 +130,20 @@ These provide:
 - Testing (pytest)
 
 ### ML/AI Dependencies (Recommended)
+
 ```bash
 pip install scikit-learn transformers optuna lightgbm
 ```
 
 Enables:
+
 - Classical ML algorithms
 - Pre-trained language models
 - Hyperparameter optimization
 - Gradient boosting
 
 ### Deep Learning (Optional)
+
 ```bash
 # PyTorch (CUDA 12.4)
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
@@ -143,11 +157,13 @@ pip install tensorflow-cpu>=2.18.0
 ```
 
 ### Experiment Tracking (Optional)
+
 ```bash
 pip install mlflow wandb
 ```
 
 ### Full Installation
+
 ```bash
 # Install everything
 pip install -r requirements.txt
@@ -163,6 +179,7 @@ pip install -r requirements.txt --upgrade --no-cache-dir
 ### 1. Environment Variables
 
 Create `.env` file:
+
 ```bash
 # Copy example
 cp .env.example .env
@@ -172,6 +189,7 @@ nano .env  # or use your preferred editor
 ```
 
 Key variables:
+
 ```env
 # Database
 DATABASE_URL=sqlite:///jarvis.db
@@ -198,6 +216,7 @@ MAX_MEMORY_GB=8
 ### 2. Training Configuration
 
 Edit `config/train_config.yaml`:
+
 ```yaml
 model:
   type: "neural_network"
@@ -242,16 +261,19 @@ python -c "from db_config import test_connection; test_connection()"
 ### 1. Training Models
 
 **Simple Training**:
+
 ```bash
 python simple_train.py
 ```
 
 **Advanced Training**:
+
 ```bash
 python -m src.training.train_final --config config/train_config.yaml
 ```
 
 **With Quantum Features**:
+
 ```bash
 python demo_quantum_consciousness_complete.py
 ```
@@ -259,6 +281,7 @@ python demo_quantum_consciousness_complete.py
 ### 2. Web Interface
 
 **Start API Server**:
+
 ```bash
 python api_enhanced.py
 ```
@@ -266,6 +289,7 @@ python api_enhanced.py
 Access at: `http://localhost:8000`
 
 **Features**:
+
 - 3D Humanoid Robot Interface
 - Real-time Training Metrics
 - Model Management Dashboard
@@ -275,11 +299,13 @@ Access at: `http://localhost:8000`
 ### 3. Demos
 
 **Complete Feature Demo**:
+
 ```bash
 python showcase_platform.py
 ```
 
 **Specific Feature Demos**:
+
 ```bash
 python demo_advanced_features.py          # Advanced AI
 python demo_temporal_complete.py          # Temporal manipulation
@@ -292,17 +318,20 @@ python demo_cosmic_consciousness.py       # Cosmic consciousness
 ## ✅ Testing & Validation
 
 ### Reality Check
+
 ```bash
 # Comprehensive module validation
 python test_reality_check.py
 ```
 
 Output interpretation:
+
 - ✅ **Working**: Module loaded successfully
 - ❌ **Missing**: Dependency not installed
 - ⚠️ **Broken**: Module has errors
 
 ### Unit Tests
+
 ```bash
 # Run all tests
 pytest tests/
@@ -317,6 +346,7 @@ pytest --cov=src --cov-report=html tests/
 ```
 
 ### Integration Tests
+
 ```bash
 # API integration
 python test_api_integration.py
@@ -329,6 +359,7 @@ python test_advanced_features_validation.py
 ```
 
 ### Performance Tests
+
 ```bash
 # Model training performance
 python -m pytest tests/ -v --benchmark-only
@@ -347,6 +378,7 @@ python -m cProfile -o profile.stats simple_train.py
 ### Docker Deployment
 
 **1. Build Image**:
+
 ```bash
 docker build -t jarvis-ai:latest -f Dockerfile .
 
@@ -357,6 +389,7 @@ docker build -t jarvis-ai:quantum \
 ```
 
 **2. Run Container**:
+
 ```bash
 # Basic
 docker run -p 8000:8000 jarvis-ai:latest
@@ -376,6 +409,7 @@ docker run -p 8000:8000 \
 ```
 
 **3. Docker Compose**:
+
 ```bash
 # Start all services
 docker-compose up -d
@@ -390,6 +424,7 @@ docker-compose down
 ### Kubernetes Deployment
 
 **1. Deploy Application**:
+
 ```bash
 # Apply configuration
 kubectl apply -f k8s-deployment.yaml
@@ -403,6 +438,7 @@ kubectl describe deployment jarvis-ai
 ```
 
 **2. Scale Application**:
+
 ```bash
 # Manual scaling
 kubectl scale deployment jarvis-ai --replicas=3
@@ -413,6 +449,7 @@ kubectl autoscale deployment jarvis-ai \
 ```
 
 **3. Expose Service**:
+
 ```bash
 # Create service
 kubectl expose deployment jarvis-ai \
@@ -442,6 +479,7 @@ helm uninstall jarvis-ai
 ### Cloud Deployments
 
 **AWS (ECS/EKS)**:
+
 ```bash
 # Push to ECR
 aws ecr get-login-password --region us-east-1 | \
@@ -456,6 +494,7 @@ aws ecs update-service --cluster jarvis-cluster \
 ```
 
 **Azure (AKS)**:
+
 ```bash
 # Push to ACR
 az acr login --name jarvisacr
@@ -467,6 +506,7 @@ kubectl apply -f k8s-deployment.yaml
 ```
 
 **GCP (GKE)**:
+
 ```bash
 # Push to GCR
 gcloud auth configure-docker
@@ -483,21 +523,27 @@ kubectl apply -f k8s-deployment.yaml
 
 ### Common Issues
 
-**1. Import Errors**
-```
+#### 1. Import Errors
+
+```text
 Error: ModuleNotFoundError: No module named 'numpy'
 ```
+
 **Solution**:
+
 ```bash
 pip install numpy pandas matplotlib pyyaml
 python test_reality_check.py  # Verify installation
 ```
 
-**2. CUDA/GPU Issues**
-```
+#### 2. CUDA/GPU Issues
+
+```text
 Error: CUDA driver version is insufficient
 ```
+
 **Solution**:
+
 ```bash
 # Use CPU-only versions
 pip uninstall torch torchvision
@@ -507,11 +553,14 @@ pip install torch torchvision
 # Visit: https://developer.nvidia.com/cuda-downloads
 ```
 
-**3. Memory Errors**
-```
+#### 3. Memory Errors
+
+```text
 Error: RuntimeError: CUDA out of memory
 ```
+
 **Solution**:
+
 ```python
 # Reduce batch size in config/train_config.yaml
 training:
@@ -521,11 +570,14 @@ training:
   gradient_accumulation_steps: 2
 ```
 
-**4. Permission Errors**
-```
+#### 4. Permission Errors
+
+```text
 Error: PermissionError: [Errno 13] Permission denied
 ```
+
 **Solution**:
+
 ```bash
 # Use virtual environment
 python -m venv .venv
@@ -535,11 +587,14 @@ python -m venv .venv
 pip install --user -r requirements.txt
 ```
 
-**5. Port Already in Use**
-```
+#### 5. Port Already in Use
+
+```text
 Error: OSError: [Errno 98] Address already in use
 ```
+
 **Solution**:
+
 ```bash
 # Find process using port
 netstat -ano | findstr :8000  # Windows
@@ -591,6 +646,7 @@ python -c "from db_config import test_connection; test_connection()"
 ## 📊 Monitoring & Observability
 
 ### Logging
+
 ```python
 # Configure logging level
 import logging
@@ -598,6 +654,7 @@ logging.basicConfig(level=logging.INFO)
 ```
 
 ### Metrics
+
 ```bash
 # MLflow tracking
 mlflow ui --port 5000
@@ -609,6 +666,7 @@ wandb sync runs/
 ```
 
 ### Performance Monitoring
+
 ```bash
 # Resource usage
 htop  # Linux
@@ -624,9 +682,10 @@ kubectl top pods
 ## 🎉 Success Checklist
 
 Deployment complete when:
+
 - [ ] Reality check shows >80% modules working
 - [ ] All tests pass (`pytest tests/`)
-- [ ] Web interface accessible at http://localhost:8000
+- [ ] Web interface accessible at <http://localhost:8000>
 - [ ] Training runs successfully (`python simple_train.py`)
 - [ ] Quantum features operational (if enabled)
 - [ ] Database connections working
@@ -638,18 +697,21 @@ Deployment complete when:
 ## 📝 Version History
 
 **v6.0 (Phase 6)** - December 2025
+
 - ✨ Quantum consciousness integration
 - ⏰ Temporal manipulation framework
 - 🧠 Advanced neuromorphic computing
 - 🌌 Cosmic consciousness network
 
 **v5.0 (Phase 5)** - June 2025
+
 - 🕰️ Time analysis capabilities
 - ⚡ Causality engine
 - 🔮 Timeline optimization
 - ⚖️ Temporal ethics framework
 
 **v4.0 (Phase 4)** - 2025
+
 - 🌍 Multidimensional consciousness
 - 🔬 Advanced prediction oracle
 - 🤖 Autonomous robotics
