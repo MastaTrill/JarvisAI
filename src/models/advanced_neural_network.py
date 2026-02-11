@@ -419,7 +419,7 @@ class AdvancedNeuralNetwork:
                 epoch_mse += mse_loss
                 
                 # Backward pass
-                self._backward(batch_X, batch_y, predictions, activations)
+                self._backward(batch_x, batch_y, predictions, activations)
             
             # Average losses
             epoch_loss /= (n_samples // batch_size + 1)
