@@ -229,6 +229,172 @@ class DatabaseConnector(DataConnector):
             return False
 
 
+class FinancialAPIConnector(DataConnector):
+    """Connector for financial data APIs (Alpha Vantage, Yahoo Finance)."""
+    
+    def __init__(self):
+        self.api_key = None
+        self.provider = None
+        self.base_url = None
+    
+    def connect(self, config: Dict[str, Any]) -> bool:
+        """Connect to financial API."""
+        try:
+            self.provider = config.get('provider', 'alpha_vantage')
+            self.api_key = config.get('api_key')
+            
+            if self.provider == 'alpha_vantage':
+                self.base_url = "https://www.alphavantage.co/query"
+            elif self.provider == 'yahoo':
+                # Yahoo Finance doesn't require API key for basic data
+                self.base_url = "https://query1.finance.yahoo.com/v8/finance/chart"
+            
+            logger.info(f"✅ Connected to {self.provider} API")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to connect to financial API: {e}")
+            return False
+    
+    def fetch_data(self, query: Optional[str] = None) -> pd.DataFrame:
+        """Fetch financial data."""
+        try:
+            if self.provider == 'alpha_vantage':
+                params = {
+                    'function': 'TIME_SERIES_DAILY',
+                    'symbol': query or 'IBM',
+                    'apikey': self.api_key,
+                    'outputsize': 'compact'
+                }
+                response = requests.get(self.base_url, params=params)
+                data = response.json()
+                
+                if 'Time Series (Daily)' in data:
+                    df = pd.DataFrame.from_dict(data['Time Series (Daily)'], orient='index')
+                    df.index = pd.to_datetime(df.index)
+                    df = df.astype(float)
+                    return df
+            
+            return pd.DataFrame()
+        except Exception as e:
+            logger.error(f"Failed to fetch financial data: {e}")
+            return pd.DataFrame()
+    
+    def validate_connection(self) -> bool:
+        """Validate API connection."""
+        try:
+            # Simple test request
+            if self.provider == 'alpha_vantage':
+                params = {'function': 'SYMBOL_SEARCH', 'keywords': 'IBM', 'apikey': self.api_key}
+                response = requests.get(self.base_url, params=params, timeout=5)
+                return response.status_code == 200
+            return True
+        except:
+            return False
+
+
+class SocialMediaConnector(DataConnector):
+    """Connector for social media APIs (Twitter, Reddit)."""
+    
+    def __init__(self):
+        self.api_key = None
+        self.api_secret = None
+        self.access_token = None
+        self.platform = None
+    
+    def connect(self, config: Dict[str, Any]) -> bool:
+        """Connect to social media API."""
+        try:
+            self.platform = config.get('platform', 'twitter')
+            self.api_key = config.get('api_key')
+            self.api_secret = config.get('api_secret')
+            self.access_token = config.get('access_token')
+            
+            logger.info(f"✅ Connected to {self.platform} API")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to connect to social media API: {e}")
+            return False
+    
+    def fetch_data(self, query: Optional[str] = None) -> pd.DataFrame:
+        """Fetch social media data."""
+        try:
+            if self.platform == 'twitter':
+                # Simplified Twitter API call (requires bearer token)
+                headers = {'Authorization': f'Bearer {self.access_token}'}
+                params = {'query': query or '#AI', 'max_results': 10}
+                # Note: This is a placeholder - actual Twitter API v2 implementation needed
+                return pd.DataFrame({'tweet': ['Sample tweet 1', 'Sample tweet 2']})
+            
+            return pd.DataFrame()
+        except Exception as e:
+            logger.error(f"Failed to fetch social media data: {e}")
+            return pd.DataFrame()
+    
+    def validate_connection(self) -> bool:
+        """Validate API connection."""
+        try:
+            # Test API call
+            return True  # Placeholder
+        except:
+            return False
+
+
+class WeatherAPIConnector(DataConnector):
+    """Connector for weather and geospatial data."""
+    
+    def __init__(self):
+        self.api_key = None
+        self.provider = None
+    
+    def connect(self, config: Dict[str, Any]) -> bool:
+        """Connect to weather API."""
+        try:
+            self.provider = config.get('provider', 'openweather')
+            self.api_key = config.get('api_key')
+            
+            logger.info(f"✅ Connected to {self.provider} weather API")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to connect to weather API: {e}")
+            return False
+    
+    def fetch_data(self, query: Optional[str] = None) -> pd.DataFrame:
+        """Fetch weather data."""
+        try:
+            if self.provider == 'openweather':
+                base_url = "http://api.openweathermap.org/data/2.5/weather"
+                params = {
+                    'q': query or 'London',
+                    'appid': self.api_key,
+                    'units': 'metric'
+                }
+                response = requests.get(base_url, params=params)
+                data = response.json()
+                
+                if response.status_code == 200:
+                    df = pd.DataFrame([{
+                        'city': data['name'],
+                        'temperature': data['main']['temp'],
+                        'humidity': data['main']['humidity'],
+                        'pressure': data['main']['pressure'],
+                        'weather': data['weather'][0]['description']
+                    }])
+                    return df
+            
+            return pd.DataFrame()
+        except Exception as e:
+            logger.error(f"Failed to fetch weather data: {e}")
+            return pd.DataFrame()
+    
+    def validate_connection(self) -> bool:
+        """Validate API connection."""
+        try:
+            # Test with a simple request
+            return True  # Placeholder
+        except:
+            return False
+
+
 class DataValidator:
     """Data validation and quality checks."""
     

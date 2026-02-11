@@ -14,5 +14,6 @@
         "gh/MastaTrill/JarvisAI",
         "gh/MastaTrill/jarvis-echo-dashboard",
         "gh/MastaTrill/jarvis-echo-dashboard"
-    ]
+    ],
+    "python.analysis.typeCheckingMode": "basic"
 }

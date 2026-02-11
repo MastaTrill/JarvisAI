@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader, OAuth2PasswordBearer, OAuth2AuthorizationCodeBearer
 from sqlalchemy.orm import Session
 import hashlib
 import secrets
@@ -24,6 +24,11 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 # Security schemes
 security = HTTPBearer()
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_auth_code = OAuth2AuthorizationCodeBearer(
+    authorizationUrl="authorize",
+    tokenUrl="token",
+)
 
 
 def hash_password(password: str) -> str:

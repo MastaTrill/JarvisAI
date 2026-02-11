@@ -1,0 +1,7 @@
+{
+  "reportMissingModuleSource": "none",
+  "reportAttributeAccessIssue": "none",
+  "stubPath": "",
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic"
+}

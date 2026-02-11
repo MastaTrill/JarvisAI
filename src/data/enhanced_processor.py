@@ -447,6 +447,25 @@ class EnhancedDataProcessor:
             "total_operations": len(self.lineage.lineage.get("operations", [])),
             "latest_version": self.lineage.lineage.get("versions", [])[-1] if self.lineage.lineage.get("versions") else None
         }
+    
+    def prepare_features_and_target(self, df: pd.DataFrame, target_column: str) -> Tuple[pd.DataFrame, pd.Series]:
+        """
+        Prepare features and target from a DataFrame
+        
+        Args:
+            df: Input DataFrame
+            target_column: Name of the target column
+            
+        Returns:
+            Tuple of (features DataFrame, target Series)
+        """
+        if target_column not in df.columns:
+            raise ValueError(f"Target column '{target_column}' not found in DataFrame")
+        
+        features = df.drop(target_column, axis=1)
+        target = df[target_column]
+        
+        return features, target
 
 
 # Export classes

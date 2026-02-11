@@ -212,27 +212,6 @@ def run_demo():
 
 if __name__ == "__main__":
     run_demo()
-                probabilities
-        """
-        if not self.is_loaded or self.model is None:
-            raise RuntimeError("Model not loaded. Call load_model() first.")
-            
-        if not hasattr(self.model, 'predict_proba'):
-            raise RuntimeError("Model doesn't support probability predictions")
-            
-        # Convert inputs to numpy array if needed
-        if isinstance(inputs, list):
-            inputs = np.array(inputs)
-            
-        try:
-            probabilities = self.model.predict_proba(inputs)
-            logger.debug(
-                f"Generated probabilities with shape: {probabilities.shape}"
-            )
-            return probabilities
-        except Exception as e:
-            logger.error(f"Probability prediction failed: {e}")
-            raise
 
 
 class DataPreprocessor:
