@@ -1,8 +1,8 @@
-tensorflow==2.10.0
-torch==1.12.1
-scikit-learn==1.1.2
-pandas==1.4.3
-numpy==1.23.1
-opencv-python==4.6.0.66
-mlflow==1.26.0
-wandb==0.12.21
+# tensorflow>=2.18.0  # Heavy - install separately
+# torch>=2.5.0        # Heavy - install separately
+scikit-learn>=1.5.2
+pandas>=2.2.3
+numpy>=1.26.4
+opencv-python>=4.10.0
+mlflow>=2.18.0
+wandb>=0.18.7
