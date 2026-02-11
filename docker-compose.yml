@@ -1,4 +1,4 @@
-# Docker Compose for JarvisAI Platform
+# Docker Compose for JarvisAI Aetheron Platform
 version: '3.8'
 
 services:
@@ -11,11 +11,18 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - JARVIS_ENV=production
+      - LOG_LEVEL=info
     volumes:
-      - ./data:/app/data
-      - ./models:/app/models
-    command: python api_enhanced.py
+      - jarvis-data:/home/jarvisuser/app/data
+      - jarvis-models:/home/jarvisuser/app/models
+    command: gunicorn api_enhanced:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   jarvis-worker:
     build:
@@ -25,11 +32,13 @@ services:
       - PYTHONUNBUFFERED=1
       - JARVIS_ENV=production
     volumes:
-      - ./data:/app/data
-      - ./models:/app/models
-    command: python -c "print('Jarvis Worker Ready'); import time; time.sleep(3600)"
+      - jarvis-data:/home/jarvisuser/app/data
+      - jarvis-models:/home/jarvisuser/app/models
+    command: python -m celery -A celery_app worker --loglevel=info
     restart: unless-stopped
+    depends_on:
+      - jarvis-api
 
 volumes:
-  data:
-  models:
+  jarvis-data:
+  jarvis-models:

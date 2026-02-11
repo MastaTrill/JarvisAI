@@ -46,9 +46,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
 LABEL maintainer="Jarvis Maintainers <maintainers@jarvis.ai>"
-LABEL org.opencontainers.image.source="https://github.com/jarvis-ai/jarvis"
-LABEL org.opencontainers.image.description="Jarvis AI Platform - Robust, scalable, and production-ready AI orchestration."
-LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.source="https://github.com/MastaTrill/JarvisAI"
+LABEL org.opencontainers.image.description="JarvisAI Aetheron Platform - Advanced AI orchestration system."
+LABEL org.opencontainers.image.version="3.0.0"
 
-# Default command: use gunicorn for production (assumes Flask/FastAPI app as 'app' in api.py)
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "api:app"]
+# Default command: use gunicorn with uvicorn workers for production
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "api_enhanced:app"]

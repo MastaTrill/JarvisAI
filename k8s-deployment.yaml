@@ -2,8 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jarvis-ai
+  labels:
+    app: jarvis-ai
+    version: v3.0.0
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: jarvis-ai
@@ -11,25 +14,74 @@ spec:
     metadata:
       labels:
         app: jarvis-ai
+        version: v3.0.0
     spec:
       containers:
       - name: jarvis-ai
-        image: jarvis-ai:latest
+        image: ghcr.io/mastatrill/jarvisai:latest
         ports:
         - containerPort: 8000
+          name: http
         env:
         - name: PYTHONUNBUFFERED
           value: "1"
+        - name: JARVIS_ENV
+          value: "production"
+        - name: LOG_LEVEL
+          value: "info"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: jarvis-ai-service
+  labels:
+    app: jarvis-ai
 spec:
   selector:
     app: jarvis-ai
   ports:
     - protocol: TCP
-      port: 8000
+      port: 80
       targetPort: 8000
-  type: ClusterIP
+      name: http
+  type: LoadBalancer
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: jarvis-ai-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: jarvis-ai
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
