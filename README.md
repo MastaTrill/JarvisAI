@@ -373,11 +373,83 @@ docker run -p 8000:8000 --env-file .env jarvis-ai
 
 ### Kubernetes/Helm
 
-- See `k8s-deployment.yaml` and `helm/` for cloud-native deployment.
+
+
+## 🔒 Security & Compliance
+
 
 ---
 
-## 🔒 Security & Compliance
+## 🚀 Deployment & Publishing Guide
+
+This section covers how to deploy and publish JarvisAI using Docker Compose, Kubernetes, and GitHub Actions.
+
+### 1. Environment Variables
+
+- Copy `.env.example` to `.env` and fill in all required secrets and configuration values.
+  ```bash
+  cp .env.example .env
+  # Edit .env with your production secrets
+  ```
+
+### 2. Docker Compose (Local/Production)
+
+**Build and run with Docker Compose:**
+```bash
+docker compose up --build -d
+# or using the provided deploy script:
+./deploy.sh
+```
+
+**Services:**
+- `jarvis-api`: Main API server (Gunicorn + Uvicorn)
+- `jarvis-worker`: Celery worker for background tasks
+
+**Volumes:**
+- `jarvis-data`, `jarvis-models` for persistent storage
+
+**Healthcheck:**
+- Make sure `/health` endpoint is available for health checks
+
+### 3. Kubernetes (Cloud-Native)
+
+**Production manifests are in:**
+`infrastructure/kubernetes/production/`
+
+**Deploy all resources:**
+```bash
+cd infrastructure/scripts
+./deploy-production.sh
+```
+
+**Key manifests:**
+- `namespace.yaml`, `secrets.yaml`, `configmap.yaml`, `rbac.yaml`, `pvc.yaml`, `deployment.yaml`, `service.yaml`, `hpa.yaml`, `ingress.yaml`, `pod-disruption-budget.yaml`
+
+**Image Reference:**
+- Update `image:` in `deployment.yaml` to your published image (see below)
+
+### 4. Publishing Docker Images (GitHub Container Registry)
+
+**GitHub Actions workflow:**
+- See `.github/workflows/docker-publish.yml`
+- On push to `main`, builds and pushes to `ghcr.io/mastatrill/jarvisai:latest`
+
+**Manual build & push:**
+```bash
+docker build -t ghcr.io/mastatrill/jarvisai:latest .
+echo $CR_PAT | docker login ghcr.io -u <username> --password-stdin
+docker push ghcr.io/mastatrill/jarvisai:latest
+```
+
+### 5. Production Checklist
+
+- [ ] Fill out `.env` with real secrets (never commit secrets to git)
+- [ ] Set up persistent storage for models/data
+- [ ] Configure domain, HTTPS, and ingress (if using Kubernetes)
+- [ ] Monitor logs and health endpoints
+- [ ] Review security best practices
+
+---
 
 - Audit logging for all sensitive admin actions (see `audit_trail.py`)
 - Role-based access control (RBAC) for users and admins

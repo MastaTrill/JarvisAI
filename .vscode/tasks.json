@@ -22,6 +22,20 @@
 			"command": "python -m pip install numpy pandas matplotlib seaborn pyyaml pytest scikit-learn --quiet",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Install AI/ML Dependencies",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-m",
+				"pip",
+				"install",
+				"-r",
+				"requirements.txt"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

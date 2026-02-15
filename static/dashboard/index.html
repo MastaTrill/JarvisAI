@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis AI Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+        
+        body {
+            background: var(--background);
+            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card {
+            background: var(--surface);
+            border-radius: 1rem;
+            border: 1px solid var(--surface-light);
+        }
+        
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--surface-light);
+        }
+        
+        .sidebar-link {
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-link:hover, .sidebar-link.active {
+            background: var(--surface-light);
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .glow {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .status-healthy { color: #10b981; }
+        .status-warning { color: #f59e0b; }
+        .status-error { color: #ef4444; }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+        
+        .table-row:hover {
+            background: var(--surface-light);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface-light);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body x-data="dashboard()" x-init="init()">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 flex-shrink-0 flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center">
+                        <i class="fas fa-brain text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-white">Jarvis AI</h1>
+                        <p class="text-xs text-gray-400">Platform v3.0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="#" @click.prevent="currentView = 'dashboard'" 
+                   :class="{'active': currentView === 'dashboard'}"
+                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                    <i class="fas fa-chart-line w-5 mr-3"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="#" @click.prevent="currentView = 'models'" 
+                   :class="{'active': currentView === 'models'}"
+                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                    <i class="fas fa-cube w-5 mr-3"></i>
+                    <span>Models</span>
+                </a>
+                
+                <a href="#" @click.prevent="currentView = 'training'" 
+                   :class="{'active': currentView === 'training'}"
+                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                    <i class="fas fa-dumbbell w-5 mr-3"></i>
+                    <span>Training Jobs</span>
+                </a>
+                
+                <a href="#" @click.prevent="currentView = 'datasets'" 
+                   :class="{'active': currentView === 'datasets'}"
+                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                    <i class="fas fa-database w-5 mr-3"></i>
+                    <span>Datasets</span>
+                </a>
+                
+                <a href="#" @click.prevent="currentView = 'predictions'" 
+                   :class="{'active': currentView === 'predictions'}"
+                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                    <i class="fas fa-magic w-5 mr-3"></i>
+                    <span>Predictions</span>
+                </a>
+                
+                <div class="pt-4 mt-4 border-t border-gray-700">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Advanced</p>
+                    
+                    <a href="#" @click.prevent="currentView = 'quantum'" 
+                       :class="{'active': currentView === 'quantum'}"
+                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                        <i class="fas fa-atom w-5 mr-3"></i>
+                        <span>Quantum AI</span>
+                    </a>
+                    
+                    <a href="#" @click.prevent="currentView = 'consciousness'" 
+                       :class="{'active': currentView === 'consciousness'}"
+                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                        <i class="fas fa-brain w-5 mr-3"></i>
+                        <span>Consciousness</span>
+                    </a>
+                    
+                    <a href="#" @click.prevent="currentView = 'robotics'" 
+                       :class="{'active': currentView === 'robotics'}"
+                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                        <i class="fas fa-robot w-5 mr-3"></i>
+                        <span>Robotics</span>
+                    </a>
+                </div>
+                
+                <div class="pt-4 mt-4 border-t border-gray-700">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">System</p>
+                    
+                    <a href="#" @click.prevent="currentView = 'monitoring'" 
+                       :class="{'active': currentView === 'monitoring'}"
+                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                        <i class="fas fa-heartbeat w-5 mr-3"></i>
+                        <span>Monitoring</span>
+                    </a>
+                    
+                    <a href="#" @click.prevent="currentView = 'settings'" 
+                       :class="{'active': currentView === 'settings'}"
+                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                        <i class="fas fa-cog w-5 mr-3"></i>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <!-- User Profile -->
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
+                        <span class="font-medium text-white">JA</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-white truncate">Admin User</p>
+                        <p class="text-xs text-gray-400 truncate">admin@jarvis.ai</p>
+                    </div>
+                    <button class="text-gray-400 hover:text-white">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Top Bar -->
+            <header class="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white" x-text="getViewTitle()"></h2>
+                        <p class="text-sm text-gray-400" x-text="getViewDescription()"></p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- Search -->
+                        <div class="relative">
+                            <input type="text" placeholder="Search..." 
+                                   class="w-64 px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        
+                        <!-- Notifications -->
+                        <button class="relative p-2 text-gray-400 hover:text-white">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        
+                        <!-- Theme Toggle -->
+                        <button class="p-2 text-gray-400 hover:text-white">
+                            <i class="fas fa-moon text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Dashboard View -->
+            <div x-show="currentView === 'dashboard'" class="p-6 space-y-6">
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="metric-card card p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Active Models</p>
+                                <p class="text-3xl font-bold text-white mt-1" x-text="metrics.activeModels">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-lg bg-indigo-600/20 flex items-center justify-center">
+                                <i class="fas fa-cube text-indigo-400 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-400"><i class="fas fa-arrow-up mr-1"></i>12%</span>
+                            <span class="text-gray-400 ml-2">vs last month</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card card p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Training Jobs</p>
+                                <p class="text-3xl font-bold text-white mt-1" x-text="metrics.trainingJobs">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
+                                <i class="fas fa-dumbbell text-green-400 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-400"><i class="fas fa-arrow-up mr-1"></i>8%</span>
+                            <span class="text-gray-400 ml-2">vs last week</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card card p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Predictions Today</p>
+                                <p class="text-3xl font-bold text-white mt-1" x-text="metrics.predictions.toLocaleString()">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                                <i class="fas fa-magic text-purple-400 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-400"><i class="fas fa-arrow-up mr-1"></i>23%</span>
+                            <span class="text-gray-400 ml-2">vs yesterday</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card card p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">API Latency</p>
+                                <p class="text-3xl font-bold text-white mt-1"><span x-text="metrics.latency">0</span>ms</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-lg bg-yellow-600/20 flex items-center justify-center">
+                                <i class="fas fa-tachometer-alt text-yellow-400 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-400"><i class="fas fa-arrow-down mr-1"></i>5%</span>
+                            <span class="text-gray-400 ml-2">improvement</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-white mb-4">API Requests (24h)</h3>
+                        <canvas id="requestsChart" height="200"></canvas>
+                    </div>
+                    
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-white mb-4">Model Performance</h3>
+                        <canvas id="performanceChart" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <!-- System Status -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">System Components</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <template x-for="component in systemStatus" :key="component.name">
+                            <div class="bg-gray-800/50 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-gray-300" x-text="component.name"></span>
+                                    <span :class="'status-' + component.status">
+                                        <i class="fas fa-circle text-xs"></i>
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-indigo-600 h-2 rounded-full" 
+                                         :style="'width: ' + component.usage + '%'"></div>
+                                </div>
+                                <p class="text-sm text-gray-400 mt-2" x-text="component.usage + '% utilized'"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white">Recent Activity</h3>
+                        <button class="text-indigo-400 hover:text-indigo-300 text-sm">View All</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="text-left text-gray-400 text-sm border-b border-gray-700">
+                                    <th class="pb-3 font-medium">Event</th>
+                                    <th class="pb-3 font-medium">Resource</th>
+                                    <th class="pb-3 font-medium">User</th>
+                                    <th class="pb-3 font-medium">Status</th>
+                                    <th class="pb-3 font-medium">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="activity in recentActivity" :key="activity.id">
+                                    <tr class="table-row border-b border-gray-800 transition-colors">
+                                        <td class="py-3">
+                                            <div class="flex items-center">
+                                                <i :class="'fas ' + activity.icon + ' text-gray-400 mr-3'"></i>
+                                                <span class="text-white" x-text="activity.event"></span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 text-gray-300" x-text="activity.resource"></td>
+                                        <td class="py-3 text-gray-300" x-text="activity.user"></td>
+                                        <td class="py-3">
+                                            <span :class="'px-2 py-1 rounded-full text-xs ' + 
+                                                (activity.status === 'success' ? 'bg-green-900/50 text-green-400' : 
+                                                 activity.status === 'pending' ? 'bg-yellow-900/50 text-yellow-400' : 
+                                                 'bg-red-900/50 text-red-400')"
+                                                x-text="activity.status"></span>
+                                        </td>
+                                        <td class="py-3 text-gray-400 text-sm" x-text="activity.time"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Models View -->
+            <div x-show="currentView === 'models'" class="p-6 space-y-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex space-x-2">
+                        <button class="btn-primary px-4 py-2 rounded-lg text-white font-medium">
+                            <i class="fas fa-plus mr-2"></i>New Model
+                        </button>
+                        <button class="px-4 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-800">
+                            <i class="fas fa-upload mr-2"></i>Import
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-300">
+                            <option>All Types</option>
+                            <option>Neural Network</option>
+                            <option>Transformer</option>
+                            <option>Random Forest</option>
+                        </select>
+                        <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-300">
+                            <option>All Status</option>
+                            <option>Active</option>
+                            <option>Training</option>
+                            <option>Archived</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="model in models" :key="model.id">
+                        <div class="card p-6 hover:border-indigo-500/50 transition-colors cursor-pointer">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-lg bg-indigo-600/20 flex items-center justify-center">
+                                    <i class="fas fa-cube text-indigo-400 text-xl"></i>
+                                </div>
+                                <span :class="'px-2 py-1 rounded-full text-xs ' + 
+                                    (model.status === 'active' ? 'bg-green-900/50 text-green-400' : 
+                                     model.status === 'training' ? 'bg-yellow-900/50 text-yellow-400' : 
+                                     'bg-gray-700 text-gray-400')"
+                                    x-text="model.status"></span>
+                            </div>
+                            <h4 class="text-lg font-semibold text-white" x-text="model.name"></h4>
+                            <p class="text-sm text-gray-400 mt-1" x-text="model.type"></p>
+                            <div class="mt-4 pt-4 border-t border-gray-700">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-400">Accuracy</span>
+                                    <span class="text-white" x-text="model.accuracy + '%'"></span>
+                                </div>
+                                <div class="flex justify-between text-sm mt-2">
+                                    <span class="text-gray-400">Version</span>
+                                    <span class="text-white" x-text="model.version"></span>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex space-x-2">
+                                <button class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm text-white">
+                                    Deploy
+                                </button>
+                                <button class="px-3 py-2 border border-gray-600 hover:bg-gray-800 rounded-lg text-sm text-gray-300">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <!-- Training View -->
+            <div x-show="currentView === 'training'" class="p-6 space-y-6">
+                <div class="flex items-center justify-between">
+                    <button class="btn-primary px-4 py-2 rounded-lg text-white font-medium">
+                        <i class="fas fa-play mr-2"></i>Start Training
+                    </button>
+                </div>
+                
+                <div class="card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-800/50">
+                                <tr class="text-left text-gray-400 text-sm">
+                                    <th class="px-6 py-4 font-medium">Job ID</th>
+                                    <th class="px-6 py-4 font-medium">Model</th>
+                                    <th class="px-6 py-4 font-medium">Progress</th>
+                                    <th class="px-6 py-4 font-medium">Metrics</th>
+                                    <th class="px-6 py-4 font-medium">Started</th>
+                                    <th class="px-6 py-4 font-medium">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="job in trainingJobs" :key="job.id">
+                                    <tr class="border-b border-gray-800 table-row">
+                                        <td class="px-6 py-4">
+                                            <span class="font-mono text-sm text-indigo-400" x-text="job.id"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-white" x-text="job.model"></td>
+                                        <td class="px-6 py-4">
+                                            <div class="w-32">
+                                                <div class="flex items-center justify-between text-sm mb-1">
+                                                    <span class="text-gray-400" x-text="job.epoch + '/' + job.totalEpochs"></span>
+                                                    <span class="text-white" x-text="job.progress + '%'"></span>
+                                                </div>
+                                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                                    <div class="bg-indigo-600 h-2 rounded-full transition-all" 
+                                                         :style="'width: ' + job.progress + '%'"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm">
+                                                <span class="text-gray-400">Loss: </span>
+                                                <span class="text-white" x-text="job.loss.toFixed(4)"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-400 text-sm" x-text="job.started"></td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex space-x-2">
+                                                <button class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white">
+                                                    <i class="fas fa-pause"></i>
+                                                </button>
+                                                <button class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-red-400">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Monitoring View -->
+            <div x-show="currentView === 'monitoring'" class="p-6 space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- System Health -->
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-white mb-4">System Health</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-server text-green-400 mr-3"></i>
+                                    <span class="text-gray-300">API Server</span>
+                                </div>
+                                <span class="text-green-400">Healthy</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-database text-green-400 mr-3"></i>
+                                    <span class="text-gray-300">Database</span>
+                                </div>
+                                <span class="text-green-400">Healthy</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-memory text-yellow-400 mr-3"></i>
+                                    <span class="text-gray-300">Redis</span>
+                                </div>
+                                <span class="text-yellow-400">High Load</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-cogs text-green-400 mr-3"></i>
+                                    <span class="text-gray-300">ML Engine</span>
+                                </div>
+                                <span class="text-green-400">Healthy</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resource Usage -->
+                    <div class="card p-6 lg:col-span-2">
+                        <h3 class="text-lg font-semibold text-white mb-4">Resource Usage</h3>
+                        <canvas id="resourceChart" height="150"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Logs -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white">Recent Logs</h3>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 rounded text-sm bg-indigo-600 text-white">All</button>
+                            <button class="px-3 py-1 rounded text-sm text-gray-400 hover:bg-gray-700">Info</button>
+                            <button class="px-3 py-1 rounded text-sm text-gray-400 hover:bg-gray-700">Warn</button>
+                            <button class="px-3 py-1 rounded text-sm text-gray-400 hover:bg-gray-700">Error</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900 rounded-lg p-4 font-mono text-sm max-h-80 overflow-y-auto">
+                        <template x-for="log in logs" :key="log.id">
+                            <div class="py-1">
+                                <span class="text-gray-500" x-text="log.timestamp"></span>
+                                <span :class="log.level === 'ERROR' ? 'text-red-400' : 
+                                              log.level === 'WARN' ? 'text-yellow-400' : 'text-blue-400'"
+                                      x-text="'[' + log.level + ']'"></span>
+                                <span class="text-gray-300" x-text="log.message"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Other views would be implemented similarly -->
+            <div x-show="currentView === 'datasets'" class="p-6">
+                <div class="card p-12 text-center">
+                    <i class="fas fa-database text-6xl text-gray-600 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-white">Datasets Management</h3>
+                    <p class="text-gray-400 mt-2">Upload, manage, and explore your training datasets</p>
+                    <button class="mt-6 btn-primary px-6 py-3 rounded-lg text-white font-medium">
+                        <i class="fas fa-upload mr-2"></i>Upload Dataset
+                    </button>
+                </div>
+            </div>
+            
+            <div x-show="currentView === 'predictions'" class="p-6">
+                <div class="card p-12 text-center">
+                    <i class="fas fa-magic text-6xl text-gray-600 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-white">Prediction Console</h3>
+                    <p class="text-gray-400 mt-2">Run real-time inference with your deployed models</p>
+                </div>
+            </div>
+            
+            <div x-show="currentView === 'quantum'" class="p-6">
+                <div class="card p-12 text-center">
+                    <i class="fas fa-atom text-6xl text-purple-500 mb-4 pulse"></i>
+                    <h3 class="text-xl font-semibold text-white">Quantum AI Processing</h3>
+                    <p class="text-gray-400 mt-2">Leverage quantum computing for advanced ML tasks</p>
+                </div>
+            </div>
+            
+            <div x-show="currentView === 'consciousness'" class="p-6">
+                <div class="card p-12 text-center">
+                    <i class="fas fa-brain text-6xl text-pink-500 mb-4 pulse"></i>
+                    <h3 class="text-xl font-semibold text-white">Consciousness Engine</h3>
+                    <p class="text-gray-400 mt-2">Advanced neural consciousness simulation</p>
+                </div>
+            </div>
+            
+            <div x-show="currentView === 'robotics'" class="p-6">
+                <div class="card p-12 text-center">
+                    <i class="fas fa-robot text-6xl text-cyan-500 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-white">Robotics Command Center</h3>
+                    <p class="text-gray-400 mt-2">Coordinate and control autonomous robotic systems</p>
+                </div>
+            </div>
+            
+            <div x-show="currentView === 'settings'" class="p-6">
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-white mb-6">Settings</h3>
+                    <div class="space-y-6 max-w-2xl">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">API Endpoint</label>
+                            <input type="text" value="https://api.jarvis.ai/v1" 
+                                   class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Default Model</label>
+                            <select class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
+                                <option>sentiment-classifier-v2</option>
+                                <option>image-recognition-v1</option>
+                                <option>nlp-transformer-v3</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-white">Enable Notifications</p>
+                                <p class="text-sm text-gray-400">Receive alerts for training completion</p>
+                            </div>
+                            <button class="w-12 h-6 bg-indigo-600 rounded-full relative">
+                                <span class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></span>
+                            </button>
+                        </div>
+                        <div class="pt-6 border-t border-gray-700">
+                            <button class="btn-primary px-6 py-2 rounded-lg text-white font-medium">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function dashboard() {
+            return {
+                currentView: 'dashboard',
+                
+                metrics: {
+                    activeModels: 12,
+                    trainingJobs: 3,
+                    predictions: 45892,
+                    latency: 23
+                },
+                
+                systemStatus: [
+                    { name: 'API Server', status: 'healthy', usage: 45 },
+                    { name: 'ML Engine', status: 'healthy', usage: 72 },
+                    { name: 'Database', status: 'healthy', usage: 38 },
+                    { name: 'Redis Cache', status: 'warning', usage: 89 }
+                ],
+                
+                recentActivity: [
+                    { id: 1, event: 'Model Deployed', resource: 'sentiment-v2', user: 'admin', status: 'success', time: '2 min ago', icon: 'fa-rocket' },
+                    { id: 2, event: 'Training Started', resource: 'nlp-transformer', user: 'user1', status: 'pending', time: '15 min ago', icon: 'fa-dumbbell' },
+                    { id: 3, event: 'Dataset Uploaded', resource: 'reviews-2026.csv', user: 'admin', status: 'success', time: '1 hour ago', icon: 'fa-upload' },
+                    { id: 4, event: 'API Key Created', resource: 'prod-key-001', user: 'admin', status: 'success', time: '2 hours ago', icon: 'fa-key' }
+                ],
+                
+                models: [
+                    { id: 1, name: 'Sentiment Classifier v2', type: 'Transformer', status: 'active', accuracy: 95.2, version: '2.1.0' },
+                    { id: 2, name: 'Image Recognition', type: 'CNN', status: 'active', accuracy: 97.8, version: '1.5.0' },
+                    { id: 3, name: 'NLP Processor', type: 'BERT', status: 'training', accuracy: 91.5, version: '3.0.0' },
+                    { id: 4, name: 'Fraud Detection', type: 'Neural Network', status: 'active', accuracy: 99.1, version: '1.2.0' },
+                    { id: 5, name: 'Recommendation Engine', type: 'Collaborative Filtering', status: 'archived', accuracy: 88.3, version: '2.0.0' },
+                    { id: 6, name: 'Time Series Forecaster', type: 'LSTM', status: 'active', accuracy: 94.7, version: '1.8.0' }
+                ],
+                
+                trainingJobs: [
+                    { id: 'job-a1b2c3', model: 'NLP Transformer v3', progress: 67, epoch: 67, totalEpochs: 100, loss: 0.0234, started: '2 hours ago' },
+                    { id: 'job-d4e5f6', model: 'Vision Model', progress: 23, epoch: 23, totalEpochs: 100, loss: 0.1523, started: '45 min ago' },
+                    { id: 'job-g7h8i9', model: 'Audio Classifier', progress: 89, epoch: 89, totalEpochs: 100, loss: 0.0089, started: '5 hours ago' }
+                ],
+                
+                logs: [
+                    { id: 1, timestamp: '2026-02-11 12:34:56', level: 'INFO', message: 'Model sentiment-v2 deployed successfully to production' },
+                    { id: 2, timestamp: '2026-02-11 12:34:45', level: 'INFO', message: 'Training job job-a1b2c3 reached epoch 67/100' },
+                    { id: 3, timestamp: '2026-02-11 12:34:30', level: 'WARN', message: 'Redis memory usage above 85% threshold' },
+                    { id: 4, timestamp: '2026-02-11 12:34:15', level: 'INFO', message: 'API request rate: 1,234 requests/min' },
+                    { id: 5, timestamp: '2026-02-11 12:34:00', level: 'ERROR', message: 'Failed to connect to external data source: timeout after 30s' },
+                    { id: 6, timestamp: '2026-02-11 12:33:45', level: 'INFO', message: 'Batch prediction completed: 10,000 samples processed' }
+                ],
+                
+                getViewTitle() {
+                    const titles = {
+                        dashboard: 'Dashboard',
+                        models: 'Models',
+                        training: 'Training Jobs',
+                        datasets: 'Datasets',
+                        predictions: 'Predictions',
+                        quantum: 'Quantum AI',
+                        consciousness: 'Consciousness Engine',
+                        robotics: 'Robotics',
+                        monitoring: 'System Monitoring',
+                        settings: 'Settings'
+                    };
+                    return titles[this.currentView] || 'Dashboard';
+                },
+                
+                getViewDescription() {
+                    const descriptions = {
+                        dashboard: 'Overview of your AI platform',
+                        models: 'Manage and deploy ML models',
+                        training: 'Monitor training jobs and experiments',
+                        datasets: 'Upload and manage training data',
+                        predictions: 'Run inference with deployed models',
+                        quantum: 'Quantum computing integration',
+                        consciousness: 'Neural consciousness simulation',
+                        robotics: 'Robotic systems control',
+                        monitoring: 'System health and performance',
+                        settings: 'Configure your platform'
+                    };
+                    return descriptions[this.currentView] || '';
+                },
+                
+                init() {
+                    this.initCharts();
+                    this.startRealTimeUpdates();
+                },
+                
+                initCharts() {
+                    // Requests Chart
+                    const requestsCtx = document.getElementById('requestsChart');
+                    if (requestsCtx) {
+                        new Chart(requestsCtx, {
+                            type: 'line',
+                            data: {
+                                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                                datasets: [{
+                                    label: 'API Requests',
+                                    data: [1200, 800, 3500, 5200, 4800, 6100, 4500],
+                                    borderColor: '#6366f1',
+                                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                    fill: true,
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                                    y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Performance Chart
+                    const performanceCtx = document.getElementById('performanceChart');
+                    if (performanceCtx) {
+                        new Chart(performanceCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['Sentiment', 'Vision', 'NLP', 'Fraud', 'Recommend', 'TimeSeries'],
+                                datasets: [{
+                                    label: 'Accuracy %',
+                                    data: [95.2, 97.8, 91.5, 99.1, 88.3, 94.7],
+                                    backgroundColor: ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e']
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                                    y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' }, min: 80, max: 100 }
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Resource Chart
+                    const resourceCtx = document.getElementById('resourceChart');
+                    if (resourceCtx) {
+                        new Chart(resourceCtx, {
+                            type: 'line',
+                            data: {
+                                labels: ['10min', '8min', '6min', '4min', '2min', 'now'],
+                                datasets: [
+                                    {
+                                        label: 'CPU',
+                                        data: [45, 52, 48, 61, 55, 58],
+                                        borderColor: '#6366f1',
+                                        tension: 0.4
+                                    },
+                                    {
+                                        label: 'Memory',
+                                        data: [62, 65, 68, 72, 70, 75],
+                                        borderColor: '#10b981',
+                                        tension: 0.4
+                                    },
+                                    {
+                                        label: 'GPU',
+                                        data: [30, 45, 82, 78, 85, 72],
+                                        borderColor: '#f59e0b',
+                                        tension: 0.4
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: { legend: { labels: { color: '#94a3b8' } } },
+                                scales: {
+                                    x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                                    y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' }, min: 0, max: 100 }
+                                }
+                            }
+                        });
+                    }
+                },
+                
+                startRealTimeUpdates() {
+                    // Simulate real-time metric updates
+                    setInterval(() => {
+                        this.metrics.predictions += Math.floor(Math.random() * 10);
+                        this.metrics.latency = 20 + Math.floor(Math.random() * 10);
+                        
+                        // Update training progress
+                        this.trainingJobs.forEach(job => {
+                            if (job.progress < 100) {
+                                job.progress = Math.min(100, job.progress + Math.random() * 0.5);
+                                job.epoch = Math.floor(job.progress);
+                                job.loss = Math.max(0.001, job.loss - Math.random() * 0.001);
+                            }
+                        });
+                    }, 3000);
+                }
+            };
+        }
+    </script>
+</body>
+</html>

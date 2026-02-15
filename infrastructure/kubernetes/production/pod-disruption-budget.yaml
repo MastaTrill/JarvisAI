@@ -1,0 +1,27 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jarvis-api-pdb
+  namespace: jarvis-production
+  labels:
+    app.kubernetes.io/name: jarvis-ai
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jarvis-ai
+      app.kubernetes.io/component: api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jarvis-worker-pdb
+  namespace: jarvis-production
+  labels:
+    app.kubernetes.io/name: jarvis-ai
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jarvis-ai
+      app.kubernetes.io/component: worker

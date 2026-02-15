@@ -22,12 +22,17 @@
     "server": "streamlit run Jarvis A! project/jarvis-ai-1/setup.py --server.enableCORS false --server.enableXsrfProtection false"
   },
   "portsAttributes": {
+    "8000": {
+      "label": "JarvisAI",
+      "onAutoForward": "openPreview"
+    },
     "8501": {
       "label": "Application",
       "onAutoForward": "openPreview"
     }
   },
   "forwardPorts": [
+    8000,
     8501
   ]
 }
