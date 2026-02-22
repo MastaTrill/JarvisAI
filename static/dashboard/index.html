@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,92 +20,109 @@
             --text: #f1f5f9;
             --text-muted: #94a3b8;
         }
-        
+
         body {
             background: var(--background);
             color: var(--text);
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
-        
+
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        
+
         .card {
             background: var(--surface);
             border-radius: 1rem;
             border: 1px solid var(--surface-light);
         }
-        
+
         .sidebar {
             background: var(--surface);
             border-right: 1px solid var(--surface-light);
         }
-        
+
         .sidebar-link {
             transition: all 0.2s ease;
         }
-        
-        .sidebar-link:hover, .sidebar-link.active {
+
+        .sidebar-link:hover,
+        .sidebar-link.active {
             background: var(--surface-light);
         }
-        
+
         .metric-card {
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
             border: 1px solid rgba(99, 102, 241, 0.3);
         }
-        
+
         .pulse {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
-        
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
-        
+
         .glow {
             box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
         }
-        
-        .status-healthy { color: #10b981; }
-        .status-warning { color: #f59e0b; }
-        .status-error { color: #ef4444; }
-        
+
+        .status-healthy {
+            color: #10b981;
+        }
+
+        .status-warning {
+            color: #f59e0b;
+        }
+
+        .status-error {
+            color: #ef4444;
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             transition: all 0.2s ease;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
-        
+
         .table-row:hover {
             background: var(--surface-light);
         }
-        
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
-        
+
         ::-webkit-scrollbar-track {
             background: var(--surface);
         }
-        
+
         ::-webkit-scrollbar-thumb {
             background: var(--surface-light);
             border-radius: 4px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
             background: #475569;
         }
     </style>
 </head>
+
 <body x-data="dashboard()" x-init="init()">
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
@@ -120,87 +138,88 @@
                     </div>
                 </div>
             </div>
-            
+
             <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                <a href="#" @click.prevent="currentView = 'dashboard'" 
-                   :class="{'active': currentView === 'dashboard'}"
-                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                <a href="#" @click.prevent="currentView = 'dashboard'" :class="{'active': currentView === 'dashboard'}"
+                    class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                     <i class="fas fa-chart-line w-5 mr-3"></i>
                     <span>Dashboard</span>
                 </a>
-                
-                <a href="#" @click.prevent="currentView = 'models'" 
-                   :class="{'active': currentView === 'models'}"
-                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+
+                <a href="#" @click.prevent="currentView = 'models'" :class="{'active': currentView === 'models'}"
+                    class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                     <i class="fas fa-cube w-5 mr-3"></i>
                     <span>Models</span>
                 </a>
-                
-                <a href="#" @click.prevent="currentView = 'training'" 
-                   :class="{'active': currentView === 'training'}"
-                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+
+                <a href="#" @click.prevent="currentView = 'training'" :class="{'active': currentView === 'training'}"
+                    class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                     <i class="fas fa-dumbbell w-5 mr-3"></i>
                     <span>Training Jobs</span>
                 </a>
-                
-                <a href="#" @click.prevent="currentView = 'datasets'" 
-                   :class="{'active': currentView === 'datasets'}"
-                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+
+                <a href="#" @click.prevent="currentView = 'datasets'" :class="{'active': currentView === 'datasets'}"
+                    class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                     <i class="fas fa-database w-5 mr-3"></i>
                     <span>Datasets</span>
                 </a>
-                
-                <a href="#" @click.prevent="currentView = 'predictions'" 
-                   :class="{'active': currentView === 'predictions'}"
-                   class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+
+                <a href="#" @click.prevent="currentView = 'predictions'"
+                    :class="{'active': currentView === 'predictions'}"
+                    class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                     <i class="fas fa-magic w-5 mr-3"></i>
                     <span>Predictions</span>
                 </a>
-                
+
                 <div class="pt-4 mt-4 border-t border-gray-700">
                     <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Advanced</p>
-                    
-                    <a href="#" @click.prevent="currentView = 'quantum'" 
-                       :class="{'active': currentView === 'quantum'}"
-                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+
+                    <a href="#" @click.prevent="currentView = 'quantum'" :class="{'active': currentView === 'quantum'}"
+                        class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                         <i class="fas fa-atom w-5 mr-3"></i>
                         <span>Quantum AI</span>
                     </a>
-                    
-                    <a href="#" @click.prevent="currentView = 'consciousness'" 
-                       :class="{'active': currentView === 'consciousness'}"
-                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+
+                    <a href="#" @click.prevent="currentView = 'consciousness'"
+                        :class="{'active': currentView === 'consciousness'}"
+                        class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                         <i class="fas fa-brain w-5 mr-3"></i>
                         <span>Consciousness</span>
                     </a>
-                    
-                    <a href="#" @click.prevent="currentView = 'robotics'" 
-                       :class="{'active': currentView === 'robotics'}"
-                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+
+                    <a href="#" @click.prevent="currentView = 'robotics'"
+                        :class="{'active': currentView === 'robotics'}"
+                        class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                         <i class="fas fa-robot w-5 mr-3"></i>
                         <span>Robotics</span>
                     </a>
+                    <a href="#" @click.prevent="currentView = 'interpretability'"
+                        :class="{'active': currentView === 'interpretability'}"
+                        class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+                        <i class="fas fa-eye w-5 mr-3"></i>
+                        <span>Interpretability</span>
+                    </a>
                 </div>
-                
+
                 <div class="pt-4 mt-4 border-t border-gray-700">
                     <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">System</p>
-                    
-                    <a href="#" @click.prevent="currentView = 'monitoring'" 
-                       :class="{'active': currentView === 'monitoring'}"
-                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+
+                    <a href="#" @click.prevent="currentView = 'monitoring'"
+                        :class="{'active': currentView === 'monitoring'}"
+                        class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                         <i class="fas fa-heartbeat w-5 mr-3"></i>
                         <span>Monitoring</span>
                     </a>
-                    
-                    <a href="#" @click.prevent="currentView = 'settings'" 
-                       :class="{'active': currentView === 'settings'}"
-                       class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
+
+                    <a href="#" @click.prevent="currentView = 'settings'"
+                        :class="{'active': currentView === 'settings'}"
+                        class="sidebar-link flex items-center px-4 py-3 rounded-lg text-gray-300 hover:text-white">
                         <i class="fas fa-cog w-5 mr-3"></i>
                         <span>Settings</span>
                     </a>
                 </div>
             </nav>
-            
+
             <!-- User Profile -->
             <div class="p-4 border-t border-gray-700">
                 <div class="flex items-center space-x-3">
@@ -217,7 +236,7 @@
                 </div>
             </div>
         </aside>
-        
+
         <!-- Main Content -->
         <main class="flex-1 overflow-y-auto">
             <!-- Top Bar -->
@@ -230,17 +249,17 @@
                     <div class="flex items-center space-x-4">
                         <!-- Search -->
                         <div class="relative">
-                            <input type="text" placeholder="Search..." 
-                                   class="w-64 px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                            <input type="text" placeholder="Search..."
+                                class="w-64 px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500">
                             <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         </div>
-                        
+
                         <!-- Notifications -->
                         <button class="relative p-2 text-gray-400 hover:text-white">
                             <i class="fas fa-bell text-xl"></i>
                             <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                         </button>
-                        
+
                         <!-- Theme Toggle -->
                         <button class="p-2 text-gray-400 hover:text-white">
                             <i class="fas fa-moon text-xl"></i>
@@ -248,7 +267,7 @@
                     </div>
                 </div>
             </header>
-            
+
             <!-- Dashboard View -->
             <div x-show="currentView === 'dashboard'" class="p-6 space-y-6">
                 <!-- Metrics Grid -->
@@ -268,7 +287,7 @@
                             <span class="text-gray-400 ml-2">vs last month</span>
                         </div>
                     </div>
-                    
+
                     <div class="metric-card card p-6">
                         <div class="flex items-center justify-between">
                             <div>
@@ -284,12 +303,13 @@
                             <span class="text-gray-400 ml-2">vs last week</span>
                         </div>
                     </div>
-                    
+
                     <div class="metric-card card p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400">Predictions Today</p>
-                                <p class="text-3xl font-bold text-white mt-1" x-text="metrics.predictions.toLocaleString()">0</p>
+                                <p class="text-3xl font-bold text-white mt-1"
+                                    x-text="metrics.predictions.toLocaleString()">0</p>
                             </div>
                             <div class="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
                                 <i class="fas fa-magic text-purple-400 text-xl"></i>
@@ -300,12 +320,13 @@
                             <span class="text-gray-400 ml-2">vs yesterday</span>
                         </div>
                     </div>
-                    
+
                     <div class="metric-card card p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400">API Latency</p>
-                                <p class="text-3xl font-bold text-white mt-1"><span x-text="metrics.latency">0</span>ms</p>
+                                <p class="text-3xl font-bold text-white mt-1"><span x-text="metrics.latency">0</span>ms
+                                </p>
                             </div>
                             <div class="w-12 h-12 rounded-lg bg-yellow-600/20 flex items-center justify-center">
                                 <i class="fas fa-tachometer-alt text-yellow-400 text-xl"></i>
@@ -317,20 +338,20 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Charts Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="card p-6">
                         <h3 class="text-lg font-semibold text-white mb-4">API Requests (24h)</h3>
                         <canvas id="requestsChart" height="200"></canvas>
                     </div>
-                    
+
                     <div class="card p-6">
                         <h3 class="text-lg font-semibold text-white mb-4">Model Performance</h3>
                         <canvas id="performanceChart" height="200"></canvas>
                     </div>
                 </div>
-                
+
                 <!-- System Status -->
                 <div class="card p-6">
                     <h3 class="text-lg font-semibold text-white mb-4">System Components</h3>
@@ -344,15 +365,15 @@
                                     </span>
                                 </div>
                                 <div class="w-full bg-gray-700 rounded-full h-2">
-                                    <div class="bg-indigo-600 h-2 rounded-full" 
-                                         :style="'width: ' + component.usage + '%'"></div>
+                                    <div class="bg-indigo-600 h-2 rounded-full"
+                                        :style="'width: ' + component.usage + '%'"></div>
                                 </div>
                                 <p class="text-sm text-gray-400 mt-2" x-text="component.usage + '% utilized'"></p>
                             </div>
                         </template>
                     </div>
                 </div>
-                
+
                 <!-- Recent Activity -->
                 <div class="card p-6">
                     <div class="flex items-center justify-between mb-4">
@@ -385,8 +406,7 @@
                                             <span :class="'px-2 py-1 rounded-full text-xs ' + 
                                                 (activity.status === 'success' ? 'bg-green-900/50 text-green-400' : 
                                                  activity.status === 'pending' ? 'bg-yellow-900/50 text-yellow-400' : 
-                                                 'bg-red-900/50 text-red-400')"
-                                                x-text="activity.status"></span>
+                                                 'bg-red-900/50 text-red-400')" x-text="activity.status"></span>
                                         </td>
                                         <td class="py-3 text-gray-400 text-sm" x-text="activity.time"></td>
                                     </tr>
@@ -396,7 +416,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Models View -->
             <div x-show="currentView === 'models'" class="p-6 space-y-6">
                 <div class="flex items-center justify-between">
@@ -423,7 +443,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <template x-for="model in models" :key="model.id">
                         <div class="card p-6 hover:border-indigo-500/50 transition-colors cursor-pointer">
@@ -434,8 +454,7 @@
                                 <span :class="'px-2 py-1 rounded-full text-xs ' + 
                                     (model.status === 'active' ? 'bg-green-900/50 text-green-400' : 
                                      model.status === 'training' ? 'bg-yellow-900/50 text-yellow-400' : 
-                                     'bg-gray-700 text-gray-400')"
-                                    x-text="model.status"></span>
+                                     'bg-gray-700 text-gray-400')" x-text="model.status"></span>
                             </div>
                             <h4 class="text-lg font-semibold text-white" x-text="model.name"></h4>
                             <p class="text-sm text-gray-400 mt-1" x-text="model.type"></p>
@@ -450,10 +469,12 @@
                                 </div>
                             </div>
                             <div class="mt-4 flex space-x-2">
-                                <button class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm text-white">
+                                <button
+                                    class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm text-white">
                                     Deploy
                                 </button>
-                                <button class="px-3 py-2 border border-gray-600 hover:bg-gray-800 rounded-lg text-sm text-gray-300">
+                                <button
+                                    class="px-3 py-2 border border-gray-600 hover:bg-gray-800 rounded-lg text-sm text-gray-300">
                                     <i class="fas fa-ellipsis-h"></i>
                                 </button>
                             </div>
@@ -461,7 +482,7 @@
                     </template>
                 </div>
             </div>
-            
+
             <!-- Training View -->
             <div x-show="currentView === 'training'" class="p-6 space-y-6">
                 <div class="flex items-center justify-between">
@@ -469,7 +490,7 @@
                         <i class="fas fa-play mr-2"></i>Start Training
                     </button>
                 </div>
-                
+
                 <div class="card overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full">
@@ -493,12 +514,13 @@
                                         <td class="px-6 py-4">
                                             <div class="w-32">
                                                 <div class="flex items-center justify-between text-sm mb-1">
-                                                    <span class="text-gray-400" x-text="job.epoch + '/' + job.totalEpochs"></span>
+                                                    <span class="text-gray-400"
+                                                        x-text="job.epoch + '/' + job.totalEpochs"></span>
                                                     <span class="text-white" x-text="job.progress + '%'"></span>
                                                 </div>
                                                 <div class="w-full bg-gray-700 rounded-full h-2">
-                                                    <div class="bg-indigo-600 h-2 rounded-full transition-all" 
-                                                         :style="'width: ' + job.progress + '%'"></div>
+                                                    <div class="bg-indigo-600 h-2 rounded-full transition-all"
+                                                        :style="'width: ' + job.progress + '%'"></div>
                                                 </div>
                                             </div>
                                         </td>
@@ -511,10 +533,12 @@
                                         <td class="px-6 py-4 text-gray-400 text-sm" x-text="job.started"></td>
                                         <td class="px-6 py-4">
                                             <div class="flex space-x-2">
-                                                <button class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white">
+                                                <button
+                                                    class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white">
                                                     <i class="fas fa-pause"></i>
                                                 </button>
-                                                <button class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-red-400">
+                                                <button
+                                                    class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-red-400">
                                                     <i class="fas fa-stop"></i>
                                                 </button>
                                             </div>
@@ -526,7 +550,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Monitoring View -->
             <div x-show="currentView === 'monitoring'" class="p-6 space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -564,14 +588,14 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Resource Usage -->
                     <div class="card p-6 lg:col-span-2">
                         <h3 class="text-lg font-semibold text-white mb-4">Resource Usage</h3>
                         <canvas id="resourceChart" height="150"></canvas>
                     </div>
                 </div>
-                
+
                 <!-- Logs -->
                 <div class="card p-6">
                     <div class="flex items-center justify-between mb-4">
@@ -589,136 +613,159 @@
                                 <span class="text-gray-500" x-text="log.timestamp"></span>
                                 <span :class="log.level === 'ERROR' ? 'text-red-400' : 
                                               log.level === 'WARN' ? 'text-yellow-400' : 'text-blue-400'"
-                                      x-text="'[' + log.level + ']'"></span>
+                                    x-text="'[' + log.level + ']'"></span>
                                 <span class="text-gray-300" x-text="log.message"></span>
                             </div>
                         </template>
                     </div>
                 </div>
             </div>
-            
-            <!-- Other views would be implemented similarly -->
-            <div x-show="currentView === 'datasets'" class="p-6">
-                <div class="card p-12 text-center">
-                    <i class="fas fa-database text-6xl text-gray-600 mb-4"></i>
-                    <h3 class="text-xl font-semibold text-white">Datasets Management</h3>
-                    <p class="text-gray-400 mt-2">Upload, manage, and explore your training datasets</p>
-                    <button class="mt-6 btn-primary px-6 py-3 rounded-lg text-white font-medium">
-                        <i class="fas fa-upload mr-2"></i>Upload Dataset
-                    </button>
-                </div>
-            </div>
-            
-            <div x-show="currentView === 'predictions'" class="p-6">
-                <div class="card p-12 text-center">
-                    <i class="fas fa-magic text-6xl text-gray-600 mb-4"></i>
-                    <h3 class="text-xl font-semibold text-white">Prediction Console</h3>
-                    <p class="text-gray-400 mt-2">Run real-time inference with your deployed models</p>
-                </div>
-            </div>
-            
-            <div x-show="currentView === 'quantum'" class="p-6">
-                <div class="card p-12 text-center">
-                    <i class="fas fa-atom text-6xl text-purple-500 mb-4 pulse"></i>
-                    <h3 class="text-xl font-semibold text-white">Quantum AI Processing</h3>
-                    <p class="text-gray-400 mt-2">Leverage quantum computing for advanced ML tasks</p>
-                </div>
-            </div>
-            
-            <div x-show="currentView === 'consciousness'" class="p-6">
-                <div class="card p-12 text-center">
-                    <i class="fas fa-brain text-6xl text-pink-500 mb-4 pulse"></i>
-                    <h3 class="text-xl font-semibold text-white">Consciousness Engine</h3>
-                    <p class="text-gray-400 mt-2">Advanced neural consciousness simulation</p>
-                </div>
-            </div>
-            
-            <div x-show="currentView === 'robotics'" class="p-6">
-                <div class="card p-12 text-center">
-                    <i class="fas fa-robot text-6xl text-cyan-500 mb-4"></i>
-                    <h3 class="text-xl font-semibold text-white">Robotics Command Center</h3>
-                    <p class="text-gray-400 mt-2">Coordinate and control autonomous robotic systems</p>
-                </div>
-            </div>
-            
-            <div x-show="currentView === 'settings'" class="p-6">
+
+            <!-- Interpretability View -->
+            <div x-show="currentView === 'interpretability'" class="p-6 space-y-6">
                 <div class="card p-6">
-                    <h3 class="text-lg font-semibold text-white mb-6">Settings</h3>
-                    <div class="space-y-6 max-w-2xl">
+                    <h3 class="text-lg font-semibold text-white mb-4">Model Interpretability (XAI)</h3>
+                    <p class="text-gray-400 mb-4">Visualize and understand model decisions using SHAP, LIME, and more.</p>
+                    <div class="mb-4 flex flex-col md:flex-row gap-4 items-center">
                         <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-2">API Endpoint</label>
-                            <input type="text" value="https://api.jarvis.ai/v1" 
-                                   class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-2">Default Model</label>
-                            <select class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                                <option>sentiment-classifier-v2</option>
-                                <option>image-recognition-v1</option>
-                                <option>nlp-transformer-v3</option>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Select Model</label>
+                            <select x-model="selectedXaiModel" @change="fetchXaiData()" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
+                                <option disabled value="">-- Select Model --</option>
+                                <template x-for="model in models" :key="model.name">
+                                    <option :value="model.name" x-text="model.name"></option>
+                                </template>
                             </select>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-white">Enable Notifications</p>
-                                <p class="text-sm text-gray-400">Receive alerts for training completion</p>
-                            </div>
-                            <button class="w-12 h-6 bg-indigo-600 rounded-full relative">
-                                <span class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></span>
-                            </button>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Instance Index</label>
+                            <input type="number" min="0" x-model.number="selectedXaiInstance" @change="fetchXaiData()" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white w-24">
                         </div>
-                        <div class="pt-6 border-t border-gray-700">
-                            <button class="btn-primary px-6 py-2 rounded-lg text-white font-medium">
-                                Save Changes
-                            </button>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-white mb-2">Global Feature Importance</h4>
+                            <canvas id="xaiFeatureImportance" height="200"></canvas>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-white mb-2">Local Explanation (LIME)</h4>
+                            <canvas id="xaiLocalExplanation" height="200"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="font-semibold text-white mb-2">Counterfactuals & Decision Boundaries</h4>
+                        <div class="bg-gray-800 rounded-lg p-4 text-gray-300">
+                            <template x-if="xaiCounterfactuals.length">
+                                <ul>
+                                    <template x-for="cf in xaiCounterfactuals" :key="cf.feature">
+                                        <li>
+                                            <span class="font-semibold text-indigo-400" x-text="cf.feature"></span>:
+                                            <span x-text="cf.current_value"></span> → <span x-text="cf.suggested_value"></span>
+                                            (<span x-text="cf.change_required"></span> adj)
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
+                            <template x-if="!xaiCounterfactuals.length">
+                                <p>No counterfactuals available.</p>
+                            </template>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <script>
-        function dashboard() {
-            return {
-                currentView: 'dashboard',
-                
-                metrics: {
-                    activeModels: 12,
-                    trainingJobs: 3,
-                    predictions: 45892,
-                    latency: 23
-                },
-                
-                systemStatus: [
-                    { name: 'API Server', status: 'healthy', usage: 45 },
-                    { name: 'ML Engine', status: 'healthy', usage: 72 },
-                    { name: 'Database', status: 'healthy', usage: 38 },
-                    { name: 'Redis Cache', status: 'warning', usage: 89 }
-                ],
-                
-                recentActivity: [
-                    { id: 1, event: 'Model Deployed', resource: 'sentiment-v2', user: 'admin', status: 'success', time: '2 min ago', icon: 'fa-rocket' },
-                    { id: 2, event: 'Training Started', resource: 'nlp-transformer', user: 'user1', status: 'pending', time: '15 min ago', icon: 'fa-dumbbell' },
-                    { id: 3, event: 'Dataset Uploaded', resource: 'reviews-2026.csv', user: 'admin', status: 'success', time: '1 hour ago', icon: 'fa-upload' },
-                    { id: 4, event: 'API Key Created', resource: 'prod-key-001', user: 'admin', status: 'success', time: '2 hours ago', icon: 'fa-key' }
-                ],
-                
-                models: [
-                    { id: 1, name: 'Sentiment Classifier v2', type: 'Transformer', status: 'active', accuracy: 95.2, version: '2.1.0' },
-                    { id: 2, name: 'Image Recognition', type: 'CNN', status: 'active', accuracy: 97.8, version: '1.5.0' },
-                    { id: 3, name: 'NLP Processor', type: 'BERT', status: 'training', accuracy: 91.5, version: '3.0.0' },
-                    { id: 4, name: 'Fraud Detection', type: 'Neural Network', status: 'active', accuracy: 99.1, version: '1.2.0' },
-                    { id: 5, name: 'Recommendation Engine', type: 'Collaborative Filtering', status: 'archived', accuracy: 88.3, version: '2.0.0' },
-                    { id: 6, name: 'Time Series Forecaster', type: 'LSTM', status: 'active', accuracy: 94.7, version: '1.8.0' }
-                ],
-                
-                trainingJobs: [
-                    { id: 'job-a1b2c3', model: 'NLP Transformer v3', progress: 67, epoch: 67, totalEpochs: 100, loss: 0.0234, started: '2 hours ago' },
-                    { id: 'job-d4e5f6', model: 'Vision Model', progress: 23, epoch: 23, totalEpochs: 100, loss: 0.1523, started: '45 min ago' },
+        <!-- XAI State -->
+        selectedXaiModel: '',
+        selectedXaiInstance: 0,
+        xaiFeatureNames: [],
+        xaiFeatureImportance: [],
+        xaiLime: {},
+        xaiCounterfactuals: [],
+        xaiFeatureImportanceChart: null,
+        xaiLimeChart: null,
+
+        <!-- Fetch XAI Data -->
+        async fetchXaiData() {
+            if (!this.selectedXaiModel) return;
+            // Fetch global feature importance
+            const globalRes = await fetch(`/api/xai/global/${this.selectedXaiModel}`);
+            const globalData = await globalRes.json();
+            this.xaiFeatureNames = globalData.feature_names || [];
+            this.xaiFeatureImportance = globalData.feature_importance || [];
+            // Fetch local explanation
+            const localRes = await fetch(`/api/xai/local/${this.selectedXaiModel}?instance_idx=${this.selectedXaiInstance}`);
+            this.xaiLime = await localRes.json();
+            // Fetch counterfactuals
+            const cfRes = await fetch(`/api/xai/counterfactuals/${this.selectedXaiModel}?instance_idx=${this.selectedXaiInstance}`);
+            const cfData = await cfRes.json();
+            this.xaiCounterfactuals = cfData.counterfactuals || [];
+            this.renderXaiCharts();
+        },
+
+        renderXaiCharts() {
+            // Feature Importance Chart
+            const ctx1 = document.getElementById('xaiFeatureImportance');
+            if (ctx1) {
+                if (this.xaiFeatureImportanceChart) this.xaiFeatureImportanceChart.destroy();
+                this.xaiFeatureImportanceChart = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: this.xaiFeatureNames,
+                        datasets: [{
+                            label: 'Importance',
+                            data: this.xaiFeatureImportance,
+                            backgroundColor: '#6366f1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' } },
+                            y: { ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+            // LIME Chart
+            const ctx2 = document.getElementById('xaiLocalExplanation');
+            if (ctx2 && this.xaiLime && this.xaiLime.top_features) {
+                if (this.xaiLimeChart) this.xaiLimeChart.destroy();
+                this.xaiLimeChart = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: this.xaiLime.top_features.map(f => f.feature),
+                        datasets: [{
+                            label: 'Contribution',
+                            data: this.xaiLime.top_features.map(f => f.contribution),
+                            backgroundColor: this.xaiLime.top_features.map(f => f.contribution > 0 ? '#10b981' : '#ef4444')
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' } },
+                            y: { ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+        },
+
+        init() {
+            this.initCharts();
+            this.startRealTimeUpdates();
+            // Preselect first model if available
+            if (this.models.length > 0) {
+                this.selectedXaiModel = this.models[0].name;
+                this.fetchXaiData();
+            }
+        },
+    </script>
+</body>
                     { id: 'job-g7h8i9', model: 'Audio Classifier', progress: 89, epoch: 89, totalEpochs: 100, loss: 0.0089, started: '5 hours ago' }
                 ],
-                
+
                 logs: [
                     { id: 1, timestamp: '2026-02-11 12:34:56', level: 'INFO', message: 'Model sentiment-v2 deployed successfully to production' },
                     { id: 2, timestamp: '2026-02-11 12:34:45', level: 'INFO', message: 'Training job job-a1b2c3 reached epoch 67/100' },
@@ -727,7 +774,7 @@
                     { id: 5, timestamp: '2026-02-11 12:34:00', level: 'ERROR', message: 'Failed to connect to external data source: timeout after 30s' },
                     { id: 6, timestamp: '2026-02-11 12:33:45', level: 'INFO', message: 'Batch prediction completed: 10,000 samples processed' }
                 ],
-                
+
                 getViewTitle() {
                     const titles = {
                         dashboard: 'Dashboard',
@@ -743,7 +790,7 @@
                     };
                     return titles[this.currentView] || 'Dashboard';
                 },
-                
+
                 getViewDescription() {
                     const descriptions = {
                         dashboard: 'Overview of your AI platform',
@@ -759,12 +806,12 @@
                     };
                     return descriptions[this.currentView] || '';
                 },
-                
+
                 init() {
                     this.initCharts();
                     this.startRealTimeUpdates();
                 },
-                
+
                 initCharts() {
                     // Requests Chart
                     const requestsCtx = document.getElementById('requestsChart');
@@ -792,7 +839,7 @@
                             }
                         });
                     }
-                    
+
                     // Performance Chart
                     const performanceCtx = document.getElementById('performanceChart');
                     if (performanceCtx) {
@@ -816,7 +863,7 @@
                             }
                         });
                     }
-                    
+
                     // Resource Chart
                     const resourceCtx = document.getElementById('resourceChart');
                     if (resourceCtx) {
@@ -856,13 +903,13 @@
                         });
                     }
                 },
-                
+
                 startRealTimeUpdates() {
                     // Simulate real-time metric updates
                     setInterval(() => {
                         this.metrics.predictions += Math.floor(Math.random() * 10);
                         this.metrics.latency = 20 + Math.floor(Math.random() * 10);
-                        
+
                         // Update training progress
                         this.trainingJobs.forEach(job => {
                             if (job.progress < 100) {
@@ -877,4 +924,5 @@
         }
     </script>
 </body>
+
 </html>

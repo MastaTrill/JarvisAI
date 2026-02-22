@@ -1,8 +1,78 @@
-"""
-FastAPI Web Interface for Jarvis AI.
+# Serve dashboard at root URL
+@app.get("/", response_class=HTMLResponse)
+def serve_dashboard():
+    static_path = os.path.join(os.path.dirname(__file__), "static", "dashboard", "index.html")
+    with open(static_path, "r", encoding="utf-8") as f:
+        return f.read()
+# --- XAI/Interpretability Endpoints ---
+from src.interpretability.model_explainer import ModelInterpreter
 
-This module provides a REST API for:
-- Model training and management
+@app.get("/api/xai/global/{model_name}")
+async def get_global_feature_importance(model_name: str):
+    """Get global feature importance (SHAP-style) for a model."""
+    if model_name not in models:
+        raise HTTPException(status_code=404, detail="Model not found")
+    model_data = models[model_name]
+    model = model_data["model"]
+    processor = processors.get(model_name)
+    if not processor:
+        raise HTTPException(status_code=404, detail="No processor for model")
+    # Use training data for explanations
+    X = processor.get_training_data() if hasattr(processor, 'get_training_data') else None
+    feature_names = list(X.columns) if hasattr(X, 'columns') else None
+    if X is None:
+        raise HTTPException(status_code=400, detail="No training data available for model")
+    interpreter = ModelInterpreter(model, feature_names)
+    shap_result = interpreter.explain_with_shap(X.values)
+    return {"feature_names": feature_names, "feature_importance": shap_result.get("feature_importance", []), "shap_values": shap_result.get("shap_values", [])}
+
+@app.get("/api/xai/local/{model_name}")
+async def get_local_explanation(model_name: str, instance_idx: int = 0):
+    """Get local explanation (LIME-style) for a model and instance."""
+    if model_name not in models:
+        raise HTTPException(status_code=404, detail="Model not found")
+    model_data = models[model_name]
+    model = model_data["model"]
+    processor = processors.get(model_name)
+    if not processor:
+        raise HTTPException(status_code=404, detail="No processor for model")
+    X = processor.get_training_data() if hasattr(processor, 'get_training_data') else None
+    feature_names = list(X.columns) if hasattr(X, 'columns') else None
+    if X is None:
+        raise HTTPException(status_code=400, detail="No training data available for model")
+    interpreter = ModelInterpreter(model, feature_names)
+    lime_result = interpreter.explain_with_lime(X.values, instance_idx=instance_idx)
+    return lime_result
+
+@app.get("/api/xai/counterfactuals/{model_name}")
+async def get_counterfactuals(model_name: str, instance_idx: int = 0):
+    """Get counterfactual suggestions for a model and instance."""
+    if model_name not in models:
+        raise HTTPException(status_code=404, detail="Model not found")
+    model_data = models[model_name]
+    model = model_data["model"]
+    processor = processors.get(model_name)
+    if not processor:
+        raise HTTPException(status_code=404, detail="No processor for model")
+    X = processor.get_training_data() if hasattr(processor, 'get_training_data') else None
+    feature_names = list(X.columns) if hasattr(X, 'columns') else None
+    if X is None:
+        raise HTTPException(status_code=400, detail="No training data available for model")
+    interpreter = ModelInterpreter(model, feature_names)
+    shap_result = interpreter.explain_with_shap(X.values)
+    shap_values = shap_result.get("shap_values", [])
+    instance = X.values[instance_idx]
+    counterfactuals = []
+    for i, feature in enumerate(feature_names):
+        shap_val = shap_values[instance_idx][i] if len(shap_values) > instance_idx else 0
+        if shap_val != 0:
+            needed_change = -2 * shap_val / abs(shap_val)
+            new_value = instance[i] + needed_change
+            counterfactuals.append({
+                "feature": feature,
+                "current_value": float(instance[i]),
+                "suggested_value": float(new_value),
+                "change_required": float(needed_change)
 - Making predictions
 - Data upload and processing
 - Monitoring model performance
@@ -113,6 +183,7 @@ from infra_api import router as infra_router
 from security_api import router as security_router
 from ml_advanced_api import router as ml_advanced_router
 from fastapi.staticfiles import StaticFiles
+from automation_api import router as automation_router
 
 app = FastAPI(
     title="Jarvis AI API",
@@ -148,6 +219,7 @@ app.include_router(collab_router)
 app.include_router(infra_router)
 app.include_router(security_router)
 app.include_router(ml_advanced_router)
+app.include_router(automation_router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # No-code/low-code workflow editor route
@@ -379,20 +451,6 @@ def get_api_key(api_key: str = Security(api_key_header)):
 
 # API Routes
 
-@app.get("/")
-async def root():
-    """API root endpoint."""
-    return {
-        "message": "Welcome to Jarvis AI API!",
-        "version": "1.0.0",
-        "endpoints": {
-            "models": "/models",
-            "train": "/train",
-            "predict": "/predict",
-            "data": "/data",
-            "health": "/health"
-        }
-    }
 
 
 @app.get("/health")
@@ -464,22 +522,6 @@ async def _train_model_background(model_name: str, model_type: str, config: Dict
         # Load or generate data
         if data_source and os.path.exists(data_source):
             df = processor.load_data(data_source)
-        else:
-            # Use default dataset or generate dummy data
-            if os.path.exists("data/processed/dataset.csv"):
-                df = processor.load_data("data/processed/dataset.csv")
-            else:
-                # Generate dummy data
-                from src.data.numpy_processor import DataProcessor
-                dummy_processor = DataProcessor()
-                df = dummy_processor.create_dummy_data(n_samples=1000, n_features=10)
-        
-        # Prepare data
-        target_col = config.get("target_column", "target")
-        if target_col not in df.columns:
-            target_col = df.columns[-1]  # Use last column as target
-        
-        X = df.drop(columns=[target_col])
         y = df[target_col]
         
         # Split data

@@ -1,4 +1,6 @@
 {
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.enableTroubleshootMissingImports": true,
     "python.testing.unittestArgs": [
         "-v",
         "-s",
@@ -15,5 +17,4 @@
         "gh/MastaTrill/jarvis-echo-dashboard",
         "gh/MastaTrill/jarvis-echo-dashboard"
     ],
-    "python.analysis.typeCheckingMode": "basic"
 }

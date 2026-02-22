@@ -32,7 +32,7 @@ RUN chown -R jarvisuser:jarvisuser /home/jarvisuser
 EXPOSE 8000
 
 # Install gunicorn for production WSGI serving (as root, before switching user)
-RUN pip install --no-cache-dir gunicorn && pip cache purge
+RUN pip install --no-cache-dir gunicorn
 
 # Switch to non-root user
 USER jarvisuser

@@ -709,6 +709,95 @@ class AetheronPlatform {
         // Initialize other charts as needed
         this.initializeDistributionChart();
         this.initializeResourceChart();
+
+        // Initialize DeFi dashboard charts (Chart.js)
+        const priceCtx = document.getElementById('priceChart');
+        if (priceCtx && window.Chart) {
+            this.priceChart = new Chart(priceCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Price',
+                        data: [],
+                        borderColor: 'rgba(102,126,234,1)',
+                        backgroundColor: 'rgba(102,126,234,0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: { x: { title: { display: true, text: 'Time' } }, y: { title: { display: true, text: 'Price' } } }
+                }
+            });
+        }
+        const volumeCtx = document.getElementById('volumeChart');
+        if (volumeCtx && window.Chart) {
+            this.volumeChart = new Chart(volumeCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Volume',
+                        data: [],
+                        backgroundColor: 'rgba(118,75,162,0.5)',
+                        borderColor: 'rgba(118,75,162,1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: { x: { title: { display: true, text: 'Time' } }, y: { title: { display: true, text: 'Volume' } } }
+                }
+            });
+        }
+        const tvlCtx = document.getElementById('tvlChart');
+        if (tvlCtx && window.Chart) {
+            this.tvlChart = new Chart(tvlCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'TVL',
+                        data: [],
+                        borderColor: 'rgba(54,162,235,1)',
+                        backgroundColor: 'rgba(54,162,235,0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: { x: { title: { display: true, text: 'Time' } }, y: { title: { display: true, text: 'TVL' } } }
+                }
+            });
+        }
+        const stakingCtx = document.getElementById('stakingChart');
+        if (stakingCtx && window.Chart) {
+            this.stakingChart = new Chart(stakingCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Staked',
+                        data: [],
+                        borderColor: 'rgba(255,206,86,1)',
+                        backgroundColor: 'rgba(255,206,86,0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: { x: { title: { display: true, text: 'Time' } }, y: { title: { display: true, text: 'Staked' } } }
+                }
+            });
+        }
     }
 
     initializePerformanceChart() {
