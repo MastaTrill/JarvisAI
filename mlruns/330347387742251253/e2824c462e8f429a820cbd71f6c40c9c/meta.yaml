@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/willi/OneDrive/JarvisAI/mlruns/330347387742251253/e2824c462e8f429a820cbd71f6c40c9c/artifacts
+end_time: 1771775546327
+entry_point_name: ''
+experiment_id: '330347387742251253'
+lifecycle_stage: active
+run_id: e2824c462e8f429a820cbd71f6c40c9c
+run_name: receptive-bass-845
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1771775540989
+status: 4
+tags: []
+user_id: willi
