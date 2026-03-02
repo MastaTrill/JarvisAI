@@ -386,12 +386,6 @@ def read_users_me(current_user: User = Depends(get_current_user)):
     }
 
 
-# Health check endpoint for Docker/Kubernetes readiness/liveness probes
-@app.get("/health")
-def health_check():
-    """Health check endpoint for Docker/Kubernetes readiness/liveness probes."""
-    return {"status": "ok"}
-
 
 # Global variables for model management
 models = {}
@@ -530,11 +524,6 @@ async def list_models():
 @app.post("/models/{model_name}/train")
 async def train_model(
     model_name: str, request: TrainRequest, background_tasks: BackgroundTasks
-):
-    """Train a new model."""
-    try:
-        # Set training status
-        training_status[model_name] = {
             "status": "training",
             "started_at": datetime.now().isoformat(),
             "progress": 0,

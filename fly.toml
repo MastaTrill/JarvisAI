@@ -1,40 +1,47 @@
-# Fly.io configuration for Jarvis AI
-app = "jarvis-ai"
-primary_region = "ord"
+# fly.toml app configuration file generated for jarvis-ai-quantum on 2026-03-01T22:42:18-06:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'jarvis-ai-quantum'
+primary_region = 'ord'
 
 [build]
-dockerfile = "Dockerfile"
-
-[http_service]
-internal_port = 8080
-force_https = true
-auto_stop_machines = true
-auto_start_machines = true
-min_machines_running = 0
-
-[[services]]
-protocol = "tcp"
-internal_port = 8080
-
-[[services.ports]]
-port = 80
-handlers = ["http"]
-force_https = true
-
-[[services.ports]]
-port = 443
-handlers = ["tls", "http"]
+  dockerfile = 'Dockerfile'
 
 [env]
-JARVIS_ENV = "production"
-LOG_LEVEL = "INFO"
-PYTHON_VERSION = "3.11"
+  JARVIS_ENV = 'production'
+  LOG_LEVEL = 'INFO'
+  PYTHON_VERSION = '3.11'
 
-[checks]
-  [checks.http]
-  grace_period = "30s"
-  interval = "30s"
-  method = "get"
-  protocol = "http"
-  timeout = "5s"
-  path = "/health"
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8080
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+  [[services.http_checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '90s'
+    method = 'get'
+    path = '/health'
+
+[[vm]]
+  memory = '1gb'
+  cpus = 1
+  memory_mb = 1024
