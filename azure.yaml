@@ -1,0 +1,63 @@
+# Azure Developer CLI (azd) Configuration
+# Documentation: https://aka.ms/azure-dev/azure.yaml
+
+name: jarvis-ai
+metadata:
+  template: jarvis-ai-platform
+
+services:
+  api:
+    project: .
+    language: python
+    host: function
+    env:
+      PYTHON_VERSION: '3.11'
+      JARVIS_ENV: production
+      LOG_LEVEL: INFO
+
+# Infrastructure configuration
+infra:
+  provider: bicep
+  path: infra
+
+# Hooks for deployment lifecycle
+hooks:
+  preprovision:
+    posix:
+      run: |
+        echo "🚀 Preparing Jarvis AI for Azure deployment..."
+    windows:
+      run: |
+        Write-Host "🚀 Preparing Jarvis AI for Azure deployment..."
+
+  postprovision:
+    posix:
+      run: |
+        echo "✅ Infrastructure provisioned successfully"
+    windows:
+      run: |
+        Write-Host "✅ Infrastructure provisioned successfully"
+
+  predeploy:
+    posix:
+      run: |
+        echo "📦 Building Jarvis AI application..."
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    windows:
+      run: |
+        Write-Host "📦 Building Jarvis AI application..."
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+  postdeploy:
+    posix:
+      run: |
+        echo "🎉 Jarvis AI deployed successfully to Azure!"
+    windows:
+      run: |
+        Write-Host "🎉 Jarvis AI deployed successfully to Azure!"
+
+# Environment variables
+pipeline:
+  provider: github
