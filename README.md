@@ -1,3 +1,14 @@
+### Fixing PyTorch DLL Issues on Windows
+
+If you encounter a PyTorch DLL error on Windows (e.g., missing DLLs or import failures), reinstall the CPU-only version of PyTorch using:
+
+```bash
+pip uninstall torch torchvision torchaudio
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+```
+
+This resolves most DLL-related issues for Windows users. After installation, rerun your training or inference script.
+
 # Jarvis AI Project
 
 A comprehensive AI/ML project template with modern tools and frameworks for machine learning, deep learning, and AI development. This version is optimized to work in environments without GPU support or advanced dependencies.
@@ -51,18 +62,21 @@ Jarvis/
 ## 🛠️ Setup
 
 ### Prerequisites
+
 - Python 3.8 or higher
 - pip package manager
 
 ### Installation
 
 1. **Clone the repository**:
+
    ```bash
    git clone <repository-url>
    cd Jarvis
    ```
 
 2. **Create a virtual environment** (recommended):
+
    ```bash
    python -m venv .venv
    # On Windows:
@@ -72,6 +86,7 @@ Jarvis/
    ```
 
 3. **Install basic dependencies**:
+
    ```bash
    pip install numpy pandas matplotlib seaborn pyyaml pytest tqdm joblib
    ```
@@ -92,6 +107,7 @@ python -m src.training.train_final --config config/train_config.yaml
 ```
 
 This will:
+
 - Generate dummy data if no dataset is found
 - Train a neural network using only numpy
 - Save the trained model and preprocessor
@@ -111,22 +127,22 @@ Edit `config/train_config.yaml` to customize your training:
 
 ```yaml
 data:
-  path: "data/processed/dataset.csv"
-  target_column: "target"
+  path: 'data/processed/dataset.csv'
+  target_column: 'target'
   test_size: 0.2
 
 model:
   hidden_sizes: [64, 32]
   output_size: 1
-  task_type: "regression"
+  task_type: 'regression'
 
 training:
   batch_size: 32
   learning_rate: 0.001
   epochs: 200
   seed: 42
-  preprocessor_path: "artifacts/preprocessor.pkl"
-  model_path: "models/trained_model.pkl"
+  preprocessor_path: 'artifacts/preprocessor.pkl'
+  model_path: 'models/trained_model.pkl'
 ```
 
 ## 📊 Usage Examples
@@ -212,6 +228,7 @@ The numpy-based implementation achieves excellent performance on the generated d
 1. **Import Errors**: Make sure you're running commands from the project root directory.
 
 2. **Missing Dependencies**: Install required packages:
+
    ```bash
    pip install numpy pandas matplotlib pyyaml
    ```
@@ -241,16 +258,14 @@ This project is licensed under the MIT License.
 ## 📞 Support
 
 For issues or questions:
+
 1. Check the troubleshooting section above
 2. Review the test files for usage examples
 3. Create an issue in the repository
 
 ---
 
-
 ---
-
-
 
 ## 🚀 API & Admin Dashboard (Platform)
 
@@ -338,23 +353,22 @@ curl -X POST http://localhost:8000/admin/users/create \
 curl -H "Authorization: Bearer <ADMIN_TOKEN>" http://localhost:8000/admin/models
 ```
 
-
 ### Advanced ML Endpoints
 
 - **HuggingFace Transformers**: Text classification via `/ml/hf-text-classify`
-    - Example:
-      ```bash
-      curl -X POST http://localhost:8000/ml/hf-text-classify \
-        -H "Content-Type: application/json" \
-        -d '{"text": "I love Jarvis!"}'
-      ```
+  - Example:
+    ```bash
+    curl -X POST http://localhost:8000/ml/hf-text-classify \
+      -H "Content-Type: application/json" \
+      -d '{"text": "I love Jarvis!"}'
+    ```
 - **AutoML (Optuna + LightGBM)**: Hyperparameter optimization via `/ml/automl-train`
-    - Example:
-      ```bash
-      curl -X POST http://localhost:8000/ml/automl-train \
-        -H "Content-Type: application/json" \
-        -d '{"X": [[1,2],[3,4]], "y": [0,1], "n_trials": 5}'
-      ```
+  - Example:
+    ```bash
+    curl -X POST http://localhost:8000/ml/automl-train \
+      -H "Content-Type: application/json" \
+      -d '{"X": [[1,2],[3,4]], "y": [0,1], "n_trials": 5}'
+    ```
 
 ---
 
@@ -373,10 +387,7 @@ docker run -p 8000:8000 --env-file .env jarvis-ai
 
 ### Kubernetes/Helm
 
-
-
 ## 🔒 Security & Compliance
-
 
 ---
 
@@ -395,6 +406,7 @@ This section covers how to deploy and publish JarvisAI using Docker Compose, Kub
 ### 2. Docker Compose (Local/Production)
 
 **Build and run with Docker Compose:**
+
 ```bash
 docker compose up --build -d
 # or using the provided deploy script:
@@ -402,13 +414,16 @@ docker compose up --build -d
 ```
 
 **Services:**
+
 - `jarvis-api`: Main API server (Gunicorn + Uvicorn)
 - `jarvis-worker`: Celery worker for background tasks
 
 **Volumes:**
+
 - `jarvis-data`, `jarvis-models` for persistent storage
 
 **Healthcheck:**
+
 - Make sure `/health` endpoint is available for health checks
 
 ### 3. Kubernetes (Cloud-Native)
@@ -417,24 +432,29 @@ docker compose up --build -d
 `infrastructure/kubernetes/production/`
 
 **Deploy all resources:**
+
 ```bash
 cd infrastructure/scripts
 ./deploy-production.sh
 ```
 
 **Key manifests:**
+
 - `namespace.yaml`, `secrets.yaml`, `configmap.yaml`, `rbac.yaml`, `pvc.yaml`, `deployment.yaml`, `service.yaml`, `hpa.yaml`, `ingress.yaml`, `pod-disruption-budget.yaml`
 
 **Image Reference:**
+
 - Update `image:` in `deployment.yaml` to your published image (see below)
 
 ### 4. Publishing Docker Images (GitHub Container Registry)
 
 **GitHub Actions workflow:**
+
 - See `.github/workflows/docker-publish.yml`
 - On push to `main`, builds and pushes to `ghcr.io/mastatrill/jarvisai:latest`
 
 **Manual build & push:**
+
 ```bash
 docker build -t ghcr.io/mastatrill/jarvisai:latest .
 echo $CR_PAT | docker login ghcr.io -u <username> --password-stdin
@@ -459,13 +479,11 @@ docker push ghcr.io/mastatrill/jarvisai:latest
 
 ---
 
-
 ## 🌐 Community & Plugins
 
 - Plugin/model registry: see [`REGISTRY.md`](REGISTRY.md) and `/plugins` for a list of community-contributed plugins and models. To submit, follow the instructions in [`CONTRIBUTING.md`](.github/CONTRIBUTING.md).
 - Hackathon template: see [`HACKATHON_TEMPLATE.md`](HACKATHON_TEMPLATE.md) for organizing or joining plugin/model competitions.
 - Join our community: [Discord](https://discord.gg/your-invite) | [Slack](https://slack.com/your-invite) | See `docs/` for more resources and onboarding.
-
 
 ---
 

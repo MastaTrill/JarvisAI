@@ -1,3 +1,18 @@
+#### 2a. PyTorch DLL Issues on Windows
+
+```text
+Error: DLL load failed while importing torch
+```
+
+**Solution**:
+
+```bash
+pip uninstall torch torchvision torchaudio
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+```
+
+This resolves most DLL-related issues for Windows users. After installation, rerun your training or inference script.
+
 # 🚀 JarvisAI Deployment Guide
 
 **Version**: Phase 6 - Quantum Consciousness Edition  
@@ -219,16 +234,16 @@ Edit `config/train_config.yaml`:
 
 ```yaml
 model:
-  type: "neural_network"
+  type: 'neural_network'
   hidden_layers: [128, 64, 32]
-  activation: "relu"
+  activation: 'relu'
   dropout: 0.2
 
 training:
   epochs: 100
   batch_size: 32
   learning_rate: 0.001
-  optimizer: "adam"
+  optimizer: 'adam'
 
 quantum:
   enabled: true
@@ -624,6 +639,7 @@ python -m cProfile -s cumtime simple_train.py
 - 🐛 **Issues**: [GitHub Issues](https://github.com/MastaTrill/JarvisAI/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/MastaTrill/JarvisAI/discussions)
 - 📧 **Contact**: Open an issue for support
+- 🛠️ **Troubleshooting**: See [docs/troubleshooting.md](docs/troubleshooting.md) for solutions to common problems, including PyTorch DLL errors on Windows.
 
 ### Health Checks
 

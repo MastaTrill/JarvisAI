@@ -21,4 +21,4 @@ training:
   seed: 42
   preprocessor_path: 'artifacts/preprocessor.pkl'
   model_path: 'models/trained_model.pkl'
-  checkpoint_dir: "artifacts/checkpoints"
+  checkpoint_dir: 'artifacts/checkpoints'

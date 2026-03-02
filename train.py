@@ -17,8 +17,8 @@ from typing import Any, Dict
 
 import mlflow
 import torch
-import torch.nn as nn
-import torch.optim as optim
+from torch import nn
+from torch import optim
 import yaml
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -49,11 +49,11 @@ def run_training(config_path: str) -> None:
     """
     # 1. Load Configuration
     try:
-        with open(config_path, "r") as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             config: Dict[str, Any] = yaml.safe_load(f)
-        logger.info(f"Configuration loaded successfully from {config_path}")
+        logger.info("Configuration loaded successfully from %s", config_path)
     except (FileNotFoundError, yaml.YAMLError) as e:
-        logger.error(f"Failed to load or parse configuration file: {e}")
+        logger.error("Failed to load or parse configuration file: %s", e)
         return
 
     # 2. Set up MLflow Experiment
@@ -68,7 +68,7 @@ def run_training(config_path: str) -> None:
 
         # 3. Setup Device
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.info(f"Using device: {device}")
+        logger.info("Using device: %s", device)
 
         # 4. Load and Prepare Data
 
@@ -77,30 +77,30 @@ def run_training(config_path: str) -> None:
             test_size=config["data"]["test_size"],
             random_state=config["training"]["seed"],
         )
-        X_train, X_test, y_train, y_test = processor.process_pipeline(
+        x_train, x_test, y_train, y_test = processor.process_pipeline(
             config["data"]["path"]
         )
 
         # Convert to PyTorch Tensors
-        X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+        x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
         y_train_tensor = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
-        X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
+        x_test_tensor = torch.tensor(x_test, dtype=torch.float32)
         y_test_tensor = torch.tensor(y_test, dtype=torch.float32).view(-1, 1)
 
         train_loader = DataLoader(
-            TensorDataset(X_train_tensor, y_train_tensor),
+            TensorDataset(x_train_tensor, y_train_tensor),
             batch_size=config["training"]["batch_size"],
             shuffle=True,
         )
         val_loader = DataLoader(
-            TensorDataset(X_test_tensor, y_test_tensor),
+            TensorDataset(x_test_tensor, y_test_tensor),
             batch_size=config["training"]["batch_size"],
         )
         logger.info("Data loaders created successfully.")
 
         # 5. Initialize Model, Optimizer, and Criterion
         model = SimpleNeuralNetwork(
-            input_size=X_train.shape[1],
+            input_size=x_train.shape[1],
             hidden_sizes=config["model"]["hidden_sizes"],
             output_size=config["model"]["output_size"],
             config={

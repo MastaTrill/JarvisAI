@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/willi/OneDrive/JarvisAI/mlruns/330347387742251253/129477cf62e3454086470584f94eac2f/artifacts
+end_time: 1771776065478
+entry_point_name: ''
+experiment_id: '330347387742251253'
+lifecycle_stage: active
+run_id: 129477cf62e3454086470584f94eac2f
+run_name: bittersweet-hare-230
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1771775977917
+status: 3
+tags: []
+user_id: willi
