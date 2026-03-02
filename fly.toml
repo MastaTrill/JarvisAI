@@ -15,7 +15,7 @@ primary_region = 'ord'
   PYTHON_VERSION = '3.11'
 
 [http_service]
-  internal_port = 8080
+  internal_port = 8000
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
@@ -23,7 +23,7 @@ primary_region = 'ord'
 
 [[services]]
   protocol = 'tcp'
-  internal_port = 8080
+  internal_port = 8000
 
   [[services.ports]]
     port = 80
