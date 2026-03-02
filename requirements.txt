@@ -1,5 +1,6 @@
 # Web Framework
 fastapi>=0.115.0
+azure-functions>=1.20.0
 uvicorn[standard]>=0.32.0
 starlette>=0.41.0
 

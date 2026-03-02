@@ -1,26 +1,27 @@
-"""Jarvis AI Platform API module.
-
-This module provides the FastAPI endpoints and integrations for the Jarvis AI Platform.
+"""
+Jarvis AI API main module.
+Provides endpoints for model management, training, data upload, system monitoring, and more.
 """
 
 # Standard library imports
 import sys
 import os
+import glob
+import importlib.util
+import logging
+import tempfile
+import asyncio
+import json
 import time
 import uuid
-import glob
-import logging
-import asyncio
-import tempfile
-import importlib.util
 from pathlib import Path
 from datetime import datetime, timedelta
 from collections import defaultdict
 
 # Third-party imports
 from typing import List, Dict, Any, Optional
-import pandas as pd
 import numpy as np
+import pandas as pd
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -53,8 +54,66 @@ from sqlalchemy.orm import Session
 
 # First-party imports
 from db_config import SessionLocal
+from database import get_db
 from models_user import User, get_password_hash, verify_password
-from src.interpretability.model_explainer import ModelInterpreter
+from auth_helpers import get_current_user, require_role
+
+try:
+    from jose import JWTError, jwt
+except ImportError:
+    JWTError = None
+    jwt = None
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+# Import Jarvis components
+try:
+    from src.models.numpy_neural_network import SimpleNeuralNetwork
+    from src.models.advanced_neural_network import AdvancedNeuralNetwork
+    from src.data.enhanced_processor import EnhancedDataProcessor
+except ImportError as e:
+    logging.warning("Import warning: %s", e)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Custom OpenAPI tags for documentation
+openapi_tags = [
+    {
+        "name": "Models",
+        "description": "Operations related to model management, training, and inference.",
+    },
+    {
+        "name": "Data",
+        "description": "Endpoints for data upload, processing, and exploration.",
+    },
+    {
+        "name": "System",
+        "description": "System health, metrics, and monitoring endpoints.",
+    },
+    {"name": "WebSocket", "description": "Real-time updates and notifications."},
+]
+
+# API Versioning Scaffold
+api_v1 = APIRouter(prefix="/v1")
+# --- API VERSIONING ---
+# Move endpoints to api_v1 for versioned API support (in progress)
+# app.include_router(api_v1)
+
+# Import and mount admin dashboard,
+# admin API,
+# model versioning API,
+# device API,
+# external API,
+# plugins API,
+# drift API,
+# audit API,
+# collab API,
+# infra API,
+# and security API
 from admin_dashboard import router as admin_router
 from admin_api import router as admin_api_router
 from models_versioning_api import router as versioning_router
@@ -68,79 +127,24 @@ from infra_api import router as infra_router
 from security_api import router as security_router
 from ml_advanced_api import router as ml_advanced_router
 from automation_api import router as automation_router
-from models_registry import create_model, get_models, activate_model
-from jobs_persistent import create_job, update_job_status, get_job
-
-try:
-    from jose import JWTError, jwt
-except ImportError:
-    JWTError = None
-    jwt = None
-
-try:
-    from slowapi import Limiter
-    from slowapi.util import get_remote_address
-    from slowapi.errors import RateLimitExceeded
-    from slowapi.middleware import SlowAPIMiddleware
-except ImportError:
-    Limiter = None
-    get_remote_address = None
-    RateLimitExceeded = None
-    SlowAPIMiddleware = None
-
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Custom OpenAPI tags for documentation
-openapi_tags = [
-    {
-        "name": "Models",
-        "description": (
-            "Operations related to model management, " "training, and inference."
-        ),
-    },
-    {
-        "name": "Data",
-        "description": ("Endpoints for data upload, processing, " "and exploration."),
-    },
-    {
-        "name": "System",
-        "description": ("System health, metrics, and monitoring endpoints."),
-    },
-    {
-        "name": "WebSocket",
-        "description": "Real-time updates and notifications.",
-    },
-]
-
-# API Versioning Scaffold
-api_v1 = APIRouter(prefix="/v1")
-# --- API VERSIONING ---
-# Move endpoints to api_v1 for versioned API support (in progress)
-# app.include_router(api_v1)
 
 app = FastAPI(
     title="Jarvis AI API",
-    description=(
-        "<b>Jarvis AI Platform</b><br>"
-        "<i>Advanced Machine Learning Platform API</i><br>"
-        "<br>"
-        "<b>Features:</b>"
-        "<ul>"
-        "<li>Model training, management, and inference</li>"
-        "<li>Data upload, processing, and validation</li>"
-        "<li>Real-time training updates via WebSocket</li>"
-        "<li>System health and monitoring endpoints</li>"
-        "</ul>"
-        "<b>Authentication:</b> (OAuth2, API Key, Admin Dashboard)"
-        "<br>"
-        "<b>Contact:</b> <a href='mailto:admin@jarvis.ai'>admin@jarvis.ai</a>"
-    ),
+    description="""
+    <b>Jarvis AI Platform</b><br>
+    <i>Advanced Machine Learning Platform API</i><br>
+    <br>
+    <b>Features:</b>
+    <ul>
+    <li>Model training, management, and inference</li>
+    <li>Data upload, processing, and validation</li>
+    <li>Real-time training updates via WebSocket</li>
+    <li>System health and monitoring endpoints</li>
+    </ul>
+    <b>Authentication:</b> (OAuth2, API Key, Admin Dashboard)
+    <br>
+    <b>Contact:</b> <a href='mailto:admin@jarvis.ai'>admin@jarvis.ai</a>
+    """,
     version="1.0.0",
     openapi_tags=openapi_tags,
     docs_url="/docs",
@@ -159,56 +163,25 @@ app.include_router(infra_router)
 app.include_router(security_router)
 app.include_router(ml_advanced_router)
 app.include_router(automation_router)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
+    name="static",
 )
-
-# Add HTTPS redirect middleware (optional, for production)
-if os.environ.get("JARVIS_FORCE_HTTPS", "0") == "1":
-    app.add_middleware(HTTPSRedirectMiddleware)
-
-
-# Add secure headers middleware
-class SecureHeadersMiddleware(BaseHTTPMiddleware):
-    """Middleware to add secure headers."""
-
-    async def dispatch(self, request, call_next):
-        """Add secure headers to each response."""
-        response: Response = await call_next(request)
-        response.headers["Strict-Transport-Security"] = (
-            "max-age=63072000; includeSubDomains; preload"
-        )
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "no-referrer"
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
-        return response
-
-
-app.add_middleware(SecureHeadersMiddleware)
-
-# --- AUTH CONFIG ---
-SECRET_KEY = os.environ.get("JARVIS_SECRET_KEY", "supersecretkey")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 # Serve dashboard at root URL
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
+    """Serve the dashboard HTML page."""
     static_path = os.path.join(
         os.path.dirname(__file__), "static", "dashboard", "index.html"
     )
     with open(static_path, "r", encoding="utf-8") as f:
-        return f.read()
+        html = f.read()
+    # Unique marker for debug
+    html += "<!-- JARVIS_DEBUG_MARKER_2026 -->"
+    return html
 
 
 # --- XAI/Interpretability Endpoints ---
@@ -312,173 +285,61 @@ async def get_counterfactuals(model_name: str, instance_idx: int = 0):
                     "change_required": float(needed_change),
                 }
             )
+
     return {"counterfactuals": counterfactuals}
 
 
-from fastapi import (
-    FastAPI,
-    HTTPException,
-    UploadFile,
-    File,
-    BackgroundTasks,
-    WebSocket,
-    WebSocketDisconnect,
-    Security,
-    Depends,
-    APIRouter,
-)
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
-from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
-import pandas as pd
-import numpy as np
-import json
-import logging
-import tempfile
-import os
-import asyncio
-from datetime import datetime
-from pathlib import Path
-import sys
-import time
-import uuid
-from collections import defaultdict
-import importlib.util
-import glob
-
-# User management imports
-from sqlalchemy.orm import Session
-from db_config import SessionLocal
-from models_user import User, get_password_hash, verify_password
-from jose import JWTError, jwt
-from datetime import timedelta
-
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-# Import Jarvis components
-try:
-    from src.models.numpy_neural_network import SimpleNeuralNetwork
-    from src.models.advanced_neural_network import AdvancedNeuralNetwork
-    from src.data.enhanced_processor import EnhancedDataProcessor
-    from src.training.numpy_trainer import NumpyTrainer
-except ImportError as e:
-    logging.warning(f"Import warning: {e}")
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Custom OpenAPI tags for documentation
-openapi_tags = [
-    {
-        "name": "Models",
-        "description": "Operations related to model management, training, and inference.",
-    },
-    {
-        "name": "Data",
-        "description": "Endpoints for data upload, processing, and exploration.",
-    },
-    {
-        "name": "System",
-        "description": "System health, metrics, and monitoring endpoints.",
-    },
-    {"name": "WebSocket", "description": "Real-time updates and notifications."},
-]
-
-# API Versioning Scaffold
-api_v1 = APIRouter(prefix="/v1")
-# --- API VERSIONING ---
-# Move endpoints to api_v1 for versioned API support (in progress)
-# app.include_router(api_v1)
-
-
-# Import and mount admin dashboard, admin API, model versioning API, device API, external API, plugins API, drift API, audit API, collab API, infra API, and security API
-from admin_dashboard import router as admin_router
-from admin_api import router as admin_api_router
-from models_versioning_api import router as versioning_router
-from models_device_api import router as device_router
-from models_external_api import router as external_router
-from plugins_api import router as plugins_router
-from models_drift_api import router as drift_router
-from audit_api import router as audit_router
-from collab_api import router as collab_router
-from infra_api import router as infra_router
-from security_api import router as security_router
-from ml_advanced_api import router as ml_advanced_router
-from fastapi.staticfiles import StaticFiles
-from automation_api import router as automation_router
-
-app = FastAPI(
-    title="Jarvis AI API",
-    description="""
-    <b>Jarvis AI Platform</b><br>
-    <i>Advanced Machine Learning Platform API</i><br>
-    <br>
-    <b>Features:</b>
-    <ul>
-    <li>Model training, management, and inference</li>
-    <li>Data upload, processing, and validation</li>
-    <li>Real-time training updates via WebSocket</li>
-    <li>System health and monitoring endpoints</li>
-    </ul>
-    <b>Authentication:</b> (OAuth2, API Key, Admin Dashboard)
-    <br>
-    <b>Contact:</b> <a href='mailto:admin@jarvis.ai'>admin@jarvis.ai</a>
-    """,
-    version="1.0.0",
-    openapi_tags=openapi_tags,
-    docs_url="/docs",
-    redoc_url="/redoc",
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify actual origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Add HTTPS redirect middleware (optional, for production)
+if os.environ.get("JARVIS_FORCE_HTTPS", "0") == "1":
+    app.add_middleware(HTTPSRedirectMiddleware)
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+# Add secure headers middleware
+class SecureHeadersMiddleware(BaseHTTPMiddleware):
+    """Middleware to add secure headers to responses."""
+
+    async def dispatch(self, request, call_next):
+        response: Response = await call_next(request)
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains; preload"
+        )
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
+        return response
 
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
-):
-    credentials_exception = HTTPException(
-        status_code=401,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        if not isinstance(username, str) or not username:
-            raise credentials_exception
-    except Exception as exc:
-        raise credentials_exception
-    user = db.query(User).filter(User.username == username).first()
-    if user is None:
-        raise credentials_exception
-    return user
+app.add_middleware(SecureHeadersMiddleware)
+
+
+# --- AUTH CONFIG ---
+SECRET_KEY = os.environ.get("JARVIS_SECRET_KEY", "supersecretkey")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 # --- AUTH ENDPOINTS ---
 class Token(BaseModel):
+    """Token response model."""
+
     access_token: str
     token_type: str
 
 
 class UserCreate(BaseModel):
+    """User creation model."""
+
     username: str
     password: str
     email: str
@@ -486,6 +347,7 @@ class UserCreate(BaseModel):
 
 @app.post("/register", tags=["System"])
 def register(user: UserCreate, db: Session = Depends(get_db)):
+    """Register a new user."""
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
@@ -499,22 +361,11 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     return {"msg": "User registered successfully"}
 
 
-from datetime import timedelta
-from jose import jwt
-
-
-def create_access_token(data: dict, expires_delta: timedelta):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
 @app.post("/token", response_model=Token, tags=["System"])
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
+    """Login and get access token."""
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
@@ -527,6 +378,7 @@ def login(
 
 @app.get("/me", tags=["System"])
 def read_users_me(current_user: User = Depends(get_current_user)):
+    """Get current user info."""
     return {
         "username": current_user.username,
         "email": current_user.email,
@@ -552,10 +404,13 @@ system_metrics = {"cpu_usage": [], "memory_usage": [], "gpu_usage": [], "timesta
 
 # WebSocket Connection Manager
 class ConnectionManager:
+    """Manages WebSocket connections."""
+
     def __init__(self):
         self.active_connections: List[Dict] = []
 
     async def connect(self, websocket: WebSocket, client_id: str):
+        """Connect a new WebSocket client."""
         await websocket.accept()
         self.active_connections.append(
             {
@@ -566,19 +421,22 @@ class ConnectionManager:
         )
 
     def disconnect(self, websocket: WebSocket):
+        """Disconnect a WebSocket client."""
         self.active_connections = [
             conn for conn in self.active_connections if conn["websocket"] != websocket
         ]
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
+        """Send a personal message to a WebSocket client."""
         await websocket.send_text(message)
 
     async def broadcast_training_update(self, data: dict):
+        """Broadcast training update to all clients."""
         disconnected = []
         for connection in self.active_connections:
             try:
                 await connection["websocket"].send_json(data)
-            except:
+            except Exception:
                 disconnected.append(connection)
 
         # Remove disconnected clients
@@ -586,6 +444,7 @@ class ConnectionManager:
             self.active_connections.remove(conn)
 
     async def send_system_metrics(self, metrics: dict):
+        """Send system metrics to all clients."""
         await self.broadcast_training_update(
             {"type": "system_metrics", "data": metrics}
         )
@@ -623,23 +482,14 @@ class DataInfo(BaseModel):
     missing_values: Dict[str, int]
 
 
-# OAuth2 and API Key security schemes
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
-# API key header (future use)
-try:
-    from fastapi.security import APIKeyHeader
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
-    api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-except ImportError:
-    api_key_header = None
-
-
-# Dummy authentication dependency (replace with real logic)
-# Remove duplicate get_current_user definition
+# Import authentication helpers from auth_helpers.py
+from auth_helpers import get_current_user, require_role
 
 
 def get_api_key(api_key: str = Security(api_key_header)):
-    """API key validation to be implemented."""
+    """API key validation."""
     if api_key == "supersecretkey":
         return api_key
     raise HTTPException(status_code=403, detail="Invalid API Key")
@@ -648,10 +498,33 @@ def get_api_key(api_key: str = Security(api_key_header)):
 # API Routes
 
 
-# Remove duplicate health_check definition
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "models_loaded": len(models),
+        "processors_loaded": len(processors),
+    }
 
 
-# Remove duplicate list_models definition
+@app.get("/models", response_model=List[ModelInfo])
+async def list_models():
+    """List all available models."""
+    model_list = []
+
+    for name, model_data in models.items():
+        model_info = ModelInfo(
+            name=name,
+            type=model_data.get("type", "unknown"),
+            status=model_data.get("status", "unknown"),
+            created_at=model_data.get("created_at", ""),
+            metrics=model_data.get("metrics", {}),
+        )
+        model_list.append(model_info)
+
+    return model_list
 
 
 @app.post("/models/{model_name}/train")
@@ -683,7 +556,7 @@ async def train_model(
         }
 
     except Exception as e:
-        logger.error("Error starting training: %s", e)
+        logger.error(f"Error starting training: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -692,32 +565,25 @@ async def _train_model_background(
 ):
     """Background task for model training."""
     try:
-        # Initialize data processor
         processor = EnhancedDataProcessor(project_name=model_name)
-
-        # Load or generate data
         df = None
-        target_col = config.get("target_col", "target")
-        X = None
-        y = None
         if data_source and os.path.exists(data_source):
             df = processor.load_data(data_source)
-            if df is not None and target_col in df.columns:
-                X = df.drop(columns=[target_col])
-                y = df[target_col]
-            else:
-                raise ValueError("Target column not found in data.")
-
-        # Split data
+        if df is None:
+            raise HTTPException(status_code=400, detail="No data found for training")
+        target_col = config.get("target_col")
+        if not target_col or target_col not in df.columns:
+            raise HTTPException(
+                status_code=400, detail="Target column not specified or missing"
+            )
+        y = df[target_col]
+        x = df.drop(columns=[target_col])
         from sklearn.model_selection import train_test_split
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=config.get("test_size", 0.2), random_state=42
+        x_train, x_test, y_train, y_test = train_test_split(
+            x, y, test_size=config.get("test_size", 0.2), random_state=42
         )
-
-        # Initialize model
-        input_size = X_train.shape[1]
-
+        input_size = x_train.shape[1]
         if model_type == "advanced":
             model = AdvancedNeuralNetwork(
                 input_size=input_size,
@@ -736,32 +602,23 @@ async def _train_model_background(
                 hidden_sizes=config.get("hidden_sizes", [64, 32]),
                 output_size=1,
             )
-
-        # Train model
         model.fit(
-            X_train.values,
+            x_train.values,
             y_train.values,
             epochs=config.get("epochs", 100),
             batch_size=config.get("batch_size", 32),
         )
-
-        # Calculate final metrics
-        train_pred = model.predict(X_train.values)
-        test_pred = model.predict(X_test.values)
-
+        train_pred = model.predict(x_train.values)
+        test_pred = model.predict(x_test.values)
         from sklearn.metrics import mean_squared_error, r2_score
 
         train_mse = mean_squared_error(y_train, train_pred)
         test_mse = mean_squared_error(y_test, test_pred)
         train_r2 = r2_score(y_train, train_pred)
         test_r2 = r2_score(y_test, test_pred)
-
-        # Save model
         model_path = f"models/{model_name}.pkl"
         os.makedirs("models", exist_ok=True)
         model.save(model_path)
-
-        # Store model info
         models[model_name] = {
             "model": model,
             "type": model_type,
@@ -776,18 +633,13 @@ async def _train_model_background(
             "config": config,
             "model_path": model_path,
         }
-
         processors[model_name] = processor
-
-        # Update training status
         training_status[model_name] = {
             "status": "completed",
             "completed_at": datetime.now().isoformat(),
             "progress": 100,
         }
-
         logger.info("Successfully trained model '%s'", model_name)
-
     except Exception as e:
         logger.error("Error training model '%s': %s", model_name, e)
         training_status[model_name] = {
@@ -797,7 +649,13 @@ async def _train_model_background(
         }
 
 
-# Remove duplicate get_training_status definition
+@app.get("/models/{model_name}/status")
+async def get_training_status(model_name: str):
+    """Get training status for a model."""
+    if model_name not in training_status:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    return training_status[model_name]
 
 
 @app.post("/models/{model_name}/predict")
@@ -924,7 +782,7 @@ async def get_model_metrics(model_name: str):
 
 
 @app.websocket("/ws/train/{client_id}")
-async def websocket_train_endpoint(websocket: WebSocket, client_id: str):
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
     """WebSocket endpoint for real-time training updates."""
     await manager.connect(websocket, client_id)
 
@@ -935,11 +793,11 @@ async def websocket_train_endpoint(websocket: WebSocket, client_id: str):
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        logger.info("Client %s disconnected", client_id)
+        logger.info(f"Client {client_id} disconnected")
 
 
 @app.websocket("/ws/{client_id}")
-async def websocket_update_endpoint(websocket: WebSocket, client_id: str):
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
     """WebSocket endpoint for real-time updates."""
     await manager.connect(websocket, client_id)
     try:
@@ -959,7 +817,7 @@ async def websocket_notifications(websocket: WebSocket):
     try:
         while True:
             await websocket.receive_text()  # Keep connection open
-    except WebSocketDisconnect:
+    except Exception:
         pass
 
 
@@ -969,7 +827,6 @@ notification_clients = set()
 
 @app.post("/notify", tags=["WebSocket"], summary="Broadcast a notification")
 async def broadcast_notification(message: str):
-    """Broadcast a notification to all connected clients."""
     for ws in list(notification_clients):
         try:
             await ws.send_json({"type": "notification", "message": message})
@@ -979,7 +836,7 @@ async def broadcast_notification(message: str):
 
 
 @app.get("/api/models/list")
-async def api_list_models():
+async def list_models():
     """Get list of all models with their status."""
     model_list = []
     for name, data in models.items():
@@ -997,7 +854,7 @@ async def api_list_models():
 
 
 @app.get("/api/training/status/{model_name}")
-async def api_get_training_status(model_name: str):
+async def get_training_status(model_name: str):
     """Get current training status for a model."""
     if model_name not in training_status:
         return {"status": "not_found", "message": "Training not found"}
@@ -1236,7 +1093,6 @@ async def rate_limit_handler(request, exc):
 from slowapi.middleware import SlowAPIMiddleware
 
 app.add_middleware(SlowAPIMiddleware)
-app = limiter.limit("100/minute")(app)
 # Audit logging planned (see audit_trail.py)
 
 # Model registry, jobs, and user data are now persistent (see db_config.py)
@@ -1271,13 +1127,14 @@ def list_registered_models():
 
 
 @app.post("/models/activate", tags=["Models"], summary="Activate a model for inference")
-def activate_model_in_memory(model_name: str):
-    for m in model_registry.keys():
+def activate_model(model_name: str):
+    for m in model_registry:
         model_registry[m]["active"] = False
     if model_name in model_registry:
         model_registry[model_name]["active"] = True
         return {"message": f"Model '{model_name}' activated."}
-    raise HTTPException(status_code=404, detail="Model not found")
+    else:
+        raise HTTPException(status_code=404, detail="Model not found")
 
 
 from fastapi import BackgroundTasks
@@ -1288,13 +1145,15 @@ jobs = {}
 
 
 def long_running_task(job_id: str, duration: int = 10):
+    import time
+
     jobs[job_id] = {"status": "running"}
     time.sleep(duration)
     jobs[job_id] = {"status": "completed"}
 
 
 @app.post("/jobs/start", tags=["System"], summary="Start a background job")
-def start_job(duration: int = 10, background_tasks: BackgroundTasks = Depends()):
+def start_job(duration: int = 10, background_tasks: BackgroundTasks = None):
     job_id = str(uuid.uuid4())
     background_tasks.add_task(long_running_task, job_id, duration)
     jobs[job_id] = {"status": "queued"}
@@ -1340,16 +1199,14 @@ def ensemble_predict(model_names: list, data: list):
 
 # Plugin system: auto-register plugins in plugins/ folder
 def register_plugins(app):
-    """Auto-register plugins in plugins/ folder."""
     for plugin_path in glob.glob("plugins/*.py"):
         if plugin_path.endswith("__init__.py"):
             continue
         spec = importlib.util.spec_from_file_location("plugin", plugin_path)
-        if spec is not None and spec.loader is not None:
-            plugin = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(plugin)
-            if hasattr(plugin, "register"):
-                plugin.register(app)
+        plugin = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(plugin)
+        if hasattr(plugin, "register"):
+            plugin.register(app)
 
 
 register_plugins(app)
@@ -1402,13 +1259,13 @@ def list_registered_models_db():
     summary="Activate a model for inference (persistent)",
 )
 def activate_model_db(model_name: str):
-    """Activate a model for inference (persistent)."""
     session = SessionLocal()
     model = activate_model(session, model_name)
     session.close()
     if model:
         return {"message": f"Model '{model_name}' activated."}
-    raise HTTPException(status_code=404, detail="Model not found")
+    else:
+        raise HTTPException(status_code=404, detail="Model not found")
 
 
 # Persistent job management (see jobs_persistent.py)
@@ -1416,8 +1273,9 @@ from jobs_persistent import create_job, update_job_status, get_job
 
 
 @app.post("/jobs/start", tags=["System"], summary="Start a background job (persistent)")
-def start_job_db(duration: int = 10, background_tasks: BackgroundTasks = Depends()):
-    """Start a background job (persistent)."""
+def start_job_db(duration: int = 10, background_tasks: BackgroundTasks = None):
+    import uuid, time
+
     session = SessionLocal()
     job_id = str(uuid.uuid4())
     create_job(session, job_id, status="queued")
@@ -1426,7 +1284,7 @@ def start_job_db(duration: int = 10, background_tasks: BackgroundTasks = Depends
         update_job_status(session, job_id, status="running")
         time.sleep(duration)
         update_job_status(
-            session, job_id, status="completed", completed_at=datetime.now()
+            session, job_id, status="completed", completed_at=datetime.utcnow()
         )
 
     background_tasks.add_task(run_job)
@@ -1450,7 +1308,14 @@ def job_status_db(job_id: str):
 def cancel_job_db(job_id: str):
     session = SessionLocal()
     job = update_job_status(session, job_id, status="cancelled", cancelled=True)
+
     session.close()
     if job:
         return {"job_id": job_id, "status": "cancelled"}
     return {"job_id": job_id, "status": "not found"}
+
+    # FastAPI/uvicorn entry point
+    if __name__ == "__main__":
+        import uvicorn
+
+        uvicorn.run("api:app", host="0.0.0.0", port=8080, reload=True)
