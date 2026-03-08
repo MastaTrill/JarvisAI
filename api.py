@@ -1,6 +1,7 @@
 """
 Jarvis AI API main module.
-Provides endpoints for model management, training, data upload, system monitoring, and more.
+
+Provides endpoints for model management, training, data upload, system monitoring.
 """
 
 # Standard library imports
@@ -9,19 +10,15 @@ import os
 import glob
 import importlib.util
 import logging
-import tempfile
 import asyncio
-import json
-import time
 import uuid
 from pathlib import Path
 from datetime import datetime, timedelta
-from collections import defaultdict
+from typing import List, Dict, Any, Optional
 
 # Third-party imports
-from typing import List, Dict, Any, Optional
 import numpy as np
-import pandas as pd
+import requests
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -33,42 +30,45 @@ from fastapi import (
     Security,
     Depends,
     APIRouter,
+    status,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
-from fastapi.responses import (
-    JSONResponse,
-    PlainTextResponse,
-    HTMLResponse,
-)
+from fastapi.responses import JSONResponse, PlainTextResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import (
-    OAuth2PasswordBearer,
-    OAuth2PasswordRequestForm,
-    APIKeyHeader,
-)
+from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # First-party imports
+from cloud_connectors import upload_to_cloud, download_from_cloud
 from db_config import SessionLocal
 from database import get_db
 from models_user import User, get_password_hash, verify_password
-from auth_helpers import get_current_user, require_role
+from auth_helpers import get_current_user
+from admin_dashboard import router as admin_router
+from admin_api import router as admin_api_router
+from models_versioning_api import router as versioning_router
+from models_device_api import router as device_router
+from models_external_api import router as external_router
+from plugins_api import router as plugins_router
+from models_drift_api import router as drift_router
+from audit_api import router as audit_router
+from collab_api import router as collab_router
+from infra_api import router as infra_router
+from security_api import router as security_router
+from ml_advanced_api import router as ml_advanced_router
+from automation_api import router as automation_router
+from src.interpretability.model_explainer import ModelInterpreter
+from models_registry import create_model, get_models, activate_model
+from jobs_persistent import create_job, update_job_status, get_job
 
-try:
-    from jose import JWTError, jwt
-except ImportError:
-    JWTError = None
-    jwt = None
-
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-# Import Jarvis components
 try:
     from src.models.numpy_neural_network import SimpleNeuralNetwork
     from src.models.advanced_neural_network import AdvancedNeuralNetwork
@@ -79,6 +79,10 @@ except ImportError as e:
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 # Custom OpenAPI tags for documentation
 openapi_tags = [
@@ -102,31 +106,6 @@ api_v1 = APIRouter(prefix="/v1")
 # --- API VERSIONING ---
 # Move endpoints to api_v1 for versioned API support (in progress)
 # app.include_router(api_v1)
-
-# Import and mount admin dashboard,
-# admin API,
-# model versioning API,
-# device API,
-# external API,
-# plugins API,
-# drift API,
-# audit API,
-# collab API,
-# infra API,
-# and security API
-from admin_dashboard import router as admin_router
-from admin_api import router as admin_api_router
-from models_versioning_api import router as versioning_router
-from models_device_api import router as device_router
-from models_external_api import router as external_router
-from plugins_api import router as plugins_router
-from models_drift_api import router as drift_router
-from audit_api import router as audit_router
-from collab_api import router as collab_router
-from infra_api import router as infra_router
-from security_api import router as security_router
-from ml_advanced_api import router as ml_advanced_router
-from automation_api import router as automation_router
 
 app = FastAPI(
     title="Jarvis AI API",
@@ -185,7 +164,6 @@ def serve_dashboard():
 
 
 # --- XAI/Interpretability Endpoints ---
-from src.interpretability.model_explainer import ModelInterpreter
 
 
 @app.get("/api/xai/global/{model_name}")
@@ -348,17 +326,30 @@ class UserCreate(BaseModel):
 @app.post("/register", tags=["System"])
 def register(user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user."""
-    db_user = db.query(User).filter(User.username == user.username).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    hashed_password = get_password_hash(user.password)
-    new_user = User(
-        username=user.username, hashed_password=hashed_password, email=user.email
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return {"msg": "User registered successfully"}
+    try:
+        db_user = db.query(User).filter(User.username == user.username).first()
+        if db_user:
+            raise HTTPException(status_code=400, detail="Username already registered")
+        hashed_password = get_password_hash(user.password)
+        new_user = User(
+            username=user.username, hashed_password=hashed_password, email=user.email
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        # Audit log
+        try:
+            from audit_trail import log_audit_event
+
+            log_audit_event(user.username, "register", "user", f"email={user.email}")
+        except Exception as e:
+            logger.warning(f"Audit logging failed: {e}")
+        return {"msg": "User registered successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Registration failed: %s", e)
+        raise HTTPException(status_code=400, detail="Unable to register user") from e
 
 
 @app.post("/token", response_model=Token, tags=["System"])
@@ -369,6 +360,8 @@ def login(
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
+    from auth_helpers import create_access_token
+
     access_token = create_access_token(
         data={"sub": user.username},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
@@ -384,7 +377,6 @@ def read_users_me(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "role": getattr(current_user.role, "name", None),
     }
-
 
 
 # Global variables for model management
@@ -460,6 +452,10 @@ class PredictRequest(BaseModel):
     data: List[List[float]]
 
 
+# Export PredictRequest for import in main_api.py
+__all__ = ["PredictRequest"]
+
+
 class ModelInfo(BaseModel):
     name: str
     type: str
@@ -496,7 +492,7 @@ def get_api_key(api_key: str = Security(api_key_header)):
 async def health_check():
     """Health check endpoint."""
     return {
-        "status": "healthy",
+        "status": "ok",
         "timestamp": datetime.now().isoformat(),
         "models_loaded": len(models),
         "processors_loaded": len(processors),
@@ -524,6 +520,10 @@ async def list_models():
 @app.post("/models/{model_name}/train")
 async def train_model(
     model_name: str, request: TrainRequest, background_tasks: BackgroundTasks
+):
+    """Train a model with the provided configuration."""
+    try:
+        training_status[model_name] = {
             "status": "training",
             "started_at": datetime.now().isoformat(),
             "progress": 0,
@@ -825,7 +825,7 @@ async def broadcast_notification(message: str):
 
 
 @app.get("/api/models/list")
-async def list_models():
+async def list_models_detailed():
     """Get list of all models with their status."""
     model_list = []
     for name, data in models.items():
@@ -1227,6 +1227,18 @@ def register_model_db(model_name: str, description: str = "", accuracy: float = 
         session, model_name, description, accuracy if accuracy is not None else 0.0
     )
     session.close()
+    # Audit log
+    try:
+        from audit_trail import log_audit_event
+
+        log_audit_event(
+            "system",
+            "register_model",
+            model_name,
+            f"desc={description}, acc={accuracy}",
+        )
+    except Exception as e:
+        logger.warning(f"Audit logging failed: {e}")
     return {"message": f"Model '{model_name}' registered.", "model": model.name}
 
 
@@ -1277,6 +1289,13 @@ def start_job_db(duration: int = 10, background_tasks: BackgroundTasks = None):
         )
 
     background_tasks.add_task(run_job)
+    # Audit log
+    try:
+        from audit_trail import log_audit_event
+
+        log_audit_event("system", "start_job", job_id, f"duration={duration}")
+    except Exception as e:
+        logger.warning(f"Audit logging failed: {e}")
     session.close()
     return {"job_id": job_id, "status": "queued"}
 
@@ -1287,6 +1306,18 @@ def start_job_db(duration: int = 10, background_tasks: BackgroundTasks = None):
 def job_status_db(job_id: str):
     session = SessionLocal()
     job = get_job(session, job_id)
+    # Audit log
+    try:
+        from audit_trail import log_audit_event
+
+        log_audit_event(
+            "system",
+            "job_status",
+            job_id,
+            f"status={getattr(job, 'status', 'not found')}",
+        )
+    except Exception as e:
+        logger.warning(f"Audit logging failed: {e}")
     session.close()
     if job:
         return {"job_id": job.job_id, "status": job.status, "cancelled": job.cancelled}
@@ -1297,14 +1328,261 @@ def job_status_db(job_id: str):
 def cancel_job_db(job_id: str):
     session = SessionLocal()
     job = update_job_status(session, job_id, status="cancelled", cancelled=True)
+    # Audit log
+    try:
+        from audit_trail import log_audit_event
 
+        log_audit_event("system", "cancel_job", job_id, "Job cancelled")
+    except Exception as e:
+        logger.warning(f"Audit logging failed: {e}")
     session.close()
     if job:
         return {"job_id": job_id, "status": "cancelled"}
     return {"job_id": job_id, "status": "not found"}
 
-    # FastAPI/uvicorn entry point
-    if __name__ == "__main__":
-        import uvicorn
 
-        uvicorn.run("api:app", host="0.0.0.0", port=8080, reload=True)
+# --- Notification System ---
+def send_notification(method: str, target: str, message: str):
+    """Send notification via webhook or email."""
+    try:
+        if method == "webhook" and target:
+            requests.post(target, json={"message": message}, timeout=5)
+        elif method == "email" and target:
+            # Placeholder for email sending logic
+            pass
+        # Audit log
+        try:
+            from audit_trail import log_audit_event
+
+            log_audit_event(
+                "system", "send_notification", method, f"target={target}, msg={message}"
+            )
+        except Exception as e:
+            logger.warning("Audit logging failed: %s", e)
+        return {
+            "status": "sent",
+            "method": method,
+            "target": target,
+            "message": message,
+        }
+    except Exception as e:
+        logger.error("Notification error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/notifications/send", tags=["System"], summary="Send a notification")
+async def send_notification_endpoint(method: str, target: str, message: str):
+    """Endpoint to send notifications."""
+    return send_notification(method, target, message)
+
+
+# --- Cloud Storage Integration ---
+@app.post("/cloud/upload", tags=["Data"], summary="Upload file to cloud storage")
+async def cloud_upload(filename: str, provider: str = "s3", bucket: str = None):
+    """Upload a file to cloud storage."""
+    try:
+        file_path = Path("data/uploads") / filename
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        result = upload_to_cloud(str(file_path), provider, bucket)
+        # Audit log
+        try:
+            from audit_trail import log_audit_event
+
+            log_audit_event(
+                "system", "cloud_upload", provider, f"bucket={bucket}, file={filename}"
+            )
+        except Exception as e:
+            logger.warning("Audit logging failed: %s", e)
+        return {
+            "status": "uploaded",
+            "provider": provider,
+            "bucket": bucket,
+            "filename": filename,
+            "result": result,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Cloud upload error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/cloud/download", tags=["Data"], summary="Download file from cloud storage")
+async def cloud_download(filename: str, provider: str = "s3", bucket: str = None):
+    """Download a file from cloud storage."""
+    try:
+        result = download_from_cloud(filename, provider, bucket)
+        # Audit log
+        try:
+            from audit_trail import log_audit_event
+
+            log_audit_event(
+                "system",
+                "cloud_download",
+                provider,
+                f"bucket={bucket}, file={filename}",
+            )
+        except Exception as e:
+            logger.warning("Audit logging failed: %s", e)
+        return {
+            "status": "downloaded",
+            "provider": provider,
+            "bucket": bucket,
+            "filename": filename,
+            "result": result,
+        }
+    except Exception as e:
+        logger.error("Cloud download error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# --- GPU Inference & External Model Server Integration ---
+@app.post(
+    "/models/{model_name}/predict_gpu",
+    tags=["Models"],
+    summary="Predict using GPU (if available)",
+)
+async def predict_gpu(model_name: str, request: PredictRequest):
+    """Make predictions using GPU if available."""
+    if model_name not in models:
+        raise HTTPException(status_code=404, detail="Model not found")
+    model_data = models[model_name]
+    if model_data["status"] != "trained":
+        raise HTTPException(status_code=400, detail="Model is not trained")
+    try:
+        model = model_data["model"]
+        input_data = np.array(request.data)
+        # Example: Use GPU if available (pseudo-code, replace with actual GPU logic)
+        if hasattr(model, "predict_gpu"):
+            predictions = model.predict_gpu(input_data)
+        else:
+            predictions = model.predict(input_data)
+        # Audit log
+        try:
+            from audit_trail import log_audit_event
+
+            log_audit_event(
+                "system", "predict_gpu", model_name, f"data_len={len(request.data)}"
+            )
+        except Exception as e:
+            logger.warning("Audit logging failed: %s", e)
+        return {
+            "model_name": model_name,
+            "predictions": predictions.tolist(),
+            "timestamp": datetime.now().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error in GPU prediction: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post(
+    "/models/{model_name}/predict_external",
+    tags=["Models"],
+    summary="Predict using external model server",
+)
+async def predict_external(model_name: str, request: PredictRequest):
+    """Make predictions using an external model server."""
+    # Example external server URL (should be configurable)
+    external_url = f"http://external-model-server:8080/predict/{model_name}"
+    try:
+        response = requests.post(external_url, json={"data": request.data}, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        # Audit log
+        try:
+            from audit_trail import log_audit_event
+
+            log_audit_event(
+                "system",
+                "predict_external",
+                model_name,
+                f"data_len={len(request.data)}",
+            )
+        except Exception as e:
+            logger.warning("Audit logging failed: %s", e)
+        return result
+    except Exception as e:
+        logger.error("Error in external prediction: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# --- GDPR/CCPA Compliance Utilities ---
+def anonymize_user_data(user_id: str, db: Session):
+    """Anonymize user data for GDPR/CCPA compliance."""
+    user = db.query(User).filter(User.username == user_id).first()
+    if user:
+        user.email = None
+        user.hashed_password = None
+        db.commit()
+        return True
+    return False
+
+
+def secure_delete_user(user_id: str, db: Session):
+    """Securely delete user data for GDPR/CCPA compliance."""
+    user = db.query(User).filter(User.username == user_id).first()
+    if user:
+        db.delete(user)
+        db.commit()
+        return True
+    return False
+
+
+# --- GDPR/CCPA Compliance Endpoints ---
+@app.post(
+    "/gdpr/anonymize/{user_id}",
+    tags=["System"],
+    summary="Anonymize user data (GDPR/CCPA)",
+)
+def gdpr_anonymize(user_id: str, db: Session = Depends(get_db)):
+    """Anonymize user data for GDPR/CCPA compliance."""
+    try:
+        success = anonymize_user_data(user_id, db)
+    except Exception as e:
+        logger.error("GDPR anonymize failed for %s: %s", user_id, e)
+        return JSONResponse(status_code=404, content={"detail": "User not found"})
+    # Audit log
+    try:
+        from audit_trail import log_audit_event
+
+        log_audit_event(user_id, "anonymize", "user", "GDPR/CCPA anonymization")
+    except Exception as e:
+        logger.warning("Audit logging failed: %s", e)
+    if success:
+        return {"message": f"User {user_id} anonymized."}
+    return JSONResponse(status_code=404, content={"detail": "User not found"})
+
+
+@app.delete(
+    "/gdpr/delete/{user_id}",
+    tags=["System"],
+    summary="Securely delete user data (GDPR/CCPA)",
+)
+def gdpr_delete(user_id: str, db: Session = Depends(get_db)):
+    """Securely delete user data for GDPR/CCPA compliance."""
+    try:
+        success = secure_delete_user(user_id, db)
+    except Exception as e:
+        logger.error("GDPR delete failed for %s: %s", user_id, e)
+        return JSONResponse(status_code=404, content={"detail": "User not found"})
+    # Audit log
+    try:
+        from audit_trail import log_audit_event
+
+        log_audit_event(user_id, "secure_delete", "user", "GDPR/CCPA secure deletion")
+    except Exception as e:
+        logger.warning("Audit logging failed: %s", e)
+    if success:
+        return {"message": f"User {user_id} deleted."}
+    return JSONResponse(status_code=404, content={"detail": "User not found"})
+
+
+# FastAPI/uvicorn entry point
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("api:app", host="0.0.0.0", port=8080, reload=True)

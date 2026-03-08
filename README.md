@@ -11,7 +11,7 @@ This resolves most DLL-related issues for Windows users. After installation, rer
 
 # Jarvis AI Project
 
-A comprehensive AI/ML project template with modern tools and frameworks for machine learning, deep learning, and AI development. This version is optimized to work in environments without GPU support or advanced dependencies.
+A comprehensive AI/ML platform with modular FastAPI backend, versioned API endpoints, admin dashboard, audit/compliance, real-time collaboration, plugin system, and cloud deployment support.
 
 ![Coverage](https://img.shields.io/badge/coverage-unknown-lightgrey)
 ![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
@@ -19,45 +19,98 @@ A comprehensive AI/ML project template with modern tools and frameworks for mach
 
 ## 🚀 Features
 
-- **Machine Learning**: Custom numpy-based neural networks for lightweight deployment
-- **Data Processing**: pandas and numpy for data manipulation and preprocessing
+- **Versioned API**: All endpoints accessible under `/v1` (see OpenAPI docs at `/docs`)
+- **Admin Dashboard**: Manage users, models, jobs, and system settings
+- **Audit & Compliance**: Log actions, export audit logs, GDPR/CCPA endpoints
+- **Collaboration**: Real-time annotation and feedback, WebSocket support
+- **Plugin System**: Easily extend platform with custom plugins
+- **Authentication & RBAC**: OAuth2, API Key, admin role enforcement
+- **Cloud Deployment**: Docker, Azure, and cross-platform scripts
+- **Machine Learning**: Custom numpy-based neural networks, advanced models
+- **Data Processing**: pandas and numpy for data manipulation
 - **Visualization**: matplotlib and seaborn for data visualization
 - **Model Tracking**: Structured logging and metrics tracking
-- **Cross-Platform**: Works on Windows, Linux, and macOS with minimal dependencies
+- **Cross-Platform**: Works on Windows, Linux, and macOS
 
 ## 📁 Project Structure
 
 ```text
-Jarvis/
-├── src/                          # Source code
-│   ├── models/                   # Model definitions
-│   │   ├── numpy_neural_network.py    # Numpy-based neural network
-│   │   ├── neural_network.py          # PyTorch-based (requires torch)
-│   │   └── simple_neural_network.py   # Scikit-learn-based (requires sklearn)
-│   ├── data/                     # Data processing utilities
-│   │   ├── numpy_processor.py         # Numpy-only data processor
-│   │   └── processor.py               # Scikit-learn-based processor
-│   ├── training/                 # Training scripts
-│   │   ├── train_final.py             # Main training script (numpy-based)
-│   │   ├── numpy_trainer.py           # Numpy-based trainer
-│   │   └── trainer.py                 # PyTorch-based trainer
-│   └── inference/                # Inference and prediction code
-│       ├── predict.py                 # Simple inference script
-│       └── predictor.py               # Advanced predictor (requires torch)
-├── notebooks/                    # Jupyter notebooks
-├── data/                         # Dataset storage
-│   ├── raw/                      # Raw data
-│   └── processed/                # Processed data
-├── models/                       # Trained model artifacts
-├── artifacts/                    # Preprocessors and other artifacts
-├── config/                       # Configuration files
-│   └── train_config.yaml         # Training configuration
-├── tests/                        # Unit tests
-│   ├── test_training_numpy.py    # Tests for numpy-based components
-│   ├── test_training.py          # Tests for PyTorch components
-│   └── test_data.py              # Tests for data processing
-└── requirements.txt              # Python dependencies
+JarvisAI/
+├── main_api.py                   # FastAPI main module (all endpoints under /v1)
+├── admin_dashboard.py            # Admin dashboard endpoints
+├── admin_api.py                  # Admin API endpoints
+├── audit_api.py                  # Audit/compliance endpoints
+├── collab_api.py                 # Collaboration endpoints
+├── plugins/                      # Plugin system
+├── database.py                   # Database utilities
+├── src/                          # ML models and data processing
+├── tests/                        # Unit/integration tests
+├── Dockerfile, docker-compose.yml # Deployment configs
+├── azure.yaml                    # Azure deployment config
+├── requirements.txt              # Python dependencies
+└── README.md                     # Project documentation
 ```
+
+## 🔒 Authentication & RBAC
+
+- OAuth2, API Key, and admin dashboard authentication
+- Role-based access control (admin endpoints require admin role)
+
+## 📝 Example API Requests
+
+**Send Notification:**
+
+```http
+POST /v1/notify/send?message=Hello&method=webhook&target=https://example.com/webhook
+```
+
+**Download File from Cloud:**
+
+```http
+GET /v1/cloud/download?filename=data.csv&provider=s3&bucket=mybucket
+```
+
+**GDPR Anonymize User:**
+
+```http
+POST /v1/gdpr/anonymize/johndoe
+```
+
+**GDPR Delete User:**
+
+```http
+DELETE /v1/gdpr/delete/johndoe
+```
+
+## ☁️ Deployment
+
+- **Docker:**
+  - Build: `docker build -t jarvisai .`
+  - Run: `docker run -p 8000:8000 jarvisai`
+- **Azure:**
+  - See `azure.yaml` and `AZURE_DEPLOYMENT_GUIDE.md` for instructions
+- **Local:**
+  - `python main_api.py` or use `uvicorn` for development
+
+## 📚 Documentation
+
+- OpenAPI docs: `/docs`
+- Redoc: `/redoc`
+- See endpoint docstrings for detailed usage
+
+## 🛡️ Compliance
+
+- GDPR/CCPA endpoints for anonymization and secure deletion
+- Audit logging for all critical actions
+
+## 🧩 Plugins
+
+- Add custom plugins in `plugins/` and register with the main API
+
+## 🧪 Testing
+
+- Unit and integration tests in `tests/`
+- Run: `pytest`
 
 ## 🛠️ Setup
 

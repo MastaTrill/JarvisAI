@@ -22,21 +22,6 @@ def get_password_hash(password: str) -> str:
 
 
 # Admin dashboard scaffolding (API endpoints)
-@router.get("/admin/users")
-def list_users(
-    db: Session = Depends(get_db), user: User = Depends(require_role("admin"))
-):
-    users = db.query(User).all()
-    return [
-        {
-            "id": u.id,
-            "username": u.username,
-            "email": u.email,
-            "role": u.role.name if u.role else None,
-            "is_active": u.is_active,
-        }
-        for u in users
-    ]
 
 
 @router.get("/admin/models")

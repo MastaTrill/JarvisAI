@@ -28,7 +28,7 @@ env/
 
 # IDE
 .idea/
-.vscode/
+
 *.swp
 *.swo
 *~
@@ -76,3 +76,15 @@ models/*.h5
 models/*.pt
 uploads/
 temp/
+
+.python_packages
+
+# Local toolchains / binaries (do not commit)
+openJdk-*/
+linux-amd64/
+minikube-linux-amd64
+*.tar.gz
+*.dll
+
+# Local generated artifacts
+audit_log.csv

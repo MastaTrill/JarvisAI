@@ -15,11 +15,10 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
 from dataclasses import dataclass, field
 from enum import Enum
-from contextlib import asynccontextmanager
 import aiohttp
 import backoff
 
@@ -155,7 +154,7 @@ class DataConnector(ABC):
         pass
     
     @abstractmethod
-    async def fetch(self, query: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    async def fetch(self, query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Fetch data from source"""
         pass
     
@@ -233,7 +232,7 @@ class RESTAPIConnector(DataConnector):
         logger.info(f"Disconnected from REST API: {self.config.name}")
     
     @backoff.on_exception(backoff.expo, aiohttp.ClientError, max_tries=3)
-    async def fetch(self, query: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    async def fetch(self, query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Fetch data from REST API"""
         if not self._session:
             await self.connect()
@@ -245,16 +244,18 @@ class RESTAPIConnector(DataConnector):
         body = query.get("body", None)
         
         async with self._rate_limiter:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             try:
+                if not self._session:
+                    raise RuntimeError("HTTP session is not initialized")
                 async with self._session.request(method, endpoint, params=params, json=body) as response:
                     response.raise_for_status()
                     data = await response.json()
                     
                     # Update metrics
-                    latency = (datetime.utcnow() - start_time).total_seconds() * 1000
+                    latency = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                     self._metrics["avg_latency_ms"] = (self._metrics["avg_latency_ms"] + latency) / 2
-                    self._last_fetch = datetime.utcnow()
+                    self._last_fetch = datetime.now(timezone.utc)
                     
                     # Normalize response
                     if isinstance(data, list):
@@ -313,6 +314,8 @@ class WebSocketConnector(DataConnector):
         """Connect to WebSocket"""
         self._session = aiohttp.ClientSession()
         try:
+            if not self._session:
+                raise RuntimeError("WebSocket session is not initialized")
             self._ws = await self._session.ws_connect(
                 self.config.url,
                 heartbeat=self.config.heartbeat_interval
@@ -337,12 +340,14 @@ class WebSocketConnector(DataConnector):
         self.is_connected = False
         logger.info(f"Disconnected from WebSocket: {self.config.name}")
     
-    async def fetch(self, query: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    async def fetch(self, query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Fetch single message from WebSocket"""
         if not self._ws:
             await self.connect()
         
         try:
+            if not self._ws:
+                raise RuntimeError("WebSocket is not connected")
             message = await asyncio.wait_for(
                 self._ws.receive(),
                 timeout=self.config.timeout
@@ -351,7 +356,7 @@ class WebSocketConnector(DataConnector):
             if message.type == aiohttp.WSMsgType.TEXT:
                 data = json.loads(message.data)
                 self._metrics["total_records"] += 1
-                self._last_fetch = datetime.utcnow()
+                self._last_fetch = datetime.now(timezone.utc)
                 return [data] if isinstance(data, dict) else data
             elif message.type == aiohttp.WSMsgType.CLOSED:
                 self.is_connected = False
@@ -372,11 +377,13 @@ class WebSocketConnector(DataConnector):
                     continue
             
             try:
+                if not self._ws:
+                    raise RuntimeError("WebSocket is not connected")
                 async for message in self._ws:
                     if message.type == aiohttp.WSMsgType.TEXT:
                         data = json.loads(message.data)
                         self._metrics["total_records"] += 1
-                        self._last_fetch = datetime.utcnow()
+                        self._last_fetch = datetime.now(timezone.utc)
                         await self._notify(data)
                         yield data
                     elif message.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
@@ -441,7 +448,7 @@ class PostgreSQLConnector(DataConnector):
         self.is_connected = False
         logger.info(f"Disconnected from PostgreSQL: {self.config.name}")
     
-    async def fetch(self, query: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    async def fetch(self, query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Execute SQL query and fetch results"""
         if not self._pool:
             await self.connect()
@@ -450,8 +457,10 @@ class PostgreSQLConnector(DataConnector):
         sql = query.get("sql", "SELECT 1")
         params = query.get("params", [])
         
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         try:
+            if not self._pool:
+                raise RuntimeError("Database pool is not initialized")
             async with self._pool.acquire() as conn:
                 rows = await conn.fetch(sql, *params)
                 
@@ -459,10 +468,10 @@ class PostgreSQLConnector(DataConnector):
                 result = [dict(row) for row in rows]
                 
                 # Update metrics
-                latency = (datetime.utcnow() - start_time).total_seconds() * 1000
+                latency = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                 self._metrics["avg_latency_ms"] = (self._metrics["avg_latency_ms"] + latency) / 2
                 self._metrics["total_records"] += len(result)
-                self._last_fetch = datetime.utcnow()
+                self._last_fetch = datetime.now(timezone.utc)
                 
                 return result
         except Exception as e:
@@ -471,11 +480,13 @@ class PostgreSQLConnector(DataConnector):
             logger.error(f"PostgreSQL query error: {e}")
             raise
     
-    async def execute(self, sql: str, params: List[Any] = None) -> str:
+    async def execute(self, sql: str, params: Optional[List[Any]] = None) -> str:
         """Execute SQL statement (INSERT, UPDATE, DELETE)"""
         if not self._pool:
             await self.connect()
         
+        if not self._pool:
+            raise RuntimeError("Database pool is not initialized")
         async with self._pool.acquire() as conn:
             return await conn.execute(sql, *(params or []))
     
@@ -540,7 +551,7 @@ class S3Connector(DataConnector):
         self.is_connected = False
         logger.info(f"Disconnected from S3: {self.config.name}")
     
-    async def fetch(self, query: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    async def fetch(self, query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """List and/or download objects from S3"""
         if not self._client:
             await self.connect()
@@ -551,55 +562,64 @@ class S3Connector(DataConnector):
         key = query.get("key", "")
         
         try:
-            async with self._client as client:
-                if operation == "list":
-                    response = await client.list_objects_v2(
-                        Bucket=self.config.bucket,
-                        Prefix=prefix
-                    )
-                    
-                    objects = []
-                    for obj in response.get("Contents", []):
-                        objects.append({
-                            "key": obj["Key"],
-                            "size": obj["Size"],
-                            "last_modified": obj["LastModified"].isoformat(),
-                            "etag": obj["ETag"]
-                        })
-                    
-                    self._metrics["total_records"] += len(objects)
-                    self._last_fetch = datetime.utcnow()
-                    return objects
+            if not self._client:
+                raise RuntimeError("S3 client is not initialized")
+            client = self._client
+            if client is None:
+                raise RuntimeError("S3 client is not initialized")
+            # aiobotocore's client is an async context manager, but only if created with 'async with'
+            # Here, we check if client supports __aenter__, else use directly
+            if hasattr(client, "__aenter__"):
+                async with client as client_ctx:
+                    client = client_ctx
+            if operation == "list":
+                response = await client.list_objects_v2(
+                    Bucket=self.config.bucket,
+                    Prefix=prefix
+                )
                 
-                elif operation == "get":
-                    response = await client.get_object(
-                        Bucket=self.config.bucket,
-                        Key=key
-                    )
-                    
-                    async with response["Body"] as stream:
-                        content = await stream.read()
-                    
-                    # Try to parse as JSON
-                    try:
-                        data = json.loads(content.decode())
-                        if isinstance(data, list):
-                            self._metrics["total_records"] += len(data)
-                            return data
-                        else:
-                            self._metrics["total_records"] += 1
-                            return [data]
-                    except json.JSONDecodeError:
-                        # Return raw content as base64 for binary files
-                        import base64
-                        return [{
-                            "key": key,
-                            "content_type": response.get("ContentType", "application/octet-stream"),
-                            "content": base64.b64encode(content).decode()
-                        }]
+                objects = []
+                for obj in response.get("Contents", []):
+                    objects.append({
+                        "key": obj["Key"],
+                        "size": obj["Size"],
+                        "last_modified": obj["LastModified"].isoformat(),
+                        "etag": obj["ETag"]
+                    })
                 
-                return []
+                self._metrics["total_records"] += len(objects)
+                self._last_fetch = datetime.now(timezone.utc)
+                return objects
+            
+            elif operation == "get":
+                response = await client.get_object(
+                    Bucket=self.config.bucket,
+                    Key=key
+                )
                 
+                async with response["Body"] as stream:
+                    content = await stream.read()
+                
+                # Try to parse as JSON
+                try:
+                    data = json.loads(content.decode())
+                    if isinstance(data, list):
+                        self._metrics["total_records"] += len(data)
+                        return data
+                    else:
+                        self._metrics["total_records"] += 1
+                        return [data]
+                except json.JSONDecodeError:
+                    # Return raw content as base64 for binary files
+                    import base64
+                    return [{
+                        "key": key,
+                        "content_type": response.get("ContentType", "application/octet-stream"),
+                        "content": base64.b64encode(content).decode()
+                    }]
+            
+            return []
+            
         except Exception as e:
             self._metrics["errors"] += 1
             self._metrics["last_error"] = str(e)
@@ -611,19 +631,24 @@ class S3Connector(DataConnector):
         if not self._client:
             await self.connect()
         
-        async with self._client as client:
-            response = await client.put_object(
-                Bucket=self.config.bucket,
-                Key=key,
-                Body=data,
-                ContentType=content_type
-            )
-            
-            return {
-                "key": key,
-                "etag": response.get("ETag"),
-                "version_id": response.get("VersionId")
-            }
+        client = self._client
+        if client is None:
+            raise RuntimeError("S3 client is not initialized")
+        if hasattr(client, "__aenter__"):
+            async with client as client_ctx:
+                client = client_ctx
+        response = await client.put_object(
+            Bucket=self.config.bucket,
+            Key=key,
+            Body=data,
+            ContentType=content_type
+        )
+        
+        return {
+            "key": key,
+            "etag": response.get("ETag"),
+            "version_id": response.get("VersionId")
+        }
     
     async def stream(self) -> AsyncGenerator[Dict[str, Any], None]:
         """Stream new objects from S3 (polling-based)"""
@@ -697,7 +722,7 @@ class DataIntegrationManager:
             if connector.is_connected:
                 await connector.disconnect()
     
-    async def fetch_from(self, name: str, query: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    async def fetch_from(self, name: str, query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Fetch data from a specific connector"""
         connector = self._connectors.get(name)
         if not connector:
@@ -708,7 +733,7 @@ class DataIntegrationManager:
         
         return await connector.fetch(query)
     
-    async def fetch_all(self, query: Dict[str, Any] = None) -> Dict[str, List[Dict[str, Any]]]:
+    async def fetch_all(self, query: Optional[Dict[str, Any]] = None) -> Dict[str, List[Dict[str, Any]]]:
         """Fetch data from all connected sources"""
         results = {}
         
@@ -733,12 +758,15 @@ class DataIntegrationManager:
         
         return results
     
-    async def start_streaming(self, callback: Callable[[str, Dict[str, Any]], None] = None) -> None:
+    async def start_streaming(self, callback: Optional[Callable[[str, Dict[str, Any]], None]] = None) -> None:
         """Start streaming from all connectors"""
         self._running = True
         
         async def stream_one(name: str, connector: DataConnector):
-            async for data in connector.stream():
+            stream_gen = await connector.stream() if asyncio.iscoroutinefunction(connector.stream) else connector.stream()
+            if not hasattr(stream_gen, "__aiter__"):
+                raise RuntimeError(f"Connector {name} stream() did not return an async generator")
+            async for data in stream_gen:
                 if callback:
                     await callback(name, data) if asyncio.iscoroutinefunction(callback) else callback(name, data)
         

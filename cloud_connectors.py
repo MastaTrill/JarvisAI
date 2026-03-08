@@ -1,3 +1,9 @@
+# Stub functions for testing
+def upload_to_cloud(file_path, provider, bucket):
+    return f"Stub upload: {file_path} to {provider}:{bucket}"
+
+def download_from_cloud(filename, provider, bucket):
+    return f"Stub download: {filename} from {provider}:{bucket}"
 
 """
 Cloud Storage and Notification Connectors for Jarvis AI

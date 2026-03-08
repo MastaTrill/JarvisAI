@@ -32,7 +32,7 @@ RUN chown -R jarvisuser:jarvisuser /home/jarvisuser
 EXPOSE 8000
 
 # Install gunicorn for production WSGI serving (as root, before switching user)
-RUN pip install --no-cache-dir gunicorn
+RUN pip install --no-cache-dir gunicorn uvicorn[standard]
 
 # Switch to non-root user
 USER jarvisuser
@@ -40,10 +40,19 @@ USER jarvisuser
 # Optional: define a volume for persistent data (logs, uploads, etc.)
 # VOLUME ["/home/jarvisuser/app/data"]
 
-
 # Healthcheck for container orchestration
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Default command: run with gunicorn and uvicorn workers
+CMD ["gunicorn", "api:app", \
+    "--workers", "4", \
+    "--worker-class", "uvicorn.workers.UvicornWorker", \
+    "--bind", "0.0.0.0:8000", \
+    "--timeout", "120", \
+    "--access-logfile", "-", \
+    "--error-logfile", "-", \
+    "--log-level", "info"]
 
 LABEL maintainer="Jarvis Maintainers <maintainers@jarvis.ai>"
 LABEL org.opencontainers.image.source="https://github.com/MastaTrill/JarvisAI"

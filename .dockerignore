@@ -1,45 +1,98 @@
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Docker Ignore File
+# Files and directories to exclude from Docker build context
 
-# IDE and editor folders
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
 .venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+.tox/
+
+# IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# VCS
+# Documentation
+docs/
+README.md
+*.md
+!DEPLOYMENT.md
+
+# Git
 .git/
 .gitignore
+.gitattributes
 
-# ML and data artifacts
-mlruns/
-logs/
-artifacts/
-models/
-notebooks/
-alembic/versions/
+# CI/CD
+.github/
+.gitlab-ci.yml
+azure-pipelines.yml
 
-# File types
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Development
+.devcontainer/
+
+# Logs and databases
 *.log
-*.csv
-*.db
 *.sqlite
-*.sqlite3
-*.bak
-*.swp
-*.tmp
-*.tar.gz
-*.zip
-*.egg
-*.whl
+*.db
+logs/
+
+# Large files and data
+models/large_models/
+data/raw/
+data/temp/
+data/*.csv
+data/*.json
+
+# Build artifacts
+dist/
+build/
 *.egg-info/
-*.eggs/
-*.ipynb_checkpoints/
-*.pytest_cache/
-*.mypy_cache/
-*.tox/
-*.coverage
+*.whl
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Azure
+.azure/
+
+# Infrastructure
+infra/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backups
+*.bak
+*.backup
+backup/
+
+# OS files
+Thumbs.db
 
 # Env files
 .env
