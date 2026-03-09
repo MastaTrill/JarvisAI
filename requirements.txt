@@ -30,7 +30,7 @@ opencv-python>=4.10.0
 Pillow>=11.0.0
 requests>=2.32.3
 
-# Jupyter and Development
+# Jupyter and Development (CLI tools)
 jupyter>=1.1.1
 jupyterlab>=4.3.1
 ipykernel>=6.29.5
@@ -38,16 +38,15 @@ notebook>=7.3.1
 
 # Model Development and Deployment
 mlflow>=2.18.0
-wandb>=0.18.7
-datasets>=3.1.0
 
 # Utilities
-python-dotenv>=1.0.1
 tqdm>=4.67.0
-click>=8.1.7
 pyyaml>=6.0.2
 pydantic>=2.9.2
-httpx>=0.28.0
+
+# Authentication
+python-jose[cryptography]>=3.3.0
+bcrypt>=4.2.0
 
 # Testing
 pytest>=8.3.3
@@ -64,13 +63,12 @@ prometheus-client>=0.21.0
 # Database
 sqlalchemy>=2.0.36
 alembic>=1.14.0
-psycopg2-binary>=2.9.10
 
 # Rate limiting and Redis
 slowapi>=0.1.9
 redis>=5.2.0
 
-# Documentation
+# Documentation (CLI tools)
 mkdocs>=1.6.1
 mkdocs-material>=9.5.44
 
@@ -78,19 +76,23 @@ mkdocs-material>=9.5.44
 boto3>=1.35.63
 slack_sdk>=3.33.4
 
-# Security and dependency scanning
+# Security scanning (CLI tools)
 bandit>=1.8.0
 pip-audit>=2.7.3
 safety>=3.2.8
-cryptography>=43.0.3
 
 # Async support
 aiohttp>=3.11.7
-aiofiles>=24.1.0
 
-# JSON handling
-orjson>=3.10.11
+# Web/Form handling
 python-multipart>=0.0.17
+jinja2>=3.1.4
 
-# Logging
-structlog>=24.4.0
+# Task queue
+celery>=5.4.0
+
+# System monitoring
+psutil>=6.1.0
+
+# WebSocket testing
+websockets>=13.1

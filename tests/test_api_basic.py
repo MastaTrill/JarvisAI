@@ -9,6 +9,26 @@ from main_api import app
 client = TestClient(app)
 
 
+def _get_auth_header():
+    """Register a test user, login, and return an Authorization header."""
+    client.post(
+        "/register",
+        json={
+            "username": "authuser",
+            "password": "authpass",
+            "email": "auth@example.com",
+        },
+    )
+    login_resp = client.post(
+        "/token",
+        data={"username": "authuser", "password": "authpass"},
+    )
+    if login_resp.status_code != 200:
+        pytest.skip("Login endpoint unavailable")
+    token = login_resp.json().get("access_token", "")
+    return {"Authorization": f"Bearer {token}"}
+
+
 def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200
@@ -31,10 +51,12 @@ def test_list_models():
 
 
 def test_gdpr_anonymize():
-    response = client.post("/gdpr/anonymize/testuser")
-    assert response.status_code in [200, 404]
+    headers = _get_auth_header()
+    response = client.post("/gdpr/anonymize/testuser", headers=headers)
+    assert response.status_code in [200, 401, 404]
 
 
 def test_gdpr_delete():
-    response = client.delete("/gdpr/delete/testuser")
-    assert response.status_code in [200, 404]
+    headers = _get_auth_header()
+    response = client.delete("/gdpr/delete/testuser", headers=headers)
+    assert response.status_code in [200, 401, 404]

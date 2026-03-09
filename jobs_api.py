@@ -1,19 +1,14 @@
 """
 Job management API endpoints for admin dashboard
 """
+
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from db_config import SessionLocal
+from db_config import get_db
 from jobs_persistent import Job
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/cancel")
 def cancel_job(job_id: str, db: Session = Depends(get_db)):
@@ -24,6 +19,7 @@ def cancel_job(job_id: str, db: Session = Depends(get_db)):
     job.status = "cancelled"
     db.commit()
     return {"message": f"Job {job_id} cancelled"}
+
 
 @router.post("/retry")
 def retry_job(job_id: str, db: Session = Depends(get_db)):

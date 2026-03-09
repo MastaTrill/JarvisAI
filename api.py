@@ -11,7 +11,9 @@ import glob
 import importlib.util
 import logging
 import asyncio
+import time
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
@@ -30,7 +32,7 @@ from fastapi import (
     Security,
     Depends,
     APIRouter,
-    status,
+    Request,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
@@ -38,6 +40,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -50,7 +53,8 @@ from slowapi.middleware import SlowAPIMiddleware
 from cloud_connectors import upload_to_cloud, download_from_cloud
 from db_config import SessionLocal
 from database import get_db
-from models_user import User, get_password_hash, verify_password
+from models_user import User, get_password_hash
+from authentication import verify_password
 from auth_helpers import get_current_user
 from admin_dashboard import router as admin_router
 from admin_api import router as admin_api_router
@@ -107,6 +111,23 @@ api_v1 = APIRouter(prefix="/v1")
 # Move endpoints to api_v1 for versioned API support (in progress)
 # app.include_router(api_v1)
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Application lifespan: startup and shutdown logic."""
+    # --- Startup ---
+    from database_models import Base as DBBase
+    from db_config import engine as db_engine, Base as ConfigBase
+    from database import engine as app_engine
+
+    DBBase.metadata.create_all(bind=db_engine)
+    ConfigBase.metadata.create_all(bind=db_engine)
+    DBBase.metadata.create_all(bind=app_engine)
+    asyncio.create_task(monitor_system())
+    yield
+    # --- Shutdown (cleanup if needed) ---
+
+
 app = FastAPI(
     title="Jarvis AI API",
     description="""
@@ -128,6 +149,7 @@ app = FastAPI(
     openapi_tags=openapi_tags,
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 app.include_router(admin_router)
 app.include_router(admin_api_router)
@@ -147,6 +169,24 @@ app.mount(
     StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
     name="static",
 )
+
+# --- Rate Limiting Middleware (slowapi) ---
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=os.getenv("REDIS_URL", "memory://"),
+)
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(_request, _exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded. Please try again later."},
+    )
+
+
+app.add_middleware(SlowAPIMiddleware)
 
 
 # Serve dashboard at root URL
@@ -182,11 +222,11 @@ async def get_global_feature_importance(model_name: str):
         if hasattr(processor, "get_training_data")
         else None
     )
-    feature_names = list(x_data.columns) if hasattr(x_data, "columns") else []
     if x_data is None:
         raise HTTPException(
             status_code=400, detail="No training data available for model"
         )
+    feature_names = list(x_data.columns) if hasattr(x_data, "columns") else []
     interpreter = ModelInterpreter(model, feature_names)
     shap_result = interpreter.explain_with_shap(x_data.values)
     return {
@@ -211,11 +251,11 @@ async def get_local_explanation(model_name: str, instance_idx: int = 0):
         if hasattr(processor, "get_training_data")
         else None
     )
-    feature_names = list(x_data.columns) if hasattr(x_data, "columns") else []
     if x_data is None:
         raise HTTPException(
             status_code=400, detail="No training data available for model"
         )
+    feature_names = list(x_data.columns) if hasattr(x_data, "columns") else []
     interpreter = ModelInterpreter(model, feature_names)
     lime_result = interpreter.explain_with_lime(
         x_data.values, instance_idx=instance_idx
@@ -238,11 +278,11 @@ async def get_counterfactuals(model_name: str, instance_idx: int = 0):
         if hasattr(processor, "get_training_data")
         else None
     )
-    feature_names = list(x_data.columns) if hasattr(x_data, "columns") else []
     if x_data is None:
         raise HTTPException(
             status_code=400, detail="No training data available for model"
         )
+    feature_names = list(x_data.columns) if hasattr(x_data, "columns") else []
     interpreter = ModelInterpreter(model, feature_names)
     shap_result = interpreter.explain_with_shap(x_data.values)
     shap_values = shap_result.get("shap_values", [])
@@ -270,7 +310,9 @@ async def get_counterfactuals(model_name: str, instance_idx: int = 0):
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=os.environ.get(
+        "JARVIS_CORS_ORIGINS", "http://localhost:3000,http://localhost:8080"
+    ).split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -302,7 +344,6 @@ app.add_middleware(SecureHeadersMiddleware)
 
 
 # --- AUTH CONFIG ---
-SECRET_KEY = os.environ.get("JARVIS_SECRET_KEY", "supersecretkey")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -324,7 +365,8 @@ class UserCreate(BaseModel):
 
 
 @app.post("/register", tags=["System"])
-def register(user: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):  # noqa: ARG001
     """Register a new user."""
     try:
         db_user = db.query(User).filter(User.username == user.username).first()
@@ -342,8 +384,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             from audit_trail import log_audit_event
 
             log_audit_event(user.username, "register", "user", f"email={user.email}")
-        except Exception as e:
-            logger.warning(f"Audit logging failed: {e}")
+        except (ImportError, SQLAlchemyError) as e:
+            logger.warning("Audit logging failed: %s", e)
         return {"msg": "User registered successfully"}
     except HTTPException:
         raise
@@ -353,14 +395,17 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @app.post("/token", response_model=Token, tags=["System"])
+@limiter.limit("10/minute")
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+    request: Request,  # noqa: ARG001 - required by slowapi
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
 ):
     """Login and get access token."""
     user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or not verify_password(form_data.password, str(user.hashed_password)):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
-    from auth_helpers import create_access_token
+    from authentication import create_access_token
 
     access_token = create_access_token(
         data={"sub": user.username},
@@ -422,17 +467,18 @@ class ConnectionManager:
         for connection in self.active_connections:
             try:
                 await connection["websocket"].send_json(data)
-            except Exception:
+            except (ConnectionError, OSError) as e:
+                logger.warning("Failed to send training update to client: %s", e)
                 disconnected.append(connection)
 
         # Remove disconnected clients
         for conn in disconnected:
             self.active_connections.remove(conn)
 
-    async def send_system_metrics(self, metrics: dict):
+    async def send_system_metrics(self, metric_data: dict):
         """Send system metrics to all clients."""
         await self.broadcast_training_update(
-            {"type": "system_metrics", "data": metrics}
+            {"type": "system_metrics", "data": metric_data}
         )
 
 
@@ -474,22 +520,32 @@ class DataInfo(BaseModel):
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
-# Import authentication helpers from auth_helpers.py
-from auth_helpers import get_current_user, require_role
-
 
 def get_api_key(api_key: str = Security(api_key_header)):
     """API key validation."""
-    if api_key == "supersecretkey":
+    expected_key = os.environ.get("JARVIS_API_KEY", "")
+    if not expected_key:
+        raise HTTPException(status_code=500, detail="API key not configured")
+    if api_key == expected_key:
         return api_key
     raise HTTPException(status_code=403, detail="Invalid API Key")
+
+
+def _safe_filename(filename: str) -> str:
+    """Sanitize a filename to prevent path traversal attacks."""
+    # Take only the basename, stripping any directory components
+    name = Path(filename).name
+    if not name or name.startswith("."):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return name
 
 
 # API Routes
 
 
 @app.get("/health")
-async def health_check():
+@limiter.limit("60/minute")
+async def health_check(request: Request):  # noqa: ARG001
     """Health check endpoint."""
     return {
         "status": "ok",
@@ -518,8 +574,13 @@ async def list_models():
 
 
 @app.post("/models/{model_name}/train")
+@limiter.limit("5/minute")
 async def train_model(
-    model_name: str, request: TrainRequest, background_tasks: BackgroundTasks
+    request: Request,  # noqa: ARG001 - required by slowapi
+    model_name: str,
+    train_request: TrainRequest,
+    background_tasks: BackgroundTasks,
+    _current_user: User = Depends(get_current_user),
 ):
     """Train a model with the provided configuration."""
     try:
@@ -533,9 +594,9 @@ async def train_model(
         background_tasks.add_task(
             _train_model_background,
             model_name,
-            request.model_type,
-            request.config,
-            request.data_source,
+            train_request.model_type,
+            train_request.config,
+            train_request.data_source,
         )
 
         return {
@@ -545,8 +606,8 @@ async def train_model(
         }
 
     except Exception as e:
-        logger.error(f"Error starting training: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Error starting training: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 async def _train_model_background(
@@ -629,7 +690,7 @@ async def _train_model_background(
             "progress": 100,
         }
         logger.info("Successfully trained model '%s'", model_name)
-    except Exception as e:
+    except (ValueError, RuntimeError, TypeError, OSError, ImportError) as e:
         logger.error("Error training model '%s': %s", model_name, e)
         training_status[model_name] = {
             "status": "failed",
@@ -648,7 +709,13 @@ async def get_training_status(model_name: str):
 
 
 @app.post("/models/{model_name}/predict")
-async def predict(model_name: str, request: PredictRequest):
+@limiter.limit("30/minute")
+async def predict(
+    request: Request,  # noqa: ARG001 - required by slowapi
+    model_name: str,
+    predict_request: PredictRequest,
+    _current_user: User = Depends(get_current_user),
+):
     """Make predictions using a trained model."""
     if model_name not in models:
         raise HTTPException(status_code=404, detail="Model not found")
@@ -660,7 +727,7 @@ async def predict(model_name: str, request: PredictRequest):
 
     try:
         model = model_data["model"]
-        input_data = np.array(request.data)
+        input_data = np.array(predict_request.data)
 
         predictions = model.predict(input_data)
 
@@ -671,19 +738,28 @@ async def predict(model_name: str, request: PredictRequest):
         }
 
     except Exception as e:
-        logger.error(f"Error making predictions: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Error making predictions: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/data/upload")
-async def upload_data(file: UploadFile = File(...)):
+@limiter.limit("10/minute")
+async def upload_data(
+    request: Request,  # noqa: ARG001 - required by slowapi
+    file: UploadFile = File(...),
+    _current_user: User = Depends(get_current_user),
+):
     """Upload a data file for processing."""
     try:
         # Save uploaded file
         upload_dir = Path("data/uploads")
         upload_dir.mkdir(parents=True, exist_ok=True)
 
-        file_path = upload_dir / file.filename
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="No filename provided")
+
+        safe_name = _safe_filename(file.filename)
+        file_path = upload_dir / safe_name
 
         with open(file_path, "wb") as buffer:
             content = await file.read()
@@ -704,11 +780,13 @@ async def upload_data(file: UploadFile = File(...)):
 
         # Return data info
         data_info = DataInfo(
-            filename=file.filename,
+            filename=file.filename or "",
             shape=list(df.shape),
             columns=df.columns.tolist(),
-            data_types={col: str(dtype) for col, dtype in df.dtypes.items()},
-            missing_values=df.isnull().sum().to_dict(),
+            data_types={str(col): str(dtype) for col, dtype in df.dtypes.items()},
+            missing_values={
+                str(k): int(v) for k, v in df.isnull().sum().to_dict().items()
+            },
         )
 
         return {
@@ -718,14 +796,15 @@ async def upload_data(file: UploadFile = File(...)):
         }
 
     except Exception as e:
-        logger.error(f"Error uploading data: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Error uploading data: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/data/validate/{filename}")
-async def validate_data(filename: str):
+async def validate_data(filename: str, _current_user: User = Depends(get_current_user)):
     """Validate an uploaded data file."""
-    file_path = Path("data/uploads") / filename
+    safe_name = _safe_filename(filename)
+    file_path = Path("data/uploads") / safe_name
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
@@ -745,8 +824,8 @@ async def validate_data(filename: str):
         return quality_report
 
     except Exception as e:
-        logger.error(f"Error validating data: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Error validating data: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/models/{model_name}/metrics")
@@ -782,11 +861,11 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        logger.info(f"Client {client_id} disconnected")
+        logger.info("Client %s disconnected", client_id)
 
 
 @app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str):
+async def websocket_general_endpoint(websocket: WebSocket, client_id: str):
     """WebSocket endpoint for real-time updates."""
     await manager.connect(websocket, client_id)
     try:
@@ -806,8 +885,8 @@ async def websocket_notifications(websocket: WebSocket):
     try:
         while True:
             await websocket.receive_text()  # Keep connection open
-    except Exception:
-        pass
+    except (WebSocketDisconnect, ConnectionError, OSError) as e:
+        logger.warning("WebSocket connection error: %s", e)
 
 
 # Broadcast notification to all connected clients (in-memory demo)
@@ -819,7 +898,8 @@ async def broadcast_notification(message: str):
     for ws in list(notification_clients):
         try:
             await ws.send_json({"type": "notification", "message": message})
-        except Exception:
+        except (ConnectionError, OSError) as e:
+            logger.warning("Failed to send notification to client: %s", e)
             notification_clients.remove(ws)
     return {"status": "sent", "message": message}
 
@@ -843,7 +923,7 @@ async def list_models_detailed():
 
 
 @app.get("/api/training/status/{model_name}")
-async def get_training_status(model_name: str):
+async def get_training_status_api(model_name: str):
     """Get current training status for a model."""
     if model_name not in training_status:
         return {"status": "not_found", "message": "Training not found"}
@@ -872,7 +952,7 @@ async def get_system_metrics():
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
 
-        metrics = {
+        current_metrics = {
             "cpu_usage": cpu_percent,
             "memory_usage": memory.percent,
             "memory_available": memory.available // (1024**3),  # GB
@@ -882,11 +962,11 @@ async def get_system_metrics():
 
         # Store in history (keep last 100 points)
         for key in ["cpu_usage", "memory_usage", "timestamp"]:
-            system_metrics[key].append(metrics[key])
+            system_metrics[key].append(current_metrics[key])
             if len(system_metrics[key]) > 100:
                 system_metrics[key].pop(0)
 
-        return metrics
+        return current_metrics
     except ImportError:
         # Fallback if psutil not available
         return {
@@ -930,7 +1010,7 @@ async def compare_models(model_names: List[str]):
 
 
 @app.post("/api/models/export/{model_name}")
-async def export_model(model_name: str, format: str = "pkl"):
+async def export_model(model_name: str, export_format: str = "pkl"):
     """Export a trained model."""
     if model_name not in models:
         raise HTTPException(status_code=404, detail="Model not found")
@@ -945,9 +1025,9 @@ async def export_model(model_name: str, format: str = "pkl"):
 
     try:
         model = model_data["model"]
-        export_path = export_dir / f"{model_name}_exported.{format}"
+        export_path = export_dir / f"{model_name}_exported.{export_format}"
 
-        if format == "pkl":
+        if export_format == "pkl":
             import pickle
 
             with open(export_path, "wb") as f:
@@ -958,18 +1038,19 @@ async def export_model(model_name: str, format: str = "pkl"):
         return {
             "message": f"Model {model_name} exported successfully",
             "export_path": str(export_path),
-            "format": format,
+            "format": export_format,
         }
 
     except Exception as e:
-        logger.error(f"Error exporting model: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Error exporting model: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/data/exploration/{filename}")
-async def explore_data(filename: str):
+async def explore_data(filename: str, _current_user: User = Depends(get_current_user)):
     """Get data exploration statistics."""
-    file_path = Path("data/uploads") / filename
+    safe_name = _safe_filename(filename)
+    file_path = Path("data/uploads") / safe_name
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
@@ -1001,8 +1082,8 @@ async def explore_data(filename: str):
         return stats
 
     except Exception as e:
-        logger.error(f"Error exploring data: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Error exploring data: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # Prometheus-compatible metrics endpoint
@@ -1012,15 +1093,15 @@ async def explore_data(filename: str):
     summary="Prometheus metrics endpoint",
     response_class=PlainTextResponse,
 )
-def metrics():
+def prometheus_metrics():
     # Example metrics (replace with real values)
-    metrics = [
+    metric_lines = [
         "jarvis_api_requests_total 1234",
         "jarvis_api_errors_total 12",
         "jarvis_model_inferences_total 567",
         "jarvis_active_models 2",
     ]
-    return "\n".join(metrics)
+    return "\n".join(metric_lines)
 
 
 # Background task for system monitoring
@@ -1028,19 +1109,16 @@ async def monitor_system():
     """Background task to monitor system metrics and broadcast updates."""
     while True:
         try:
-            metrics = await get_system_metrics()
-            await manager.send_system_metrics(metrics)
+            sys_metrics = await get_system_metrics()
+            await manager.send_system_metrics(sys_metrics)
             await asyncio.sleep(5)  # Update every 5 seconds
-        except Exception as e:
-            logger.error(f"Error in system monitoring: {e}")
+        except (OSError, RuntimeError) as e:
+            logger.error("Error in system monitoring: %s", e)
             await asyncio.sleep(10)
 
 
 # Start system monitoring on startup
-@app.on_event("startup")
-async def startup_event():
-    """Start background tasks on app startup."""
-    asyncio.create_task(monitor_system())
+# (Moved to lifespan handler above)
 
 
 # Example of a protected endpoint
@@ -1050,117 +1128,12 @@ async def startup_event():
     summary="Get secure system info",
     description="Requires OAuth2 or API Key.",
 )
-def secure_info(user=Depends(get_current_user), api_key=Security(get_api_key)):
+def secure_info(user=Depends(get_current_user), _api_key=Security(get_api_key)):
     return {"secure": True, "user": user}
 
 
-# User registration, login, and RBAC implemented above
-# Admin dashboard scaffolded and integrated
-
-# --- Rate Limiting Middleware (slowapi) ---
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from fastapi.responses import JSONResponse
-
-limiter = Limiter(
-    key_func=get_remote_address,
-    storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
-)
-app.state.limiter = limiter
-
-
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request, exc):
-    return JSONResponse(
-        status_code=429,
-        content={"detail": "Rate limit exceeded. Please try again later."},
-    )
-
-
-# Example: Apply global rate limit (100 requests/minute per IP)
-from slowapi.middleware import SlowAPIMiddleware
-
-app.add_middleware(SlowAPIMiddleware)
-# Audit logging planned (see audit_trail.py)
-
 # Model registry, jobs, and user data are now persistent (see db_config.py)
-# Example: Use SQLAlchemy models and CRUD operations instead of in-memory dicts
-
-# In-memory model registry (replace with persistent storage in production)
-model_registry = {}
-
-
-@app.post(
-    "/models/register",
-    tags=["Models"],
-    summary="Register a new model",
-    description="Upload and register a new trained model with metadata.",
-)
-def register_model(model_name: str, description: str = "", accuracy: float = 0.0):
-    model_registry[model_name] = {
-        "description": description,
-        "accuracy": accuracy if accuracy is not None else 0.0,
-        "registered_at": datetime.utcnow().isoformat(),
-        "active": False,
-    }
-    return {
-        "message": f"Model '{model_name}' registered.",
-        "model": model_registry[model_name],
-    }
-
-
-@app.get("/models/registry", tags=["Models"], summary="List all registered models")
-def list_registered_models():
-    return model_registry
-
-
-@app.post("/models/activate", tags=["Models"], summary="Activate a model for inference")
-def activate_model(model_name: str):
-    for m in model_registry:
-        model_registry[m]["active"] = False
-    if model_name in model_registry:
-        model_registry[model_name]["active"] = True
-        return {"message": f"Model '{model_name}' activated."}
-    else:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-
-from fastapi import BackgroundTasks
-import threading
-
-# In-memory job store (replace with persistent storage in production)
-jobs = {}
-
-
-def long_running_task(job_id: str, duration: int = 10):
-    import time
-
-    jobs[job_id] = {"status": "running"}
-    time.sleep(duration)
-    jobs[job_id] = {"status": "completed"}
-
-
-@app.post("/jobs/start", tags=["System"], summary="Start a background job")
-def start_job(duration: int = 10, background_tasks: BackgroundTasks = None):
-    job_id = str(uuid.uuid4())
-    background_tasks.add_task(long_running_task, job_id, duration)
-    jobs[job_id] = {"status": "queued"}
-    return {"job_id": job_id, "status": "queued"}
-
-
-@app.get("/jobs/status/{job_id}", tags=["System"], summary="Check job status")
-def job_status(job_id: str):
-    return jobs.get(job_id, {"status": "not found"})
-
-
-@app.post("/jobs/cancel/{job_id}", tags=["System"], summary="Cancel a job")
-def cancel_job(job_id: str):
-    # For demo: just mark as cancelled (real implementation would stop the thread/process)
-    if job_id in jobs and jobs[job_id]["status"] == "running":
-        jobs[job_id]["status"] = "cancelled"
-        return {"job_id": job_id, "status": "cancelled"}
-    return {"job_id": job_id, "status": jobs.get(job_id, {}).get("status", "not found")}
+# Use SQLAlchemy models and CRUD operations (see models_registry.py, jobs_persistent.py)
 
 
 @app.post(
@@ -1179,23 +1152,23 @@ def ensemble_predict(model_names: list, data: list):
         results.append(pred)
     # Simple average ensemble
     if results:
-        import numpy as np
-
         ensemble = np.mean(results, axis=0).tolist()
         return {"ensemble_prediction": ensemble}
     return {"error": "No valid models found"}
 
 
 # Plugin system: auto-register plugins in plugins/ folder
-def register_plugins(app):
+def register_plugins(application):
     for plugin_path in glob.glob("plugins/*.py"):
         if plugin_path.endswith("__init__.py"):
             continue
         spec = importlib.util.spec_from_file_location("plugin", plugin_path)
+        if spec is None or spec.loader is None:
+            continue
         plugin = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(plugin)
         if hasattr(plugin, "register"):
-            plugin.register(app)
+            plugin.register(application)
 
 
 register_plugins(app)
@@ -1213,15 +1186,18 @@ register_plugins(app)
 # Secure headers and HTTPS recommended for production (see SECURITY.md)
 # Secrets are loaded from environment variables or a secrets manager (see .env.example)
 
-# Example: Use persistent model registry (see models_registry.py)
-from models_registry import create_model, get_models, activate_model
-from db_config import SessionLocal
+# Persistent model registry (see models_registry.py)
 
 
 @app.post(
     "/models/register", tags=["Models"], summary="Register a new model (persistent)"
 )
-def register_model_db(model_name: str, description: str = "", accuracy: float = 0.0):
+def register_model_db(
+    model_name: str,
+    description: str = "",
+    accuracy: float = 0.0,
+    _current_user: User = Depends(get_current_user),
+):
     session = SessionLocal()
     model = create_model(
         session, model_name, description, accuracy if accuracy is not None else 0.0
@@ -1237,8 +1213,8 @@ def register_model_db(model_name: str, description: str = "", accuracy: float = 
             model_name,
             f"desc={description}, acc={accuracy}",
         )
-    except Exception as e:
-        logger.warning(f"Audit logging failed: {e}")
+    except (ImportError, SQLAlchemyError) as e:
+        logger.warning("Audit logging failed: %s", e)
     return {"message": f"Model '{model_name}' registered.", "model": model.name}
 
 
@@ -1247,11 +1223,11 @@ def register_model_db(model_name: str, description: str = "", accuracy: float = 
     tags=["Models"],
     summary="List all registered models (persistent)",
 )
-def list_registered_models_db():
+def list_registered_models_db(_current_user: User = Depends(get_current_user)):
     session = SessionLocal()
-    models = get_models(session)
+    db_models = get_models(session)
     session.close()
-    return [m.name for m in models]
+    return [m.name for m in db_models]
 
 
 @app.post(
@@ -1259,7 +1235,7 @@ def list_registered_models_db():
     tags=["Models"],
     summary="Activate a model for inference (persistent)",
 )
-def activate_model_db(model_name: str):
+def activate_model_db(model_name: str, _current_user: User = Depends(get_current_user)):
     session = SessionLocal()
     model = activate_model(session, model_name)
     session.close()
@@ -1270,13 +1246,14 @@ def activate_model_db(model_name: str):
 
 
 # Persistent job management (see jobs_persistent.py)
-from jobs_persistent import create_job, update_job_status, get_job
 
 
 @app.post("/jobs/start", tags=["System"], summary="Start a background job (persistent)")
-def start_job_db(duration: int = 10, background_tasks: BackgroundTasks = None):
-    import uuid, time
-
+def start_job_db(
+    duration: int = 10,
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    _current_user: User = Depends(get_current_user),
+):
     session = SessionLocal()
     job_id = str(uuid.uuid4())
     create_job(session, job_id, status="queued")
@@ -1294,8 +1271,8 @@ def start_job_db(duration: int = 10, background_tasks: BackgroundTasks = None):
         from audit_trail import log_audit_event
 
         log_audit_event("system", "start_job", job_id, f"duration={duration}")
-    except Exception as e:
-        logger.warning(f"Audit logging failed: {e}")
+    except (ImportError, SQLAlchemyError) as e:
+        logger.warning("Audit logging failed: %s", e)
     session.close()
     return {"job_id": job_id, "status": "queued"}
 
@@ -1303,7 +1280,7 @@ def start_job_db(duration: int = 10, background_tasks: BackgroundTasks = None):
 @app.get(
     "/jobs/status/{job_id}", tags=["System"], summary="Check job status (persistent)"
 )
-def job_status_db(job_id: str):
+def job_status_db(job_id: str, _current_user: User = Depends(get_current_user)):
     session = SessionLocal()
     job = get_job(session, job_id)
     # Audit log
@@ -1316,8 +1293,8 @@ def job_status_db(job_id: str):
             job_id,
             f"status={getattr(job, 'status', 'not found')}",
         )
-    except Exception as e:
-        logger.warning(f"Audit logging failed: {e}")
+    except (ImportError, SQLAlchemyError) as e:
+        logger.warning("Audit logging failed: %s", e)
     session.close()
     if job:
         return {"job_id": job.job_id, "status": job.status, "cancelled": job.cancelled}
@@ -1325,7 +1302,7 @@ def job_status_db(job_id: str):
 
 
 @app.post("/jobs/cancel/{job_id}", tags=["System"], summary="Cancel a job (persistent)")
-def cancel_job_db(job_id: str):
+def cancel_job_db(job_id: str, _current_user: User = Depends(get_current_user)):
     session = SessionLocal()
     job = update_job_status(session, job_id, status="cancelled", cancelled=True)
     # Audit log
@@ -1333,8 +1310,8 @@ def cancel_job_db(job_id: str):
         from audit_trail import log_audit_event
 
         log_audit_event("system", "cancel_job", job_id, "Job cancelled")
-    except Exception as e:
-        logger.warning(f"Audit logging failed: {e}")
+    except (ImportError, SQLAlchemyError) as e:
+        logger.warning("Audit logging failed: %s", e)
     session.close()
     if job:
         return {"job_id": job_id, "status": "cancelled"}
@@ -1342,10 +1319,28 @@ def cancel_job_db(job_id: str):
 
 
 # --- Notification System ---
+_ALLOWED_NOTIFICATION_HOSTS: set = set(
+    h.strip()
+    for h in os.environ.get("JARVIS_WEBHOOK_ALLOWLIST", "").split(",")
+    if h.strip()
+)
+
+
 def send_notification(method: str, target: str, message: str):
     """Send notification via webhook or email."""
     try:
         if method == "webhook" and target:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(target)
+            if (
+                _ALLOWED_NOTIFICATION_HOSTS
+                and parsed.hostname not in _ALLOWED_NOTIFICATION_HOSTS
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Webhook target host not in allowlist",
+                )
             requests.post(target, json={"message": message}, timeout=5)
         elif method == "email" and target:
             # Placeholder for email sending logic
@@ -1357,7 +1352,7 @@ def send_notification(method: str, target: str, message: str):
             log_audit_event(
                 "system", "send_notification", method, f"target={target}, msg={message}"
             )
-        except Exception as e:
+        except (ImportError, SQLAlchemyError) as e:
             logger.warning("Audit logging failed: %s", e)
         return {
             "status": "sent",
@@ -1371,17 +1366,28 @@ def send_notification(method: str, target: str, message: str):
 
 
 @app.post("/notifications/send", tags=["System"], summary="Send a notification")
-async def send_notification_endpoint(method: str, target: str, message: str):
+async def send_notification_endpoint(
+    method: str,
+    target: str,
+    message: str,
+    _current_user: User = Depends(get_current_user),
+):
     """Endpoint to send notifications."""
     return send_notification(method, target, message)
 
 
 # --- Cloud Storage Integration ---
 @app.post("/cloud/upload", tags=["Data"], summary="Upload file to cloud storage")
-async def cloud_upload(filename: str, provider: str = "s3", bucket: str = None):
+async def cloud_upload(
+    filename: str,
+    provider: str = "s3",
+    bucket: Optional[str] = None,
+    _current_user: User = Depends(get_current_user),
+):
     """Upload a file to cloud storage."""
     try:
-        file_path = Path("data/uploads") / filename
+        safe_name = _safe_filename(filename)
+        file_path = Path("data/uploads") / safe_name
         if not file_path.exists():
             raise HTTPException(status_code=404, detail="File not found")
         result = upload_to_cloud(str(file_path), provider, bucket)
@@ -1392,7 +1398,7 @@ async def cloud_upload(filename: str, provider: str = "s3", bucket: str = None):
             log_audit_event(
                 "system", "cloud_upload", provider, f"bucket={bucket}, file={filename}"
             )
-        except Exception as e:
+        except (ImportError, SQLAlchemyError) as e:
             logger.warning("Audit logging failed: %s", e)
         return {
             "status": "uploaded",
@@ -1409,7 +1415,12 @@ async def cloud_upload(filename: str, provider: str = "s3", bucket: str = None):
 
 
 @app.get("/cloud/download", tags=["Data"], summary="Download file from cloud storage")
-async def cloud_download(filename: str, provider: str = "s3", bucket: str = None):
+async def cloud_download(
+    filename: str,
+    provider: str = "s3",
+    bucket: Optional[str] = None,
+    _current_user: User = Depends(get_current_user),
+):
     """Download a file from cloud storage."""
     try:
         result = download_from_cloud(filename, provider, bucket)
@@ -1423,7 +1434,7 @@ async def cloud_download(filename: str, provider: str = "s3", bucket: str = None
                 provider,
                 f"bucket={bucket}, file={filename}",
             )
-        except Exception as e:
+        except (ImportError, SQLAlchemyError) as e:
             logger.warning("Audit logging failed: %s", e)
         return {
             "status": "downloaded",
@@ -1443,7 +1454,11 @@ async def cloud_download(filename: str, provider: str = "s3", bucket: str = None
     tags=["Models"],
     summary="Predict using GPU (if available)",
 )
-async def predict_gpu(model_name: str, request: PredictRequest):
+async def predict_gpu(
+    model_name: str,
+    request: PredictRequest,
+    _current_user: User = Depends(get_current_user),
+):
     """Make predictions using GPU if available."""
     if model_name not in models:
         raise HTTPException(status_code=404, detail="Model not found")
@@ -1465,7 +1480,7 @@ async def predict_gpu(model_name: str, request: PredictRequest):
             log_audit_event(
                 "system", "predict_gpu", model_name, f"data_len={len(request.data)}"
             )
-        except Exception as e:
+        except (ImportError, SQLAlchemyError) as e:
             logger.warning("Audit logging failed: %s", e)
         return {
             "model_name": model_name,
@@ -1484,7 +1499,11 @@ async def predict_gpu(model_name: str, request: PredictRequest):
     tags=["Models"],
     summary="Predict using external model server",
 )
-async def predict_external(model_name: str, request: PredictRequest):
+async def predict_external(
+    model_name: str,
+    request: PredictRequest,
+    _current_user: User = Depends(get_current_user),
+):
     """Make predictions using an external model server."""
     # Example external server URL (should be configurable)
     external_url = f"http://external-model-server:8080/predict/{model_name}"
@@ -1502,7 +1521,7 @@ async def predict_external(model_name: str, request: PredictRequest):
                 model_name,
                 f"data_len={len(request.data)}",
             )
-        except Exception as e:
+        except (ImportError, SQLAlchemyError) as e:
             logger.warning("Audit logging failed: %s", e)
         return result
     except Exception as e:
@@ -1515,8 +1534,10 @@ def anonymize_user_data(user_id: str, db: Session):
     """Anonymize user data for GDPR/CCPA compliance."""
     user = db.query(User).filter(User.username == user_id).first()
     if user:
-        user.email = None
-        user.hashed_password = None
+        anon_id = uuid.uuid4().hex[:12]
+        user.email = f"anon-{anon_id}@deleted.invalid"
+        user.hashed_password = "REDACTED"
+        user.full_name = None
         db.commit()
         return True
     return False
@@ -1538,11 +1559,15 @@ def secure_delete_user(user_id: str, db: Session):
     tags=["System"],
     summary="Anonymize user data (GDPR/CCPA)",
 )
-def gdpr_anonymize(user_id: str, db: Session = Depends(get_db)):
+def gdpr_anonymize(
+    user_id: str,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+):
     """Anonymize user data for GDPR/CCPA compliance."""
     try:
         success = anonymize_user_data(user_id, db)
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError) as e:
         logger.error("GDPR anonymize failed for %s: %s", user_id, e)
         return JSONResponse(status_code=404, content={"detail": "User not found"})
     # Audit log
@@ -1550,7 +1575,7 @@ def gdpr_anonymize(user_id: str, db: Session = Depends(get_db)):
         from audit_trail import log_audit_event
 
         log_audit_event(user_id, "anonymize", "user", "GDPR/CCPA anonymization")
-    except Exception as e:
+    except (ImportError, SQLAlchemyError) as e:
         logger.warning("Audit logging failed: %s", e)
     if success:
         return {"message": f"User {user_id} anonymized."}
@@ -1562,11 +1587,15 @@ def gdpr_anonymize(user_id: str, db: Session = Depends(get_db)):
     tags=["System"],
     summary="Securely delete user data (GDPR/CCPA)",
 )
-def gdpr_delete(user_id: str, db: Session = Depends(get_db)):
+def gdpr_delete(
+    user_id: str,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+):
     """Securely delete user data for GDPR/CCPA compliance."""
     try:
         success = secure_delete_user(user_id, db)
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError) as e:
         logger.error("GDPR delete failed for %s: %s", user_id, e)
         return JSONResponse(status_code=404, content={"detail": "User not found"})
     # Audit log
@@ -1574,7 +1603,7 @@ def gdpr_delete(user_id: str, db: Session = Depends(get_db)):
         from audit_trail import log_audit_event
 
         log_audit_event(user_id, "secure_delete", "user", "GDPR/CCPA secure deletion")
-    except Exception as e:
+    except (ImportError, SQLAlchemyError) as e:
         logger.warning("Audit logging failed: %s", e)
     if success:
         return {"message": f"User {user_id} deleted."}

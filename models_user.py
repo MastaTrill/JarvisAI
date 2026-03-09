@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from auth_helpers import get_current_user, require_role
-from authentication import hash_password, verify_password
+from auth_helpers import require_role
+from authentication import hash_password
 from database import get_db
 from database_models import User
 
@@ -26,7 +26,7 @@ def get_password_hash(password: str) -> str:
 
 @router.get("/admin/models")
 def list_models(
-    db: Session = Depends(get_db), user: User = Depends(require_role("admin"))
+    db: Session = Depends(get_db), _user: User = Depends(require_role("admin"))
 ):
     from models_registry import ModelRegistry
 
@@ -44,7 +44,7 @@ def list_models(
 
 @router.get("/admin/jobs")
 def list_jobs(
-    db: Session = Depends(get_db), user: User = Depends(require_role("admin"))
+    db: Session = Depends(get_db), _user: User = Depends(require_role("admin"))
 ):
     from jobs_persistent import Job
 

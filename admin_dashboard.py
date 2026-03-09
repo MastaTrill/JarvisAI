@@ -11,9 +11,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
-from db_config import SessionLocal
+from db_config import get_db
 from models_user import User, get_password_hash
-from api import get_current_user
+from auth_helpers import admin_required
 from audit_trail import log_audit_event
 from models_registry import create_model, get_models
 from jobs_persistent import Job, get_job, update_job_status
@@ -22,22 +22,6 @@ router = APIRouter(prefix="/admin/dashboard", tags=["AdminDashboard"])
 templates = Jinja2Templates(
     directory=os.path.join(os.path.dirname(__file__), "templates")
 )
-
-
-def get_db(session_override=None):
-    """Get database session, optionally overriding with a provided session factory."""
-    db = session_override() if session_override else SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def admin_required(current_user: User = Depends(get_current_user)):
-    """Verify that the current user has admin role."""
-    if not getattr(current_user.role, "name", None) == "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return current_user
 
 
 @router.get("/admin", response_class=HTMLResponse)

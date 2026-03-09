@@ -3,13 +3,15 @@ Persistent Model Registry for Jarvis AI
 - SQLAlchemy ORM model for registered models
 - CRUD utilities for database operations
 """
-from db_config import Base, SessionLocal
+
+from db_config import Base
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime
 from datetime import datetime
 
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
+
 
 class ModelRegistry(Base):
     __tablename__ = "model_registry"
@@ -24,10 +26,14 @@ class ModelRegistry(Base):
     external_endpoint = Column(String, nullable=True)
     drift_score = Column(Float, nullable=True)
     audit_log = Column(String, nullable=True)
-    parent_id = Column(Integer, ForeignKey("model_registry.id"), nullable=True)  # for rollback
+    parent_id = Column(
+        Integer, ForeignKey("model_registry.id"), nullable=True
+    )  # for rollback
     parent = relationship("ModelRegistry", remote_side=[id])
 
+
 # CRUD utilities
+
 
 def create_model(session, name, description="", accuracy=None):
     model = ModelRegistry(name=name, description=description, accuracy=accuracy)
@@ -36,8 +42,10 @@ def create_model(session, name, description="", accuracy=None):
     session.refresh(model)
     return model
 
+
 def get_models(session):
     return session.query(ModelRegistry).all()
+
 
 def activate_model(session, name):
     for m in session.query(ModelRegistry).all():

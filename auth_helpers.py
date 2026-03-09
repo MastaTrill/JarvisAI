@@ -2,33 +2,38 @@
 Authentication helper functions for FastAPI JWT authentication and role-based access control.
 """
 
+import os
 from fastapi import HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 try:
     from jose import JWTError, jwt
-except ImportError:
+except ImportError as exc:
     raise ImportError(
         "python-jose is not installed. Please install it with 'pip install python-jose'"
-    )
+    ) from exc
 
 
-SECRET_KEY = "your-secret-key"  # Replace with a secure key
+from database import get_db as _get_user_db
+
+SECRET_KEY = os.environ.get("JARVIS_SECRET_KEY", "")
+if not SECRET_KEY:
+    # Import from the canonical source so all modules share the same key
+    from authentication import SECRET_KEY  # noqa: F811
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(lambda: __import__('models_user').get_db())
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(_get_user_db),
 ):
+    """Retrieve the current user from the JWT token."""
     # Import User here to avoid circular import
-    User = __import__('models_user').User
-    """
-    Retrieve the current user from the JWT token.
-    """
+    User = __import__("models_user").User
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -52,7 +57,7 @@ def require_role(required_role: str):
     Dependency to require a specific user role.
     """
 
-    def role_checker(user = Depends(get_current_user)):
+    def role_checker(user=Depends(get_current_user)):
         # Check if user.role exists and is not a SQLAlchemy Column object
         role = getattr(user, "role", None)
         role_name = getattr(role, "name", None) if role else None
@@ -61,3 +66,12 @@ def require_role(required_role: str):
         return user
 
     return role_checker
+
+
+def admin_required(current_user=Depends(get_current_user)):
+    """Verify that the current user has admin role."""
+    role = getattr(current_user, "role", None)
+    role_name = getattr(role, "name", None) if role else None
+    if role_name != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user

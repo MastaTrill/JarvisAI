@@ -3,20 +3,27 @@ JarvisAI Authentication System
 JWT-based authentication with role-based access control
 """
 
+import os
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader, OAuth2PasswordBearer, OAuth2AuthorizationCodeBearer
+from fastapi.security import (
+    HTTPBearer,
+    HTTPAuthorizationCredentials,
+    APIKeyHeader,
+    OAuth2PasswordBearer,
+    OAuth2AuthorizationCodeBearer,
+)
 from sqlalchemy.orm import Session
-import hashlib
 import secrets
+import bcrypt
 
 from database import get_db
 from database_models import User
 
-# Security configuration
-SECRET_KEY = secrets.token_urlsafe(32)  # In production, use environment variable
+# Security configuration — single source of truth for the whole app
+SECRET_KEY = os.environ.get("JARVIS_SECRET_KEY") or secrets.token_urlsafe(32)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -32,24 +39,28 @@ oauth2_auth_code = OAuth2AuthorizationCodeBearer(
 
 
 def hash_password(password: str) -> str:
-    """Hash password using SHA-256"""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Hash password using bcrypt."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash"""
-    return hash_password(plain_password) == hashed_password
+    """Verify password against bcrypt hash."""
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
 
 
-def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(
+    data: Dict[str, Any], expires_delta: Optional[timedelta] = None
+) -> str:
     """Create JWT access token"""
     to_encode = data.copy()
-    
+
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -74,27 +85,27 @@ def decode_token(token: str) -> Dict[str, Any]:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Could not validate credentials: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Security(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     """Get current user from JWT token"""
     token = credentials.credentials
     payload = decode_token(token)
-    
+
     username: str = payload.get("sub")
     token_type: str = payload.get("type")
-    
+
     if username is None or token_type != "access":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise HTTPException(
@@ -102,41 +113,36 @@ def get_current_user(
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
         )
-    
+
     # Update last login
     user.last_login = datetime.utcnow()
     db.commit()
-    
+
     return user
 
 
 def get_current_user_from_api_key(
-    api_key: str = Security(api_key_header),
-    db: Session = Depends(get_db)
+    api_key: str = Security(api_key_header), db: Session = Depends(get_db)
 ) -> Optional[User]:
     """Get current user from API key"""
     if api_key is None:
         return None
-    
+
     user = db.query(User).filter(User.api_key == api_key).first()
     if user is None or not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key"
         )
-    
+
     return user
 
 
-def get_current_active_user(
-    current_user: User = Depends(get_current_user)
-) -> User:
+def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """Get current active user"""
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -146,15 +152,15 @@ def get_current_active_user(
 # Role-based access control
 class RoleChecker:
     """Check if user has required role"""
-    
+
     def __init__(self, allowed_roles: list):
         self.allowed_roles = allowed_roles
-    
+
     def __call__(self, current_user: User = Depends(get_current_active_user)):
         if current_user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Required roles: {', '.join(self.allowed_roles)}"
+                detail=f"Access denied. Required roles: {', '.join(self.allowed_roles)}",
             )
         return current_user
 
@@ -169,16 +175,16 @@ require_user = RoleChecker(["creator", "family", "admin", "user"])
 def authenticate_user(username: str, password: str, db: Session) -> Optional[User]:
     """Authenticate user with username and password"""
     user = db.query(User).filter(User.username == username).first()
-    
+
     if not user:
         return None
-    
+
     if not verify_password(password, user.hashed_password):
         return None
-    
+
     if not user.is_active:
         return None
-    
+
     return user
 
 
@@ -210,10 +216,10 @@ def verify_password_reset_token(token: str) -> Optional[str]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         token_type: str = payload.get("type")
-        
+
         if token_type != "password_reset":
             return None
-        
+
         email: str = payload.get("email")
         return email
     except JWTError:
@@ -225,11 +231,11 @@ def reset_password(token: str, new_password: str, db: Session) -> bool:
     email = verify_password_reset_token(token)
     if not email:
         return False
-    
+
     user = db.query(User).filter(User.email == email).first()
     if not user:
         return False
-    
+
     user.hashed_password = hash_password(new_password)
     db.commit()
     return True
@@ -238,6 +244,7 @@ def reset_password(token: str, new_password: str, db: Session) -> bool:
 # User permissions
 class Permission:
     """Permission constants"""
+
     READ = "read"
     WRITE = "write"
     DELETE = "delete"
@@ -248,12 +255,23 @@ class Permission:
 def has_permission(user: User, permission: str) -> bool:
     """Check if user has specific permission"""
     role_permissions = {
-        "creator": [Permission.READ, Permission.WRITE, Permission.DELETE, Permission.ADMIN, Permission.CREATOR],
-        "family": [Permission.READ, Permission.WRITE, Permission.DELETE, Permission.ADMIN],
+        "creator": [
+            Permission.READ,
+            Permission.WRITE,
+            Permission.DELETE,
+            Permission.ADMIN,
+            Permission.CREATOR,
+        ],
+        "family": [
+            Permission.READ,
+            Permission.WRITE,
+            Permission.DELETE,
+            Permission.ADMIN,
+        ],
         "admin": [Permission.READ, Permission.WRITE, Permission.DELETE],
-        "user": [Permission.READ, Permission.WRITE]
+        "user": [Permission.READ, Permission.WRITE],
     }
-    
+
     user_permissions = role_permissions.get(user.role, [])
     return permission in user_permissions
 
@@ -263,7 +281,7 @@ def check_permission(user: User, permission: str):
     if not has_permission(user, permission):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Permission denied. Required permission: {permission}"
+            detail=f"Permission denied. Required permission: {permission}",
         )
 
 
@@ -273,16 +291,16 @@ if __name__ == "__main__":
     print(f"✅ Secret Key Generated: {SECRET_KEY[:20]}...")
     print(f"✅ Algorithm: {ALGORITHM}")
     print(f"✅ Token Expiry: {ACCESS_TOKEN_EXPIRE_MINUTES} minutes")
-    
+
     # Test token creation
     test_data = {"sub": "creator", "role": "creator"}
     test_token = create_access_token(test_data)
     print(f"✅ Test Token: {test_token[:50]}...")
-    
+
     # Test token decoding
     decoded = decode_token(test_token)
     print(f"✅ Decoded Token: {decoded}")
-    
+
     # Test password hashing
     test_password = "Test123"
     hashed = hash_password(test_password)

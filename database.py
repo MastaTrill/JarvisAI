@@ -6,9 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 from contextlib import contextmanager
-from pathlib import Path
 import os
-from typing import Generator
+from typing import Generator, Optional
 
 from database_models import Base
 
@@ -32,6 +31,9 @@ else:
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Ensure tables exist at import time
+Base.metadata.create_all(bind=engine)
 
 
 def init_database():
@@ -85,12 +87,8 @@ def get_db_session():
 def create_default_users():
     """Create default users for the system"""
     from database_models import User
-    import hashlib
+    from authentication import hash_password
     import secrets
-
-    def hash_password(password: str) -> str:
-        """Simple SHA-256 password hashing"""
-        return hashlib.sha256(password.encode()).hexdigest()
 
     default_users = [
         {
@@ -149,7 +147,7 @@ class DatabaseManager:
     """Database management utilities"""
 
     @staticmethod
-    def backup_database(backup_path: str = None):
+    def backup_database(backup_path: Optional[str] = None):
         """Backup SQLite database"""
         if not DATABASE_URL.startswith("sqlite"):
             raise NotImplementedError("Backup only supported for SQLite databases")
@@ -200,13 +198,12 @@ class DatabaseManager:
             AgentTask,
         ]
 
-        stats = {}
+        table_stats = {}
         with get_db_session() as db:
             for model in models:
-                count = db.query(model).count()
-                stats[model.__tablename__] = count
+                table_stats[model.__tablename__] = db.query(model).count()
 
-        return stats
+        return table_stats
 
     @staticmethod
     def cleanup_old_data(days: int = 30):
@@ -252,7 +249,7 @@ class DatabaseManager:
 
             db.commit()
 
-            print(f"🧹 Cleaned up old data:")
+            print("🧹 Cleaned up old data:")
             print(f"  - Chat histories: {deleted_chats}")
             print(f"  - Performance metrics: {deleted_metrics}")
             print(f"  - Quantum states: {deleted_quantum}")
