@@ -289,23 +289,16 @@ def check_permission(user: User, permission: str):
 
 
 if __name__ == "__main__":
-    # Test authentication system
-    print("🔐 JarvisAI Authentication System")
-    print(f"✅ Secret Key Generated: {SECRET_KEY[:20]}...")
-    print(f"✅ Algorithm: {ALGORITHM}")
-    print(f"✅ Token Expiry: {ACCESS_TOKEN_EXPIRE_MINUTES} minutes")
+    # Smoke-test authentication system (no secrets printed)
+    print("JarvisAI Authentication System")
+    print(f"Algorithm: {ALGORITHM}")
+    print(f"Token Expiry: {ACCESS_TOKEN_EXPIRE_MINUTES} minutes")
 
-    # Test token creation
     test_data = {"sub": "creator", "role": "creator"}
     test_token = create_access_token(test_data)
-    print(f"✅ Test Token: {test_token[:50]}...")
-
-    # Test token decoding
     decoded = decode_token(test_token)
-    print(f"✅ Decoded Token: {decoded}")
+    print(f"Token creation: {'OK' if decoded else 'FAIL'}")
 
-    # Test password hashing
     test_password = "Test123"
     hashed = hash_password(test_password)
-    print(f"✅ Password Hash: {hashed[:20]}...")
-    print(f"✅ Password Verified: {verify_password(test_password, hashed)}")
+    print(f"Password hashing: {'OK' if verify_password(test_password, hashed) else 'FAIL'}")

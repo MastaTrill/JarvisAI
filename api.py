@@ -81,7 +81,12 @@ except ImportError as e:
     logging.warning("Import warning: %s", e)
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+_log_level = getattr(logging, os.environ.get("LOG_LEVEL", "INFO").upper(), logging.INFO)
+logging.basicConfig(
+    level=_log_level,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
 logger = logging.getLogger(__name__)
 
 # Add project root to path

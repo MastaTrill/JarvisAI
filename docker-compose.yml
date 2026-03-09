@@ -12,10 +12,13 @@ services:
       - PYTHONUNBUFFERED=1
       - JARVIS_ENV=production
       - LOG_LEVEL=info
+      - JARVIS_SECRET_KEY=${JARVIS_SECRET_KEY:?Set JARVIS_SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./jarvis.db}
+      - JARVIS_CORS_ORIGINS=${JARVIS_CORS_ORIGINS:-}
     volumes:
       - jarvis-data:/home/jarvisuser/app/data
       - jarvis-models:/home/jarvisuser/app/models
-    command: gunicorn api_enhanced:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+    command: gunicorn api:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -31,6 +34,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - JARVIS_ENV=production
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./jarvis.db}
     volumes:
       - jarvis-data:/home/jarvisuser/app/data
       - jarvis-models:/home/jarvisuser/app/models
