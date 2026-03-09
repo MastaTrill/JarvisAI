@@ -18,6 +18,7 @@ from database_models import Base, User
 from db_config import Base as ConfigBase
 import models_registry  # noqa: F401  # side-effect: registers tables
 import jobs_persistent  # noqa: F401  # side-effect: registers tables
+
 _ = models_registry, jobs_persistent  # prevent unused-import warnings
 
 Base.metadata.create_all(bind=engine)

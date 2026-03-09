@@ -31,7 +31,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHea
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response, JSONResponse
 from pydantic import BaseModel, Field
-from jose import JWTError, jwt
+import jwt  # noqa: F401
+from jwt import InvalidTokenError as JWTError  # noqa: F401
 import bcrypt
 
 logger = logging.getLogger(__name__)

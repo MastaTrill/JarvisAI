@@ -8,10 +8,11 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 try:
-    from jose import JWTError, jwt
+    import jwt
+    from jwt import InvalidTokenError as JWTError
 except ImportError as exc:
     raise ImportError(
-        "python-jose is not installed. Please install it with 'pip install python-jose'"
+        "PyJWT is not installed. Please install it with 'pip install PyJWT'"
     ) from exc
 
 
