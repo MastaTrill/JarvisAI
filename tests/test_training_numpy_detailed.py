@@ -2,10 +2,7 @@
 Unit tests for the Jarvis AI Project training module (numpy-only).
 """
 
-import pytest
 import numpy as np
-import tempfile
-import os
 
 from src.models.numpy_neural_network import SimpleNeuralNetwork
 from src.training.numpy_trainer import NumpyTrainer
@@ -73,7 +70,7 @@ class TestNumpyTraining:
         y = data["target"][:20].reshape(-1, 1)
 
         # Train for one epoch
-        initial_loss = trainer.compute_loss(y, model.forward(X))
+        trainer.compute_loss(y, model.forward(X))
         epoch_loss = trainer.train_epoch(X, y)
         final_loss = trainer.compute_loss(y, model.forward(X))
 
@@ -217,4 +214,5 @@ class TestNumpyTraining:
 
 
 if __name__ == "__main__":
+    import pytest
     pytest.main([__file__])

@@ -2,12 +2,10 @@
 Unit tests for the Jarvis AI Project inference module (numpy-only).
 """
 
-import pytest
 import numpy as np
 import tempfile
 import os
 
-from src.inference.predict import run_inference
 from src.models.numpy_neural_network import SimpleNeuralNetwork
 from src.data.numpy_processor import DataProcessor
 
@@ -91,14 +89,16 @@ class TestNumpyInference:
         """Test model prediction with saved/loaded model and preprocessor"""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create and save a model
-            model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
+            model = SimpleNeuralNetwork(
+                input_size=4, hidden_sizes=[8, 4], output_size=1
+            )
             model_path = os.path.join(temp_dir, "model.pkl")
             model.save(model_path)
 
             # Create and save preprocessor
             data = self.processor.load_sample_data()
             X_train = data["data"][:50]
-            scaled, scaler_stats = self.processor.scale_features(X_train)
+            _, scaler_stats = self.processor.scale_features(X_train)
 
             preprocessor_path = os.path.join(temp_dir, "preprocessor.pkl")
             self.processor.save_processor(scaler_stats, preprocessor_path)
@@ -151,4 +151,5 @@ class TestNumpyInference:
 
 
 if __name__ == "__main__":
+    import pytest
     pytest.main([__file__])

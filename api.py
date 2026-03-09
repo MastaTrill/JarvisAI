@@ -366,9 +366,7 @@ class UserCreate(BaseModel):
 
 @app.post("/register", tags=["System"])
 @limiter.limit("5/minute")
-def register(
-    request: Request, user: UserCreate, db: Session = Depends(get_db)
-):
+def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user."""
     _ = request  # required by slowapi rate limiter
     try:

@@ -2,7 +2,6 @@
 Unit test for quantum processor
 """
 
-import pytest
 from src.quantum.quantum_processor import QuantumProcessor
 
 

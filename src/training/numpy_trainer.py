@@ -5,7 +5,6 @@ Simple trainer for numpy-based neural networks
 import logging
 import numpy as np
 from typing import Dict, List, Tuple, Optional
-import pickle
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ class NumpyTrainer:
             y = y.reshape(-1, 1)
 
         m = X.shape[0]
-        activations, z_values = self.model._forward_pass(X)
+        activations, z_values = self.model.forward_pass(X)
 
         weight_grads: list = [None] * len(self.model.weights)
         bias_grads: list = [None] * len(self.model.biases)
@@ -69,7 +68,7 @@ class NumpyTrainer:
             if i == len(self.model.weights) - 1:
                 dZ = dA
             else:
-                dZ = dA * self.model._relu_derivative(z_values[i])
+                dZ = dA * self.model.relu_derivative(z_values[i])
 
             weight_grads[i] = (1 / m) * np.dot(activations[i].T, dZ)
             bias_grads[i] = (1 / m) * np.sum(dZ, axis=0, keepdims=True)
@@ -137,7 +136,7 @@ class NumpyTrainer:
 
         logger.info("Starting training for %d epochs", epochs)
 
-        for epoch in range(epochs):
+        for _epoch in range(epochs):
             epoch_loss = self.train_epoch(X_train, y_train)
             history["train_loss"].append(epoch_loss)
 

@@ -163,6 +163,14 @@ class SimpleNeuralNetwork:
         self.is_trained = True
         logger.info("Training completed")
 
+    def forward_pass(self, x: np.ndarray):
+        """Public wrapper for _forward_pass. Returns (activations, z_values)."""
+        return self._forward_pass(x)
+
+    def relu_derivative(self, x: np.ndarray) -> np.ndarray:
+        """Public wrapper for _relu_derivative."""
+        return self._relu_derivative(x)
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Forward pass returning output activations."""
         activations, _ = self._forward_pass(x)
