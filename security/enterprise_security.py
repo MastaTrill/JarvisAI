@@ -19,20 +19,17 @@ import secrets
 import time
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, Dict, Any, List, Callable
-from functools import wraps
+
 from collections import defaultdict
 import ipaddress
 import re
 
 from fastapi import Request, HTTPException, Depends, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
+from fastapi.security import HTTPBearer, APIKeyHeader
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response, JSONResponse
-from pydantic import BaseModel, Field
-import jwt  # noqa: F401
-from jwt import InvalidTokenError as JWTError  # noqa: F401
 import bcrypt
 
 logger = logging.getLogger(__name__)
@@ -97,7 +94,7 @@ class PasswordHasher:
         """Verify a password against its hash"""
         try:
             return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-        except Exception:
+        except (ValueError, TypeError):
             return False
     
     @staticmethod
@@ -105,7 +102,7 @@ class PasswordHasher:
         """Check if password hash needs to be updated"""
         try:
             return bcrypt.checkpw(b"", hashed.encode('utf-8'))
-        except Exception:
+        except (ValueError, TypeError):
             return True
 
 
@@ -386,14 +383,14 @@ class RequestSigner:
             request_time = int(timestamp)
             age = abs(time.time() - request_time)
             if age > config.REQUEST_MAX_AGE_SECONDS:
-                logger.warning(f"Request too old: {age}s")
+                logger.warning("Request too old: %ss", age)
                 return False
         except ValueError:
             return False
         
         # Check nonce reuse
         if nonce in self._used_nonces:
-            logger.warning(f"Nonce reuse detected: {nonce}")
+            logger.warning("Nonce reuse detected: %s", nonce)
             return False
         
         # Clean old nonces
@@ -436,7 +433,7 @@ class IPFilter:
                 else:
                     networks.append(ipaddress.ip_network(f"{ip_str}/32", strict=False))
             except ValueError as e:
-                logger.warning(f"Invalid IP in filter: {ip_str} - {e}")
+                logger.warning("Invalid IP in filter: %s - %s", ip_str, e)
         return networks
     
     def is_allowed(self, ip_str: str) -> bool:
@@ -601,7 +598,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         # Log request
         duration = time.time() - start_time
         logger.info(
-            f"{request.method} {request.url.path} - {response.status_code} - {duration:.3f}s"
+            "%s %s - %s - %.3fs",
+            request.method, request.url.path, response.status_code, duration
         )
         
         return response
