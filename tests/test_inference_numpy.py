@@ -28,7 +28,7 @@ class TestNumpyInference:
 
     def test_model_forward_pass(self):
         """Test model forward pass"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[10, 5], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[10, 5], output_size=1)
 
         # Test single sample
         X = np.random.randn(1, 4)
@@ -42,7 +42,7 @@ class TestNumpyInference:
 
     def test_model_predict(self):
         """Test model prediction"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[10, 5], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[10, 5], output_size=1)
 
         # Test prediction
         X = np.random.randn(5, 4)
@@ -52,7 +52,7 @@ class TestNumpyInference:
 
     def test_model_save_load(self):
         """Test model saving and loading"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[10, 5], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[10, 5], output_size=1)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Save model
@@ -61,7 +61,7 @@ class TestNumpyInference:
             assert os.path.exists(model_path)
 
             # Load model
-            loaded_model = NumpyNeuralNetwork.load(model_path)
+            loaded_model = SimpleNeuralNetwork.load(model_path)
             assert loaded_model.input_size == model.input_size
             assert loaded_model.hidden_sizes == model.hidden_sizes
             assert loaded_model.output_size == model.output_size
@@ -75,7 +75,7 @@ class TestNumpyInference:
     def test_inference_pipeline(self):
         """Test complete inference pipeline"""
         # Create and train a simple model
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
 
         # Get sample data
         data = self.processor.load_sample_data()
@@ -88,25 +88,27 @@ class TestNumpyInference:
         assert not np.isnan(predictions).any()
 
     def test_predict_with_model_function(self):
-        """Test the predict_with_model function"""
-        # Create temporary model and preprocessor files
+        """Test model prediction with saved/loaded model and preprocessor"""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create and save a model
-            model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
+            model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
             model_path = os.path.join(temp_dir, "model.pkl")
             model.save(model_path)
 
             # Create and save preprocessor
             data = self.processor.load_sample_data()
             X_train = data["data"][:50]
-            _, scaler_stats = self.processor.scale_features(X_train)
+            scaled, scaler_stats = self.processor.scale_features(X_train)
 
             preprocessor_path = os.path.join(temp_dir, "preprocessor.pkl")
             self.processor.save_processor(scaler_stats, preprocessor_path)
 
-            # Test prediction
+            # Load model and preprocessor, then predict
+            loaded_model = SimpleNeuralNetwork.load(model_path)
+            loaded_stats = self.processor.load_processor(preprocessor_path)
             X_test = data["data"][50:55]
-            predictions = predict_with_model(X_test, model_path, preprocessor_path)
+            X_scaled = self.processor.apply_scaling(X_test, loaded_stats)
+            predictions = loaded_model.predict(X_scaled)
 
             assert predictions.shape == (5, 1)
             assert isinstance(predictions, np.ndarray)
@@ -114,7 +116,7 @@ class TestNumpyInference:
 
     def test_batch_prediction(self):
         """Test batch prediction with different sizes"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
 
         # Test different batch sizes
         for batch_size in [1, 5, 10, 50]:
@@ -132,7 +134,7 @@ class TestNumpyInference:
         ]
 
         for input_size, hidden_sizes, output_size in architectures:
-            model = NumpyNeuralNetwork(
+            model = SimpleNeuralNetwork(
                 input_size=input_size,
                 hidden_sizes=hidden_sizes,
                 output_size=output_size,

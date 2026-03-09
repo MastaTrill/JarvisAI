@@ -7,9 +7,11 @@ from src.quantum.quantum_processor import QuantumProcessor
 
 
 def test_create_superposition():
-    qp = QuantumProcessor(creator_auth=True)
-    result = qp.create_quantum_superposition(num_states=4)
+    qp = QuantumProcessor()
+    qp.authenticate_creator("AETHERON_QUANTUM_CREATOR_KEY_2025")
+    result = qp.create_quantum_superposition(["state0", "state1", "state2", "state3"])
     assert isinstance(result, dict)
-    assert "probabilities" in result
-    assert len(result["probabilities"]) == 4
-    assert abs(sum(result["probabilities"]) - 1.0) < 1e-6
+    assert result["status"] == "success"
+    superposition = result["superposition"]
+    assert superposition["total_states"] == 4
+    assert abs(superposition["probability_per_state"] * 4 - 1.0) < 1e-6

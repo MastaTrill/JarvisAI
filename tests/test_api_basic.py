@@ -8,9 +8,14 @@ from main_api import app
 
 client = TestClient(app)
 
+_auth_header_cache = None
+
 
 def _get_auth_header():
     """Register a test user, login, and return an Authorization header."""
+    global _auth_header_cache
+    if _auth_header_cache is not None:
+        return _auth_header_cache
     client.post(
         "/register",
         json={
@@ -26,7 +31,8 @@ def _get_auth_header():
     if login_resp.status_code != 200:
         pytest.skip("Login endpoint unavailable")
     token = login_resp.json().get("access_token", "")
-    return {"Authorization": f"Bearer {token}"}
+    _auth_header_cache = {"Authorization": f"Bearer {token}"}
+    return _auth_header_cache
 
 
 def test_health_check():

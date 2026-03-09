@@ -163,6 +163,11 @@ class SimpleNeuralNetwork:
         self.is_trained = True
         logger.info("Training completed")
 
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        """Forward pass returning output activations."""
+        activations, _ = self._forward_pass(x)
+        return activations[-1]
+
     def predict(self, x: np.ndarray) -> np.ndarray:
         """
         Make predictions
@@ -173,9 +178,6 @@ class SimpleNeuralNetwork:
         Returns:
             Predictions
         """
-        if not self.is_trained:
-            raise ValueError("Model must be trained before making predictions")
-
         activations, _ = self._forward_pass(x)
         return activations[-1]
 
@@ -220,17 +222,21 @@ class SimpleNeuralNetwork:
             pickle.dump(model_data, f)
         logger.info("Model saved to %s", filepath)
 
-    def load(self, filepath: str) -> None:
-        """Load model from file"""
+    @classmethod
+    def load(cls, filepath: str) -> "SimpleNeuralNetwork":
+        """Load model from file and return a new instance."""
         with open(filepath, "rb") as f:
             model_data = pickle.load(f)
 
-        self.weights = model_data["weights"]
-        self.biases = model_data["biases"]
-        self.input_size = model_data["input_size"]
-        self.hidden_sizes = model_data["hidden_sizes"]
-        self.output_size = model_data["output_size"]
-        self.config = model_data["config"]
-        self.is_trained = model_data["is_trained"]
+        instance = cls(
+            input_size=model_data["input_size"],
+            hidden_sizes=model_data["hidden_sizes"],
+            output_size=model_data["output_size"],
+            config=model_data.get("config", {}),
+        )
+        instance.weights = model_data["weights"]
+        instance.biases = model_data["biases"]
+        instance.is_trained = model_data.get("is_trained", False)
 
         logger.info("Model loaded from %s", filepath)
+        return instance

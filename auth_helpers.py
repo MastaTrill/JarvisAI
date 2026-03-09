@@ -60,7 +60,7 @@ def require_role(required_role: str):
     def role_checker(user=Depends(get_current_user)):
         # Check if user.role exists and is not a SQLAlchemy Column object
         role = getattr(user, "role", None)
-        role_name = getattr(role, "name", None) if role else None
+        role_name = getattr(role, "name", role) if role else None
         if role_name != required_role:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
         return user
@@ -71,7 +71,7 @@ def require_role(required_role: str):
 def admin_required(current_user=Depends(get_current_user)):
     """Verify that the current user has admin role."""
     role = getattr(current_user, "role", None)
-    role_name = getattr(role, "name", None) if role else None
+    role_name = getattr(role, "name", role) if role else None
     if role_name != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user

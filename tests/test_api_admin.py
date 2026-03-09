@@ -1,38 +1,33 @@
 # Patch database engine/session before any other imports
+import sys
+import os
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test_admin.db"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Ensure tables are created before tests
-from database_models import Base
+# Ensure tables are created
+from database_models import Base, User
+from db_config import Base as ConfigBase
+import models_registry  # noqa: F401
+import jobs_persistent  # noqa: F401
 
 Base.metadata.create_all(bind=engine)
+ConfigBase.metadata.create_all(bind=engine)
 
-
-import database
-
-database.engine = engine
-database.SessionLocal = TestingSessionLocal
-
-# Ensure tables are created before any DB/model import
-from database_models import Base
-
-Base.metadata.create_all(bind=engine)
-
-# Now import models and app
-from database_models import User
 from models_user import get_password_hash
-from admin_dashboard import admin_required, get_db as admin_get_db
+from admin_dashboard import admin_required
+from database import get_db as users_get_db
+from db_config import get_db as jobs_get_db
 from main_api import app
 from fastapi.testclient import TestClient
-
-# Use the dedicated test session for dependency overrides.
 import database
 
 
@@ -44,10 +39,6 @@ def override_get_db():
         db.close()
 
 
-app.dependency_overrides[database.get_db] = override_get_db
-app.dependency_overrides[admin_get_db] = override_get_db
-
-
 def override_admin_required():
     return User(
         username="admin",
@@ -57,7 +48,27 @@ def override_admin_required():
     )
 
 
-app.dependency_overrides[admin_required] = override_admin_required
+@pytest.fixture(autouse=True)
+def _apply_overrides():
+    """Apply dependency overrides for this module only, then clean up."""
+    _orig_engine = database.engine
+    _orig_session = database.SessionLocal
+    database.engine = engine
+    database.SessionLocal = TestingSessionLocal
+
+    app.dependency_overrides[database.get_db] = override_get_db
+    app.dependency_overrides[users_get_db] = override_get_db
+    app.dependency_overrides[jobs_get_db] = override_get_db
+    app.dependency_overrides[admin_required] = override_admin_required
+    yield
+    app.dependency_overrides.pop(database.get_db, None)
+    app.dependency_overrides.pop(users_get_db, None)
+    app.dependency_overrides.pop(jobs_get_db, None)
+    app.dependency_overrides.pop(admin_required, None)
+
+    database.engine = _orig_engine
+    database.SessionLocal = _orig_session
+
 
 client = TestClient(app)
 

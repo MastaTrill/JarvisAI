@@ -11,7 +11,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
-from db_config import get_db
+from db_config import get_db as get_jobs_db
+from database import get_db as get_users_db
 from models_user import User, get_password_hash
 from auth_helpers import admin_required
 from audit_trail import log_audit_event
@@ -27,7 +28,7 @@ templates = Jinja2Templates(
 @router.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_users_db),
     current_user: User = Depends(admin_required),
 ):
     """Render admin dashboard with list of users."""
@@ -44,7 +45,7 @@ def admin_dashboard(
 # GET /admin/users endpoint for test coverage
 @router.get("/admin/users", response_class=JSONResponse)
 def list_users(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_users_db),
 ):
     """List all users in the system."""
     users = db.query(User).all()
@@ -66,7 +67,7 @@ def create_user(
     username: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_users_db),
     current_user: User = Depends(admin_required),
 ):
     """Create a new user with the provided credentials."""
@@ -90,7 +91,7 @@ def create_user(
 @router.post("/admin/users/delete")
 def delete_user(
     user_id: int = Form(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_users_db),
     current_user: User = Depends(admin_required),
 ):
     """Delete a user by ID."""
@@ -113,7 +114,7 @@ def delete_user(
 
 @router.get("/admin/models")
 def list_models(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_jobs_db),
 ):
     """List all registered models."""
     models = get_models(db)
@@ -137,7 +138,7 @@ def create_model_endpoint(
     name: str = Form(...),
     description: str = Form(""),
     accuracy: float = Form(None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_jobs_db),
     current_user: User = Depends(admin_required),
 ):
     """Create a new model with the provided details."""
@@ -153,7 +154,7 @@ def create_model_endpoint(
 
 @router.get("/admin/jobs")
 def list_jobs(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_jobs_db),
 ):
     """List all jobs in the system."""
     jobs = db.query(Job).all()
@@ -175,7 +176,7 @@ def list_jobs(
 @router.post("/admin/jobs/cancel")
 def cancel_job(
     job_id: str = Form(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_jobs_db),
     current_user: User = Depends(admin_required),
 ):
     """Cancel a job by ID."""

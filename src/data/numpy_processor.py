@@ -313,3 +313,90 @@ class DataProcessor:
 
         logger.info("Generated dummy data with shape: %s", data.shape)
         return data
+
+    def load_sample_data(self) -> dict:
+        """
+        Load sample data for testing.
+
+        Returns:
+            dict with 'data' (np.ndarray) and 'target' (np.ndarray) keys.
+        """
+        np.random.seed(self.random_state)
+        n_samples, n_features = 100, 4
+        X = np.random.randn(n_samples, n_features)
+        weights = np.array([1.0, -0.5, 0.3, 0.8])
+        y = X @ weights + np.random.randn(n_samples) * 0.1
+        return {"data": X, "target": y}
+
+    def prepare_data(
+        self, X: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Split data into train/test sets.
+
+        Args:
+            X: Feature array.
+            y: Target array.
+
+        Returns:
+            Tuple of X_train, X_test, y_train, y_test.
+        """
+        return train_test_split(
+            X, y, test_size=self.test_size, random_state=self.random_state
+        )
+
+    def scale_features(self, data: np.ndarray) -> Tuple[np.ndarray, dict]:
+        """
+        Scale features to zero mean and unit variance.
+
+        Args:
+            data: Feature array to scale.
+
+        Returns:
+            Tuple of (scaled_data, scaler_stats dict with 'mean' and 'std').
+        """
+        mean = np.mean(data, axis=0)
+        std = np.std(data, axis=0)
+        std[std == 0] = 1.0
+        scaled = (data - mean) / std
+        return scaled, {"mean": mean, "std": std}
+
+    def apply_scaling(self, data: np.ndarray, scaler_stats: dict) -> np.ndarray:
+        """
+        Apply previously computed scaling to new data.
+
+        Args:
+            data: Feature array to scale.
+            scaler_stats: Dict with 'mean' and 'std' from scale_features().
+
+        Returns:
+            Scaled data array.
+        """
+        return (data - scaler_stats["mean"]) / scaler_stats["std"]
+
+    def save_processor(self, data: object, file_path: str) -> None:
+        """
+        Save arbitrary data (e.g. scaler stats) to a pickle file.
+
+        Args:
+            data: Object to save.
+            file_path: Destination path.
+        """
+        with open(file_path, "wb") as f:
+            pickle.dump(data, f)
+        logger.info("Processor data saved to %s", file_path)
+
+    def load_processor(self, file_path: str) -> object:
+        """
+        Load previously saved processor data.
+
+        Args:
+            file_path: Path to the pickle file.
+
+        Returns:
+            The loaded object.
+        """
+        with open(file_path, "rb") as f:
+            data = pickle.load(f)
+        logger.info("Processor data loaded from %s", file_path)
+        return data

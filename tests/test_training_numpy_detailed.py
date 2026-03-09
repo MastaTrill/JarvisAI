@@ -27,7 +27,7 @@ class TestNumpyTraining:
 
     def test_loss_calculation(self):
         """Test loss calculation"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
         trainer = NumpyTrainer(model=model)
 
         # Test loss calculation
@@ -44,7 +44,7 @@ class TestNumpyTraining:
 
     def test_batch_creation(self):
         """Test batch creation for training"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
         trainer = NumpyTrainer(model=model, batch_size=5)
 
         # Create sample data
@@ -64,7 +64,7 @@ class TestNumpyTraining:
 
     def test_single_epoch_training(self):
         """Test single epoch training"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
         trainer = NumpyTrainer(model=model, learning_rate=0.01, batch_size=5)
 
         # Get sample data
@@ -84,7 +84,7 @@ class TestNumpyTraining:
 
     def test_full_training(self):
         """Test full training process"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[6, 3], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[6, 3], output_size=1)
         trainer = NumpyTrainer(model=model, learning_rate=0.01, batch_size=10)
 
         # Get sample data
@@ -115,7 +115,7 @@ class TestNumpyTraining:
 
     def test_model_improvement(self):
         """Test that model actually learns (loss decreases)"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[10, 5], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[10, 5], output_size=1)
         trainer = NumpyTrainer(
             model=model,
             learning_rate=0.1,  # Higher learning rate for faster improvement
@@ -147,7 +147,7 @@ class TestNumpyTraining:
 
     def test_gradient_computation(self):
         """Test gradient computation"""
-        model = NumpyNeuralNetwork(input_size=2, hidden_sizes=[3], output_size=1)
+        model = SimpleNeuralNetwork(input_size=2, hidden_sizes=[3], output_size=1)
         trainer = NumpyTrainer(model=model)
 
         # Simple test case
@@ -170,7 +170,7 @@ class TestNumpyTraining:
 
     def test_parameter_update(self):
         """Test parameter update"""
-        model = NumpyNeuralNetwork(input_size=2, hidden_sizes=[3], output_size=1)
+        model = SimpleNeuralNetwork(input_size=2, hidden_sizes=[3], output_size=1)
         trainer = NumpyTrainer(model=model, learning_rate=0.1)
 
         # Store initial parameters
@@ -194,7 +194,7 @@ class TestNumpyTraining:
 
     def test_training_with_validation(self):
         """Test training with validation data"""
-        model = NumpyNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
+        model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
         trainer = NumpyTrainer(model=model, learning_rate=0.01, batch_size=10)
 
         # Get sample data

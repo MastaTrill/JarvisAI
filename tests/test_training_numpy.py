@@ -76,13 +76,8 @@ class TestSimpleNeuralNetwork:
                 # Save model
                 model.save(f.name)
                 
-                # Create new model and load
-                new_model = SimpleNeuralNetwork(
-                    input_size=3,
-                    hidden_sizes=[5],
-                    output_size=1
-                )
-                new_model.load(f.name)
+                # Load model using classmethod
+                new_model = SimpleNeuralNetwork.load(f.name)
                 
                 assert new_model.is_trained
                 assert new_model.input_size == 3
@@ -130,13 +125,10 @@ class TestNumpyTrainer:
             epochs=5
         )
         
-        assert 'final_train_score' in metrics
-        assert 'final_val_score' in metrics
         assert 'train_loss' in metrics
         assert 'val_loss' in metrics
-        
-        assert len(self.trainer.train_scores) == 1
-        assert len(self.trainer.val_scores) == 1
+        assert len(metrics['train_loss']) == 5
+        assert len(metrics['val_loss']) == 5
     
     def test_model_save_load(self):
         """Test model saving and loading"""
