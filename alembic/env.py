@@ -3,7 +3,6 @@ Alembic environment configuration for migrations.
 Refactored for clarity and best practices.
 """
 
-
 import os
 import sys
 from logging.config import fileConfig
@@ -17,15 +16,20 @@ from alembic.context import (
 )
 
 # Ensure project root is in sys.path before importing db_config
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from db_config import Base
+
+# Import all models so Base.metadata includes their tables for autogenerate
+import models_registry  # noqa: F401
+import jobs_persistent  # noqa: F401
+import audit_trail  # noqa: F401
+import models_versioning  # noqa: F401
 import logging
 
 
-
 # Alembic Config object setup
-config = Config(os.path.join(os.path.dirname(__file__), '..', 'alembic.ini'))
+config = Config(os.path.join(os.path.dirname(__file__), "..", "alembic.ini"))
 db_url_env = os.getenv("ALEMBIC_DATABASE_URL")
 if db_url_env:
     config.set_main_option("sqlalchemy.url", db_url_env)
@@ -41,6 +45,7 @@ else:
 
 # Set target metadata for 'autogenerate' support
 target_metadata = Base.metadata
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
@@ -64,18 +69,21 @@ def run_migrations_offline() -> None:
         logger.exception(f"Error during offline migrations: {e}")
         raise
 
+
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     section = config.get_section(config.config_ini_section)
     if section is None:
-        logger.error("Alembic config section is missing. Please ensure your alembic.ini file is present and properly configured.")
+        logger.error(
+            "Alembic config section is missing. Please ensure your alembic.ini file is present and properly configured."
+        )
         raise RuntimeError(
             "Alembic config section is missing. "
             "Please ensure your alembic.ini file is present and properly configured."
         )
     connectable = engine_from_config(
         section,
-        prefix='sqlalchemy.',
+        prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
     try:
@@ -94,10 +102,12 @@ def run_migrations_online() -> None:
         logger.exception(f"Error during online migrations: {e}")
         raise
 
+
 def pre_migration_hook() -> None:
     """Custom logic to run before migrations (optional)."""
     logger.info("Pre-migration hook executed.")
     # Add custom pre-migration logic here (e.g., health checks, backups)
+
 
 def post_migration_hook() -> None:
     """Custom logic to run after migrations (optional)."""
@@ -110,13 +120,20 @@ def check_migration_consistency() -> None:
     from alembic.autogenerate import compare_metadata
     from alembic.script import ScriptDirectory
     from alembic.runtime.environment import EnvironmentContext
+
     script = ScriptDirectory.from_config(config)
+
     def process_revision_directives(context, revision, directives):
-        if getattr(config.cmd_opts, 'autogenerate', False):
+        if getattr(config.cmd_opts, "autogenerate", False):
             diffs = compare_metadata(context, target_metadata)
             if diffs:
-                logger.error("Model and migration are out of sync! Run 'alembic revision --autogenerate'.")
-                raise RuntimeError("Model and migration are out of sync! Run 'alembic revision --autogenerate'.")
+                logger.error(
+                    "Model and migration are out of sync! Run 'alembic revision --autogenerate'."
+                )
+                raise RuntimeError(
+                    "Model and migration are out of sync! Run 'alembic revision --autogenerate'."
+                )
+
     try:
         with EnvironmentContext(
             config,
@@ -130,10 +147,12 @@ def check_migration_consistency() -> None:
         logger.exception(f"Migration consistency check failed: {e}")
         raise
 
+
 # --- Migration utility functions ---
 def alembic_stamp(revision: str = "head") -> None:
     """Stamp the database with the given revision (default: head)."""
     from alembic.command import stamp
+
     try:
         stamp(config, revision)
         logger.info(f"Database stamped with revision: {revision}")
@@ -141,9 +160,11 @@ def alembic_stamp(revision: str = "head") -> None:
         logger.exception(f"Error during alembic stamp: {e}")
         raise
 
+
 def alembic_upgrade(revision: str = "head") -> None:
     """Upgrade the database to the given revision (default: head)."""
     from alembic.command import upgrade
+
     try:
         upgrade(config, revision)
         logger.info(f"Database upgraded to revision: {revision}")
@@ -151,9 +172,11 @@ def alembic_upgrade(revision: str = "head") -> None:
         logger.exception(f"Error during alembic upgrade: {e}")
         raise
 
+
 def alembic_downgrade(revision: str) -> None:
     """Downgrade the database to the given revision."""
     from alembic.command import downgrade
+
     try:
         downgrade(config, revision)
         logger.info(f"Database downgraded to revision: {revision}")
@@ -161,9 +184,11 @@ def alembic_downgrade(revision: str) -> None:
         logger.exception(f"Error during alembic downgrade: {e}")
         raise
 
+
 def main() -> None:
     """CLI entry point for Alembic migration utilities."""
     import sys
+
     args = sys.argv[1:]
     if not args:
         # Default: run migrations
@@ -191,6 +216,7 @@ def main() -> None:
         logger.error(f"Unknown command: {cmd}")
         print("Usage: python alembic/env.py [check|stamp|upgrade|downgrade]")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

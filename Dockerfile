@@ -1,7 +1,7 @@
 # Dockerfile for Jarvis AI Platform
 
 # Use official Python slim image
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Install system dependencies (curl for healthcheck, build-essential for some Python packages)
 RUN apt-get update \
@@ -42,7 +42,7 @@ USER jarvisuser
 
 # Healthcheck for container orchestration
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8000/ || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 LABEL maintainer="Jarvis Maintainers <maintainers@jarvis.ai>"
 LABEL org.opencontainers.image.source="https://github.com/MastaTrill/JarvisAI"
@@ -50,4 +50,4 @@ LABEL org.opencontainers.image.description="JarvisAI Aetheron Platform - Advance
 LABEL org.opencontainers.image.version="3.0.0"
 
 # Default command: use gunicorn with uvicorn workers for production
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "api_enhanced:app"]
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "api:app"]

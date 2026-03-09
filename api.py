@@ -206,7 +206,11 @@ def serve_dashboard():
 # --- XAI/Interpretability Endpoints ---
 
 
-@app.get("/api/xai/global/{model_name}", tags=["XAI"], summary="Global feature importance (SHAP)")
+@app.get(
+    "/api/xai/global/{model_name}",
+    tags=["XAI"],
+    summary="Global feature importance (SHAP)",
+)
 async def get_global_feature_importance(model_name: str):
     """Get global feature importance (SHAP-style) for a model."""
     if model_name not in models:
@@ -236,7 +240,9 @@ async def get_global_feature_importance(model_name: str):
     }
 
 
-@app.get("/api/xai/local/{model_name}", tags=["XAI"], summary="Local explanation (LIME)")
+@app.get(
+    "/api/xai/local/{model_name}", tags=["XAI"], summary="Local explanation (LIME)"
+)
 async def get_local_explanation(model_name: str, instance_idx: int = 0):
     """Get local explanation (LIME-style) for a model and instance."""
     if model_name not in models:
@@ -263,7 +269,11 @@ async def get_local_explanation(model_name: str, instance_idx: int = 0):
     return lime_result
 
 
-@app.get("/api/xai/counterfactuals/{model_name}", tags=["XAI"], summary="Counterfactual suggestions")
+@app.get(
+    "/api/xai/counterfactuals/{model_name}",
+    tags=["XAI"],
+    summary="Counterfactual suggestions",
+)
 async def get_counterfactuals(model_name: str, instance_idx: int = 0):
     """Get counterfactual suggestions for a model and instance."""
     if model_name not in models:
@@ -314,8 +324,8 @@ app.add_middleware(
         "JARVIS_CORS_ORIGINS", "http://localhost:3000,http://localhost:8080"
     ).split(","),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
 )
 
 # Add HTTPS redirect middleware (optional, for production)
@@ -558,7 +568,12 @@ async def health_check(request: Request):
     }
 
 
-@app.get("/models", response_model=List[ModelInfo], tags=["Models"], summary="List available models")
+@app.get(
+    "/models",
+    response_model=List[ModelInfo],
+    tags=["Models"],
+    summary="List available models",
+)
 async def list_models():
     """List all available models."""
     model_list = []
@@ -928,7 +943,11 @@ async def list_models_detailed():
     return {"models": model_list}
 
 
-@app.get("/api/training/status/{model_name}", tags=["Models"], summary="Get training status (API)")
+@app.get(
+    "/api/training/status/{model_name}",
+    tags=["Models"],
+    summary="Get training status (API)",
+)
 async def get_training_status_api(model_name: str):
     """Get current training status for a model."""
     if model_name not in training_status:
@@ -937,7 +956,9 @@ async def get_training_status_api(model_name: str):
     return training_status[model_name]
 
 
-@app.post("/api/training/stop/{model_name}", tags=["Models"], summary="Stop model training")
+@app.post(
+    "/api/training/stop/{model_name}", tags=["Models"], summary="Stop model training"
+)
 async def stop_training(model_name: str):
     """Stop training for a model."""
     if model_name not in active_trainings:
@@ -1015,7 +1036,9 @@ async def compare_models(model_names: List[str]):
     return {"models": comparison_data}
 
 
-@app.post("/api/models/export/{model_name}", tags=["Models"], summary="Export a trained model")
+@app.post(
+    "/api/models/export/{model_name}", tags=["Models"], summary="Export a trained model"
+)
 async def export_model(model_name: str, export_format: str = "pkl"):
     """Export a trained model."""
     if model_name not in models:
@@ -1052,7 +1075,9 @@ async def export_model(model_name: str, export_format: str = "pkl"):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@app.get("/api/data/exploration/{filename}", tags=["Data"], summary="Explore data statistics")
+@app.get(
+    "/api/data/exploration/{filename}", tags=["Data"], summary="Explore data statistics"
+)
 async def explore_data(filename: str, _current_user: User = Depends(get_current_user)):
     """Get data exploration statistics."""
     safe_name = _safe_filename(filename)
