@@ -6,7 +6,7 @@ Persistent Model Registry for Jarvis AI
 
 from db_config import Base
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 from sqlalchemy import ForeignKey
@@ -20,7 +20,7 @@ class ModelRegistry(Base):
     version = Column(String, default="1.0.0")
     description = Column(String)
     accuracy = Column(Float)
-    registered_at = Column(DateTime, default=datetime.utcnow)
+    registered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     active = Column(Boolean, default=False)
     device = Column(String, default="cpu")  # cpu/gpu/other
     external_endpoint = Column(String, nullable=True)
@@ -48,10 +48,11 @@ def get_models(session):
 
 
 def activate_model(session, name):
-    for m in session.query(ModelRegistry).all():
-        m.active = False
     model = session.query(ModelRegistry).filter_by(name=name).first()
     if model:
+        session.query(ModelRegistry).filter(ModelRegistry.active.is_(True)).update(
+            {"active": False}
+        )
         model.active = True
         session.commit()
         return model

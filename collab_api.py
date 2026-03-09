@@ -8,7 +8,7 @@ Real-Time Collaboration & Annotation Endpoints
 from fastapi import APIRouter, Depends
 from models_user import User
 from auth_helpers import get_current_user
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import json
 
@@ -26,7 +26,7 @@ def add_annotation(
     entry = {
         "user": str(current_user.username),
         "feedback": feedback,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     with open(ann_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")

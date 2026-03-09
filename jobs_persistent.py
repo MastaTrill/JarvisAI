@@ -6,7 +6,7 @@ Persistent Job Management for Jarvis AI
 
 from db_config import Base
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class Job(Base):
@@ -14,7 +14,7 @@ class Job(Base):
     id = Column(Integer, primary_key=True, index=True)
     job_id = Column(String, unique=True, index=True)
     status = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime, nullable=True)
     result = Column(JSON, nullable=True)
     cancelled = Column(Boolean, default=False)

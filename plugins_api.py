@@ -8,7 +8,7 @@ Plugin & Extension Marketplace Endpoints
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from models_user import User
 from auth_helpers import admin_required, get_current_user
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
 router = APIRouter(prefix="/plugins", tags=["Plugin Marketplace"])
@@ -30,7 +30,7 @@ def register_plugin(
     raw_filename = (
         file.filename
         if file and file.filename
-        else f"plugin_{datetime.utcnow().timestamp()}"
+        else f"plugin_{datetime.now(timezone.utc).timestamp()}"
     )
     # Sanitize filename to prevent path traversal
     filename = os.path.basename(raw_filename)
@@ -44,7 +44,7 @@ def register_plugin(
         "filename": filename,
         "uploaded_by": current_user.username,
         "approved": False,
-        "uploaded_at": datetime.utcnow().isoformat(),
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
     }
     return {"message": f"Plugin '{name}' uploaded for review."}
 

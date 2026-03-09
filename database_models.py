@@ -15,7 +15,7 @@ from sqlalchemy import (
     ForeignKey,
 )
 from sqlalchemy.orm import declarative_base, relationship
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 Base = declarative_base()
@@ -35,7 +35,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     api_key = Column(String(100), unique=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime)
 
     # Relationships
@@ -64,7 +64,9 @@ class ChatHistory(Base):
     quantum_enhanced = Column(Boolean, default=False)
     temporal_context = Column(JSON)  # Store temporal analysis data
     sentiment_score = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
 
     # Relationships
     user = relationship("User", back_populates="chat_histories")
@@ -107,7 +109,9 @@ class ModelRun(Base):
     error_message = Column(Text)
     notes = Column(Text)
 
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
     completed_at = Column(DateTime)
 
     # Relationships
@@ -144,7 +148,7 @@ class PerformanceMetric(Base):
     error_count = Column(Integer)
     avg_response_time = Column(Float)
 
-    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
     # Relationships
     model_run = relationship("ModelRun", back_populates="metrics")
@@ -177,7 +181,9 @@ class QuantumState(Base):
     coherence_time = Column(Float)
     operation_count = Column(Integer)
 
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
 
     def __repr__(self):
         return f"<QuantumState(type='{self.state_type}', qubits={self.num_qubits})>"
@@ -207,7 +213,9 @@ class TemporalPattern(Base):
     timeframe_end = Column(DateTime)
     data_points = Column(Integer)
 
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
 
     def __repr__(self):
         return (
@@ -244,7 +252,9 @@ class AgentTask(Base):
     scheduled_at = Column(DateTime)
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
 
     def __repr__(self):
         return f"<AgentTask(name='{self.task_name}', status='{self.status}')>"

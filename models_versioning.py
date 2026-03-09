@@ -7,7 +7,7 @@ Model Versioning and Advanced Serving for Jarvis AI
 
 from db_config import Base
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class ModelVersion(Base):
@@ -17,7 +17,7 @@ class ModelVersion(Base):
     version = Column(String, index=True)
     path = Column(String)
     accuracy = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     is_active = Column(Boolean, default=False)
 
 

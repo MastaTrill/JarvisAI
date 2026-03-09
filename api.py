@@ -15,7 +15,7 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 
 # Third-party imports
@@ -206,7 +206,7 @@ def serve_dashboard():
 # --- XAI/Interpretability Endpoints ---
 
 
-@app.get("/api/xai/global/{model_name}")
+@app.get("/api/xai/global/{model_name}", tags=["XAI"], summary="Global feature importance (SHAP)")
 async def get_global_feature_importance(model_name: str):
     """Get global feature importance (SHAP-style) for a model."""
     if model_name not in models:
@@ -236,7 +236,7 @@ async def get_global_feature_importance(model_name: str):
     }
 
 
-@app.get("/api/xai/local/{model_name}")
+@app.get("/api/xai/local/{model_name}", tags=["XAI"], summary="Local explanation (LIME)")
 async def get_local_explanation(model_name: str, instance_idx: int = 0):
     """Get local explanation (LIME-style) for a model and instance."""
     if model_name not in models:
@@ -263,7 +263,7 @@ async def get_local_explanation(model_name: str, instance_idx: int = 0):
     return lime_result
 
 
-@app.get("/api/xai/counterfactuals/{model_name}")
+@app.get("/api/xai/counterfactuals/{model_name}", tags=["XAI"], summary="Counterfactual suggestions")
 async def get_counterfactuals(model_name: str, instance_idx: int = 0):
     """Get counterfactual suggestions for a model and instance."""
     if model_name not in models:
@@ -545,7 +545,7 @@ def _safe_filename(filename: str) -> str:
 # API Routes
 
 
-@app.get("/health")
+@app.get("/health", tags=["System"], summary="Health check")
 @limiter.limit("60/minute")
 async def health_check(request: Request):
     """Health check endpoint."""
@@ -558,7 +558,7 @@ async def health_check(request: Request):
     }
 
 
-@app.get("/models", response_model=List[ModelInfo])
+@app.get("/models", response_model=List[ModelInfo], tags=["Models"], summary="List available models")
 async def list_models():
     """List all available models."""
     model_list = []
@@ -576,7 +576,7 @@ async def list_models():
     return model_list
 
 
-@app.post("/models/{model_name}/train")
+@app.post("/models/{model_name}/train", tags=["Models"], summary="Train a model")
 @limiter.limit("5/minute")
 async def train_model(
     request: Request,
@@ -703,7 +703,7 @@ async def _train_model_background(
         }
 
 
-@app.get("/models/{model_name}/status")
+@app.get("/models/{model_name}/status", tags=["Models"], summary="Get training status")
 async def get_training_status(model_name: str):
     """Get training status for a model."""
     if model_name not in training_status:
@@ -712,7 +712,7 @@ async def get_training_status(model_name: str):
     return training_status[model_name]
 
 
-@app.post("/models/{model_name}/predict")
+@app.post("/models/{model_name}/predict", tags=["Models"], summary="Make predictions")
 @limiter.limit("30/minute")
 async def predict(
     request: Request,
@@ -747,7 +747,7 @@ async def predict(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@app.post("/data/upload")
+@app.post("/data/upload", tags=["Data"], summary="Upload a data file")
 @limiter.limit("10/minute")
 async def upload_data(
     request: Request,
@@ -806,7 +806,7 @@ async def upload_data(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@app.get("/data/validate/{filename}")
+@app.get("/data/validate/{filename}", tags=["Data"], summary="Validate uploaded data")
 async def validate_data(filename: str, _current_user: User = Depends(get_current_user)):
     """Validate an uploaded data file."""
     safe_name = _safe_filename(filename)
@@ -834,7 +834,7 @@ async def validate_data(filename: str, _current_user: User = Depends(get_current
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@app.get("/models/{model_name}/metrics")
+@app.get("/models/{model_name}/metrics", tags=["Models"], summary="Get model metrics")
 async def get_model_metrics(model_name: str):
     """Get detailed metrics for a model."""
     if model_name not in models:
@@ -910,7 +910,7 @@ async def broadcast_notification(message: str):
     return {"status": "sent", "message": message}
 
 
-@app.get("/api/models/list")
+@app.get("/api/models/list", tags=["Models"], summary="List models with details")
 async def list_models_detailed():
     """Get list of all models with their status."""
     model_list = []
@@ -928,7 +928,7 @@ async def list_models_detailed():
     return {"models": model_list}
 
 
-@app.get("/api/training/status/{model_name}")
+@app.get("/api/training/status/{model_name}", tags=["Models"], summary="Get training status (API)")
 async def get_training_status_api(model_name: str):
     """Get current training status for a model."""
     if model_name not in training_status:
@@ -937,7 +937,7 @@ async def get_training_status_api(model_name: str):
     return training_status[model_name]
 
 
-@app.post("/api/training/stop/{model_name}")
+@app.post("/api/training/stop/{model_name}", tags=["Models"], summary="Stop model training")
 async def stop_training(model_name: str):
     """Stop training for a model."""
     if model_name not in active_trainings:
@@ -949,7 +949,7 @@ async def stop_training(model_name: str):
     return {"message": f"Stop requested for model {model_name}"}
 
 
-@app.get("/api/system/metrics")
+@app.get("/api/system/metrics", tags=["System"], summary="Get system metrics")
 async def get_system_metrics():
     """Get current system metrics."""
     try:
@@ -984,7 +984,7 @@ async def get_system_metrics():
         }
 
 
-@app.get("/api/system/metrics/history")
+@app.get("/api/system/metrics/history", tags=["System"], summary="Get metrics history")
 async def get_system_metrics_history():
     """Get system metrics history."""
     return {
@@ -993,7 +993,7 @@ async def get_system_metrics_history():
     }
 
 
-@app.post("/api/models/compare")
+@app.post("/api/models/compare", tags=["Models"], summary="Compare multiple models")
 async def compare_models(model_names: List[str]):
     """Compare multiple models."""
     comparison_data = []
@@ -1015,7 +1015,7 @@ async def compare_models(model_names: List[str]):
     return {"models": comparison_data}
 
 
-@app.post("/api/models/export/{model_name}")
+@app.post("/api/models/export/{model_name}", tags=["Models"], summary="Export a trained model")
 async def export_model(model_name: str, export_format: str = "pkl"):
     """Export a trained model."""
     if model_name not in models:
@@ -1052,7 +1052,7 @@ async def export_model(model_name: str, export_format: str = "pkl"):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@app.get("/api/data/exploration/{filename}")
+@app.get("/api/data/exploration/{filename}", tags=["Data"], summary="Explore data statistics")
 async def explore_data(filename: str, _current_user: User = Depends(get_current_user)):
     """Get data exploration statistics."""
     safe_name = _safe_filename(filename)
@@ -1268,7 +1268,7 @@ def start_job_db(
         update_job_status(session, job_id, status="running")
         time.sleep(duration)
         update_job_status(
-            session, job_id, status="completed", completed_at=datetime.utcnow()
+            session, job_id, status="completed", completed_at=datetime.now(timezone.utc)
         )
 
     background_tasks.add_task(run_job)

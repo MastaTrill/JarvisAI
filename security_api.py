@@ -8,7 +8,7 @@ Advanced Security Endpoints
 from fastapi import APIRouter, Depends, HTTPException
 from models_user import User
 from auth_helpers import admin_required
-from datetime import datetime
+from datetime import datetime, timezone
 import secrets
 
 router = APIRouter(prefix="/security", tags=["Advanced Security"])
@@ -25,7 +25,7 @@ def create_api_key(_current_user: User = Depends(admin_required)):
     key = secrets.token_urlsafe(32)
     api_keys[key] = {
         "user": str(_current_user.username),
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
         "revoked": False,
     }
     return {"api_key": key}

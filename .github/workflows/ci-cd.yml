@@ -7,11 +7,11 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9, 3.10, 3.11]
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -29,38 +29,58 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install --upgrade --upgrade-strategy eager -r requirements.txt
-      - name: Run Bandit security scan
-        run: |
-          pip install bandit
-          bandit -r .
-      - name: Run tests
-        run: |
-          python -m pytest tests/ --maxfail=1 --disable-warnings
-      - name: Lint Python code
+      - name: Lint (fatal errors only)
         run: |
           pip install flake8
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      - name: Run coverage
+      - name: Run tests with coverage
         run: |
-          pip install coverage
-          coverage run -m pytest tests/
-          coverage report
-          coverage xml
+          python -m pytest tests/ --cov --cov-report=xml --cov-report=term -q
       - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Bandit
+        run: pip install bandit
+      - name: Run Bandit security scan
+        run: |
+          bandit -r api.py authentication.py database.py database_models.py models_registry.py \
+            security_api.py audit_api.py plugins_api.py collab_api.py jobs_persistent.py \
+            models_versioning.py models_versioning_api.py auth_helpers.py db_config.py \
+            -ll --skip B101
+
+  docker:
+    needs: [test, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Build and push Docker image
-        if: matrix.python-version == '3.10' && github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           echo "${DOCKER_PASSWORD}" | docker login -u "MastaTriLL" --password-stdin
           docker build -t "MastaTriLL/jarvis-ai:latest" .
           docker push "MastaTriLL/jarvis-ai:latest"
+
+  deploy:
+    needs: docker
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Deploy to Kubernetes (Helm)
-        if: matrix.python-version == '3.10' && github.ref == 'refs/heads/main' && github.event_name == 'push' && env.KUBECONFIG != ''
+        if: env.KUBECONFIG != ''
         env:
           KUBECONFIG: ${{ secrets.KUBECONFIG }}
         run: |

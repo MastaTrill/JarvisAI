@@ -11,7 +11,7 @@ from db_config import get_db
 from models_registry import ModelRegistry
 from models_user import User
 from auth_helpers import admin_required
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/models/versioning", tags=["Model Versioning"])
 
@@ -31,7 +31,7 @@ def register_version(
         version=version,
         description=description,
         device=device,
-        registered_at=datetime.utcnow(),
+        registered_at=datetime.now(timezone.utc),
         parent_id=parent_id,
     )
     db.add(model)

@@ -8,7 +8,7 @@ Audit Trail & Compliance Dashboard Endpoints
 from fastapi import APIRouter, Depends
 from models_user import User
 from auth_helpers import get_current_user
-from datetime import datetime
+from datetime import datetime, timezone
 import csv
 import os
 
@@ -24,7 +24,9 @@ if not os.path.exists(AUDIT_LOG_PATH):
 def log_audit(user: str, action: str, detail: str):
     with open(AUDIT_LOG_PATH, "a", newline="", encoding="utf-8") as audit_file:
         audit_writer = csv.writer(audit_file)
-        audit_writer.writerow([datetime.utcnow().isoformat(), user, action, detail])
+        audit_writer.writerow(
+            [datetime.now(timezone.utc).isoformat(), user, action, detail]
+        )
 
 
 @router.post("/log")

@@ -208,7 +208,7 @@ class DatabaseManager:
     @staticmethod
     def cleanup_old_data(days: int = 30):
         """Clean up data older than specified days"""
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         from database_models import (
             ChatHistory,
             PerformanceMetric,
@@ -216,7 +216,7 @@ class DatabaseManager:
             TemporalPattern,
         )
 
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         with get_db_session() as db:
             # Clean up old chat histories
