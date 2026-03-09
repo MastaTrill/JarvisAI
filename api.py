@@ -366,8 +366,11 @@ class UserCreate(BaseModel):
 
 @app.post("/register", tags=["System"])
 @limiter.limit("5/minute")
-def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):  # noqa: ARG001
+def register(
+    request: Request, user: UserCreate, db: Session = Depends(get_db)
+):
     """Register a new user."""
+    _ = request  # required by slowapi rate limiter
     try:
         db_user = db.query(User).filter(User.username == user.username).first()
         if db_user:
@@ -397,11 +400,12 @@ def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
 @app.post("/token", response_model=Token, tags=["System"])
 @limiter.limit("10/minute")
 def login(
-    request: Request,  # noqa: ARG001 - required by slowapi
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
     """Login and get access token."""
+    _ = request  # required by slowapi rate limiter
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, str(user.hashed_password)):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
@@ -545,8 +549,9 @@ def _safe_filename(filename: str) -> str:
 
 @app.get("/health")
 @limiter.limit("60/minute")
-async def health_check(request: Request):  # noqa: ARG001
+async def health_check(request: Request):
     """Health check endpoint."""
+    _ = request  # required by slowapi rate limiter
     return {
         "status": "ok",
         "timestamp": datetime.now().isoformat(),
@@ -576,13 +581,14 @@ async def list_models():
 @app.post("/models/{model_name}/train")
 @limiter.limit("5/minute")
 async def train_model(
-    request: Request,  # noqa: ARG001 - required by slowapi
+    request: Request,
     model_name: str,
     train_request: TrainRequest,
     background_tasks: BackgroundTasks,
     _current_user: User = Depends(get_current_user),
 ):
     """Train a model with the provided configuration."""
+    _ = request  # required by slowapi rate limiter
     try:
         training_status[model_name] = {
             "status": "training",
@@ -711,12 +717,13 @@ async def get_training_status(model_name: str):
 @app.post("/models/{model_name}/predict")
 @limiter.limit("30/minute")
 async def predict(
-    request: Request,  # noqa: ARG001 - required by slowapi
+    request: Request,
     model_name: str,
     predict_request: PredictRequest,
     _current_user: User = Depends(get_current_user),
 ):
     """Make predictions using a trained model."""
+    _ = request  # required by slowapi rate limiter
     if model_name not in models:
         raise HTTPException(status_code=404, detail="Model not found")
 
@@ -745,11 +752,12 @@ async def predict(
 @app.post("/data/upload")
 @limiter.limit("10/minute")
 async def upload_data(
-    request: Request,  # noqa: ARG001 - required by slowapi
+    request: Request,
     file: UploadFile = File(...),
     _current_user: User = Depends(get_current_user),
 ):
     """Upload a data file for processing."""
+    _ = request  # required by slowapi rate limiter
     try:
         # Save uploaded file
         upload_dir = Path("data/uploads")
