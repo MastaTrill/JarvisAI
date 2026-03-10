@@ -5,7 +5,7 @@ FROM python:3.11-slim
 
 # Install system dependencies (curl for healthcheck, build-essential for some Python packages)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user and set up environment
@@ -41,7 +41,7 @@ USER jarvisuser
 # VOLUME ["/home/jarvisuser/app/data"]
 
 # Healthcheck for container orchestration
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 LABEL maintainer="Jarvis Maintainers <maintainers@jarvis.ai>"
@@ -50,4 +50,4 @@ LABEL org.opencontainers.image.description="JarvisAI Aetheron Platform - Advance
 LABEL org.opencontainers.image.version="3.0.0"
 
 # Default command: use gunicorn with uvicorn workers for production
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "api:app"]
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "main_api:app"]

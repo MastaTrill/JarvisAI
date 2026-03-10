@@ -18,7 +18,7 @@ services:
     volumes:
       - jarvis-data:/home/jarvisuser/app/data
       - jarvis-models:/home/jarvisuser/app/models
-    command: gunicorn api:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+    command: gunicorn main_api:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
