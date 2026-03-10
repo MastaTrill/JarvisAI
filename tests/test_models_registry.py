@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from db_config import Base
-from models_registry import ModelRegistry, create_model, get_models, activate_model
+from models_registry import create_model, get_models, activate_model
 
 
 @pytest.fixture()
@@ -26,17 +26,19 @@ def db_session():
 class TestCreateModel:
     def test_create_model_basic(self, db_session):
         model = create_model(db_session, "test_model", "A test model", 0.95)
-        assert model.name == "test_model"
-        assert model.description == "A test model"
-        assert model.accuracy == 0.95
+        assert model is not None
+        assert str(model.name) == "test_model"
+        assert str(model.description) == "A test model"
+        assert float(model.accuracy) == 0.95
         assert model.active is False
 
     def test_create_model_defaults(self, db_session):
         model = create_model(db_session, "basic")
-        assert model.description == ""
+        assert model is not None
+        assert str(model.description) == ""
         assert model.accuracy is None
-        assert model.version == "1.0.0"
-        assert model.device == "cpu"
+        assert str(model.version) == "1.0.0"
+        assert str(model.device) == "cpu"
 
     def test_create_multiple_models(self, db_session):
         create_model(db_session, "m1")

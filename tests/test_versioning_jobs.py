@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from db_config import Base
-from jobs_persistent import Job, create_job, update_job_status, get_job
+from jobs_persistent import create_job, update_job_status, get_job
 from fastapi.testclient import TestClient
 from main_api import app
 
@@ -32,8 +32,9 @@ def db_session():
 class TestJobsCRUD:
     def test_create_job(self, db_session):
         job = create_job(db_session, "job-001", status="queued")
-        assert job.job_id == "job-001"
-        assert job.status == "queued"
+        assert job is not None
+        assert str(job.job_id) == "job-001"
+        assert str(job.status) == "queued"
         assert job.cancelled is False
 
     def test_get_job(self, db_session):
@@ -49,13 +50,15 @@ class TestJobsCRUD:
     def test_update_job_status(self, db_session):
         create_job(db_session, "job-003")
         updated = update_job_status(db_session, "job-003", status="running")
-        assert updated.status == "running"
+        assert updated is not None
+        assert str(updated.status) == "running"
 
     def test_cancel_job(self, db_session):
         create_job(db_session, "job-004")
         updated = update_job_status(
             db_session, "job-004", status="cancelled", cancelled=True
         )
+        assert updated is not None
         assert updated.cancelled is True
 
 

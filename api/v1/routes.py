@@ -13,17 +13,14 @@ This module provides a versioned, standardized API following REST best practices
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     Query,
     Path,
     Body,
-    Security,
     Request,
 )
-from fastapi.responses import JSONResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
+from fastapi.security import HTTPBearer, APIKeyHeader
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List, Dict, Any, Generic, TypeVar
+from typing import Optional, List, Dict, Any, TypeVar
 from datetime import datetime, timezone
 from enum import Enum
 import logging
@@ -316,7 +313,7 @@ def create_paginated_response(
 def create_error_response(
     message: str,
     errors: List[ErrorDetail] = None,
-    status_code: int = 400,
+    status_code: int = 400,  # noqa: ARG001 — kept for callers to pass
     request_id: str = None,
 ) -> ErrorResponse:
     """Create an error response"""

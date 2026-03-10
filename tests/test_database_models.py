@@ -40,7 +40,7 @@ class TestUserModel:
         db_session.add(user)
         db_session.commit()
         assert user.id is not None
-        assert user.role == "user"
+        assert str(user.role) == "user"
         assert user.is_active is True
         assert user.is_admin is False
 
@@ -81,7 +81,7 @@ class TestModelRun:
         )
         db_session.add(run)
         db_session.commit()
-        assert run.status == "running"
+        assert str(run.status) == "running"
         assert "test_nn" in repr(run)
 
 
@@ -130,5 +130,5 @@ class TestAgentTask:
         )
         db_session.add(task)
         db_session.commit()
-        assert task.status == "pending"
-        assert task.retry_count == 0
+        assert str(task.status) == "pending"
+        assert int(task.retry_count) == 0
