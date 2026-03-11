@@ -82,9 +82,10 @@ slack_sdk>=3.33.4
 bandit>=1.8.0
 pip-audit>=2.7.3
 safety>=3.2.8
+cryptography>=44.0.0
 
 # Async support
-aiohttp>=3.11.7
+aiohttp>=3.11.11
 
 # Web/Form handling
 python-multipart>=0.0.17
