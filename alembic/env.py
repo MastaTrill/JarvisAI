@@ -66,7 +66,7 @@ def run_migrations_offline() -> None:
         post_migration_hook()
         logger.info("Alembic offline migrations completed successfully.")
     except Exception as e:
-        logger.exception(f"Error during offline migrations: {e}")
+        logger.exception("Error during offline migrations: %s", e)
         raise
 
 
@@ -99,7 +99,7 @@ def run_migrations_online() -> None:
             post_migration_hook()
             logger.info("Alembic online migrations completed successfully.")
     except Exception as e:
-        logger.exception(f"Error during online migrations: {e}")
+        logger.exception("Error during online migrations: %s", e)
         raise
 
 
@@ -123,7 +123,7 @@ def check_migration_consistency() -> None:
 
     script = ScriptDirectory.from_config(config)
 
-    def process_revision_directives(context, revision, directives):
+    def process_revision_directives(context, _revision, _directives):
         if getattr(config.cmd_opts, "autogenerate", False):
             diffs = compare_metadata(context, target_metadata)
             if diffs:
@@ -144,7 +144,7 @@ def check_migration_consistency() -> None:
         ):
             logger.info("Migration consistency check completed successfully.")
     except Exception as e:
-        logger.exception(f"Migration consistency check failed: {e}")
+        logger.exception("Migration consistency check failed: %s", e)
         raise
 
 
@@ -155,9 +155,9 @@ def alembic_stamp(revision: str = "head") -> None:
 
     try:
         stamp(config, revision)
-        logger.info(f"Database stamped with revision: {revision}")
+        logger.info("Database stamped with revision: %s", revision)
     except Exception as e:
-        logger.exception(f"Error during alembic stamp: {e}")
+        logger.exception("Error during alembic stamp: %s", e)
         raise
 
 
@@ -167,9 +167,9 @@ def alembic_upgrade(revision: str = "head") -> None:
 
     try:
         upgrade(config, revision)
-        logger.info(f"Database upgraded to revision: {revision}")
+        logger.info("Database upgraded to revision: %s", revision)
     except Exception as e:
-        logger.exception(f"Error during alembic upgrade: {e}")
+        logger.exception("Error during alembic upgrade: %s", e)
         raise
 
 
@@ -179,9 +179,9 @@ def alembic_downgrade(revision: str) -> None:
 
     try:
         downgrade(config, revision)
-        logger.info(f"Database downgraded to revision: {revision}")
+        logger.info("Database downgraded to revision: %s", revision)
     except Exception as e:
-        logger.exception(f"Error during alembic downgrade: {e}")
+        logger.exception("Error during alembic downgrade: %s", e)
         raise
 
 

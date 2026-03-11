@@ -131,4 +131,4 @@ class TestAgentTask:
         db_session.add(task)
         db_session.commit()
         assert str(task.status) == "pending"
-        assert int(task.retry_count) == 0
+        assert task.retry_count == 0  # type: ignore[comparison-overlap]

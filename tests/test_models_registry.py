@@ -29,7 +29,7 @@ class TestCreateModel:
         assert model is not None
         assert str(model.name) == "test_model"
         assert str(model.description) == "A test model"
-        assert float(model.accuracy) == 0.95
+        assert model.accuracy == 0.95  # type: ignore[comparison-overlap]
         assert model.active is False
 
     def test_create_model_defaults(self, db_session):

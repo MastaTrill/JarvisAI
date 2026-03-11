@@ -301,4 +301,6 @@ if __name__ == "__main__":
 
     test_password = "Test123"
     hashed = hash_password(test_password)
-    print(f"Password hashing: {'OK' if verify_password(test_password, hashed) else 'FAIL'}")
+    print(
+        f"Password hashing: {'OK' if verify_password(test_password, hashed) else 'FAIL'}"
+    )
