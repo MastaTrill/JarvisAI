@@ -20,8 +20,9 @@ def _ensure_tables():
     from models_registry import ModelRegistry  # side-effect: registers table
     from jobs_persistent import Job  # side-effect: registers table
     from database_models import User  # side-effect: registers table
+    from models_versioning import ModelVersion  # side-effect: registers table
 
-    _ = ModelRegistry, Job, User  # prevent unused warnings
+    _ = ModelRegistry, Job, User, ModelVersion  # prevent unused warnings
 
     from db_config import Base as ConfigBase, engine as config_engine
     from database import Base as AppBase, engine as app_engine

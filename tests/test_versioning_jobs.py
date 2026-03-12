@@ -16,20 +16,19 @@ from main_api import app
 client = TestClient(app)
 
 
-@pytest.fixture()
-def db_session():
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(bind=engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    yield session
-    session.close()
-
-
 # --- jobs_persistent CRUD ---
 
 
 class TestJobsCRUD:
+    @pytest.fixture()
+    def db_session(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(bind=engine)
+        TestSession = sessionmaker(bind=engine)
+        session = TestSession()
+        yield session
+        session.close()
+
     def test_create_job(self, db_session):
         job = create_job(db_session, "job-001", status="queued")
         assert job is not None

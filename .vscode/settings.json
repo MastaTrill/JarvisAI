@@ -16,9 +16,7 @@
     "git.ignoreLimitWarning": true,
     "circleci.filters.branchFilter": "allBranches",
     "circleci.persistedProjectSelection": [
-        "gh/MastaTrill/JarvisAI",
-        "gh/MastaTrill/jarvis-echo-dashboard",
-        "gh/MastaTrill/jarvis-echo-dashboard"
+        "gh/MastaTrill/JarvisAI"
     ],
     "azureTerraform.checkTerraformCmd": false,
     "azureFunctions.deploySubpath": ".",

@@ -138,7 +138,7 @@ def create_job(
 ):
     from audit_trail import log_audit_event
 
-    db_job = Job(**job.dict())
+    db_job = Job(job_id=job.name, status=job.status)
     db.add(db_job)
     db.commit()
     db.refresh(db_job)

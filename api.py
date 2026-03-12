@@ -69,6 +69,7 @@ from infra_api import router as infra_router
 from security_api import router as security_router
 from ml_advanced_api import router as ml_advanced_router
 from automation_api import router as automation_router
+from models_versioning import router as versioning_orm_router
 from src.interpretability.model_explainer import ModelInterpreter
 from models_registry import create_model, get_models, activate_model
 from jobs_persistent import create_job, update_job_status, get_job
@@ -169,6 +170,7 @@ app.include_router(infra_router)
 app.include_router(security_router)
 app.include_router(ml_advanced_router)
 app.include_router(automation_router)
+app.include_router(versioning_orm_router)
 app.mount(
     "/static",
     StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
@@ -205,7 +207,7 @@ def serve_dashboard():
         html = f.read()
     # Unique marker for debug
     html += "<!-- JARVIS_DEBUG_MARKER_2026 -->"
-    return html
+    return HTMLResponse(content=html, status_code=200)
 
 
 # --- XAI/Interpretability Endpoints ---
@@ -641,23 +643,41 @@ async def _train_model_background(
     try:
         processor = EnhancedDataProcessor(project_name=model_name)
         df = None
+        training_status[model_name] = {
+            "status": "training",
+            "started_at": datetime.now().isoformat(),
+            "progress": 0,
+        }
         if data_source and os.path.exists(data_source):
             df = processor.load_data(data_source)
+            training_status[model_name]["progress"] = 10
         if df is None:
-            raise HTTPException(status_code=400, detail="No data found for training")
+            training_status[model_name] = {
+                "status": "failed",
+                "error": "No data found for training",
+                "completed_at": datetime.now().isoformat(),
+            }
+            logger.error("No data found for training '%s'", model_name)
+            return
         target_col = config.get("target_col")
         if not target_col or target_col not in df.columns:
-            raise HTTPException(
-                status_code=400, detail="Target column not specified or missing"
-            )
+            training_status[model_name] = {
+                "status": "failed",
+                "error": "Target column not specified or missing",
+                "completed_at": datetime.now().isoformat(),
+            }
+            logger.error("Target column missing for '%s'", model_name)
+            return
         y = df[target_col]
         x = df.drop(columns=[target_col])
         from sklearn.model_selection import train_test_split
 
+        training_status[model_name]["progress"] = 20
         x_train, x_test, y_train, y_test = train_test_split(
             x, y, test_size=config.get("test_size", 0.2), random_state=42
         )
         input_size = x_train.shape[1]
+        training_status[model_name]["progress"] = 30
         if model_type == "advanced":
             model = AdvancedNeuralNetwork(
                 input_size=input_size,
@@ -676,45 +696,55 @@ async def _train_model_background(
                 hidden_sizes=config.get("hidden_sizes", [64, 32]),
                 output_size=1,
             )
-        model.fit(
-            x_train.values,
-            y_train.values,
-            epochs=config.get("epochs", 100),
-            batch_size=config.get("batch_size", 32),
-        )
-        train_pred = model.predict(x_train.values)
-        test_pred = model.predict(x_test.values)
-        from sklearn.metrics import mean_squared_error, r2_score
+        training_status[model_name]["progress"] = 40
+        try:
+            model.fit(
+                x_train.values,
+                y_train.values,
+                epochs=config.get("epochs", 100),
+                batch_size=config.get("batch_size", 32),
+            )
+            training_status[model_name]["progress"] = 70
+            train_pred = model.predict(x_train.values)
+            test_pred = model.predict(x_test.values)
+            from sklearn.metrics import mean_squared_error, r2_score
 
-        train_mse = mean_squared_error(y_train, train_pred)
-        test_mse = mean_squared_error(y_test, test_pred)
-        train_r2 = r2_score(y_train, train_pred)
-        test_r2 = r2_score(y_test, test_pred)
-        model_path = f"models/{model_name}.pkl"
-        os.makedirs("models", exist_ok=True)
-        model.save(model_path)
-        models[model_name] = {
-            "model": model,
-            "type": model_type,
-            "status": "trained",
-            "created_at": datetime.now().isoformat(),
-            "metrics": {
-                "train_mse": float(train_mse),
-                "test_mse": float(test_mse),
-                "train_r2": float(train_r2),
-                "test_r2": float(test_r2),
-            },
-            "config": config,
-            "model_path": model_path,
-        }
-        processors[model_name] = processor
-        training_status[model_name] = {
-            "status": "completed",
-            "completed_at": datetime.now().isoformat(),
-            "progress": 100,
-        }
-        logger.info("Successfully trained model '%s'", model_name)
-    except (ValueError, RuntimeError, TypeError, OSError, ImportError) as e:
+            train_mse = mean_squared_error(y_train, train_pred)
+            test_mse = mean_squared_error(y_test, test_pred)
+            train_r2 = r2_score(y_train, train_pred)
+            test_r2 = r2_score(y_test, test_pred)
+            model_path = f"models/{model_name}.pkl"
+            os.makedirs("models", exist_ok=True)
+            model.save(model_path)
+            models[model_name] = {
+                "model": model,
+                "type": model_type,
+                "status": "trained",
+                "created_at": datetime.now().isoformat(),
+                "metrics": {
+                    "train_mse": float(train_mse),
+                    "test_mse": float(test_mse),
+                    "train_r2": float(train_r2),
+                    "test_r2": float(test_r2),
+                },
+                "config": config,
+                "model_path": model_path,
+            }
+            processors[model_name] = processor
+            training_status[model_name] = {
+                "status": "completed",
+                "completed_at": datetime.now().isoformat(),
+                "progress": 100,
+            }
+            logger.info("Successfully trained model '%s'", model_name)
+        except Exception as e:
+            logger.error("Error during model fitting for '%s': %s", model_name, e)
+            training_status[model_name] = {
+                "status": "failed",
+                "error": str(e),
+                "completed_at": datetime.now().isoformat(),
+            }
+    except Exception as e:
         logger.error("Error training model '%s': %s", model_name, e)
         training_status[model_name] = {
             "status": "failed",
@@ -1146,10 +1176,19 @@ async def monitor_system():
     while True:
         try:
             sys_metrics = await get_system_metrics()
+            # Add advanced metrics collection
+            sys_metrics["uptime"] = (
+                (datetime.now() - app_start_time).total_seconds()
+                if "app_start_time" in globals()
+                else None
+            )
+            sys_metrics["active_connections"] = len(manager.active_connections)
+            sys_metrics["timestamp"] = datetime.now().isoformat()
             await manager.send_system_metrics(sys_metrics)
+            logger.info(f"System metrics broadcasted: {sys_metrics}")
             await asyncio.sleep(5)  # Update every 5 seconds
-        except (OSError, RuntimeError) as e:
-            logger.error("Error in system monitoring: %s", e)
+        except Exception as e:
+            logger.error(f"Error in system monitoring: {e}")
             await asyncio.sleep(10)
 
 
