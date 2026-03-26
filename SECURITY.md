@@ -4,6 +4,11 @@
 - Use `bandit` for Python security checks: `bandit -r .`
 - Enable Dependabot in your repository for automated alerts.
 
+## Current Advisory Note
+- As of March 26, 2026, the repo dependency cleanup reduced the actionable dependency advisories to one remaining upstream alert affecting `Pygments 2.19.2`.
+- The remaining `Pygments` advisory currently has no published fixed release in upstream vulnerability metadata, so there is no clean version bump to apply yet.
+- Treat this as a watch item: update `Pygments` promptly once an upstream patched release is published and Dependabot or your lockfile tooling can resolve to it.
+
 ## HTTPS & Secure Headers
 - Deploy behind a reverse proxy (e.g., Nginx, Traefik) with HTTPS.
 - Use FastAPI middleware for secure headers (see below).
