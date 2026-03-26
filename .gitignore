@@ -99,3 +99,12 @@ mlflow.db
 New folder/
 gunicorn.ctl
 host_unlock_check.txt
+reports/
+experiments/
+_dashboard_check.js
+_edit_*.py
+Untitled-2.md
+Untitled-2.txt
+jarvis-ai-project/
+jarvis_ai_project/
+jarvis-ar-visual-system/
