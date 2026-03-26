@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: jarvisai
+metadata:
+  template: jarvisai-containerapp@0.0.1
+
+services:
+  api:
+    language: python
+    project: .
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: .
+
+hooks:
+  preprovision:
+    posix:
+      shell: sh
+      run: |
+        echo "Preparing infrastructure provisioning..."
+    windows:
+      shell: pwsh
+      run: |
+        Write-Host "Preparing infrastructure provisioning..."
+
+  postprovision:
+    posix:
+      shell: sh
+      run: |
+        echo "Infrastructure provisioned successfully"
+        echo "Setting up secrets in Key Vault..."
+    windows:
+      shell: pwsh
+      run: |
+        Write-Host "Infrastructure provisioned successfully"
+        Write-Host "Setting up secrets in Key Vault..."
+
+  predeploy:
+    posix:
+      shell: sh
+      run: |
+        echo "Building container image..."
+    windows:
+      shell: pwsh
+      run: |
+        Write-Host "Building container image..."
+
+  postdeploy:
+    posix:
+      shell: sh
+      run: |
+        echo "🎉 Jarvis AI deployed successfully to Azure!"
+        echo "Run 'azd show' to view endpoint URLs"
+    windows:
+      shell: pwsh
+      run: |
+        Write-Host "🎉 Jarvis AI deployed successfully to Azure!"
+        Write-Host "Run 'azd show' to view endpoint URLs"
+
+# Environment variables
+env:
+  PYTHON_VERSION: '3.11'
+  JARVIS_ENV: production
+  LOG_LEVEL: INFO
+
+pipeline:
+  provider: github

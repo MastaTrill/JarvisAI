@@ -1,0 +1,105 @@
+# Local Development with Docker Compose
+# Test JarvisAI locally before deploying to Azure
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16
+    container_name: jarvisai-postgres
+    environment:
+      POSTGRES_DB: jarvisai
+      POSTGRES_USER: jarvisadmin
+      POSTGRES_PASSWORD: localdevpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jarvisadmin -d jarvisai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: jarvisai-redis
+    command: redis-server --requirepass localdevpassword
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "localdevpassword", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # JarvisAI API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jarvisai-api
+    environment:
+      # Database
+      DATABASE_URL: postgresql://jarvisadmin:localdevpassword@postgres:5432/jarvisai
+      
+      # Redis
+      REDIS_URL: redis://:localdevpassword@redis:6379/0
+      
+      # Application
+      SECRET_KEY: local-dev-secret-key-change-in-production
+      ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+      DEBUG: "True"
+      
+      # API Config
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      WORKERS: 2
+      
+      # CORS
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8000,http://127.0.0.1:8000
+      
+      # Features
+      ENABLE_WEBSOCKETS: "True"
+      ENABLE_ADMIN_DASHBOARD: "True"
+      ENABLE_API_DOCS: "True"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      # Mount source code for hot reloading (development only)
+      - ./api.py:/home/jarvisuser/app/api.py:ro
+      - ./models:/home/jarvisuser/app/models
+      - ./data:/home/jarvisuser/app/data
+    command: >
+      uvicorn api:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --log-level debug
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: jarvisai-network
+    driver: bridge

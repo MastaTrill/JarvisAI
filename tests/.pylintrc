@@ -1,0 +1,3 @@
+[MESSAGES CONTROL]
+# pytest test classes use setup_method() instead of __init__
+disable=attribute-defined-outside-init

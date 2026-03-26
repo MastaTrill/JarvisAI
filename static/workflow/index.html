@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis No-Code Workflow Editor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; background: #f8f9fa; }
+        h1 { color: #2c3e50; }
+        #canvas { border: 2px dashed #bbb; min-height: 400px; background: #fff; padding: 1em; }
+        .block { display: inline-block; background: #e3e7ed; border-radius: 6px; padding: 1em; margin: 0.5em; cursor: move; }
+        .block.selected { border: 2px solid #007bff; }
+        #toolbar { margin-bottom: 1em; }
+        button { margin-right: 0.5em; }
+        /* Moved from inline styles */
+        #onboarding { background: #e9f7ef; padding: 1em; border-radius: 8px; margin-bottom: 1em; }
+        #onboarding .tip { color: #888; }
+        #onboarding .dismiss-btn { float: right; }
+        #error { color: red; margin-top: 1em; display: none; }
+    </style>
+</head>
+<body>
+    <h1>Jarvis No-Code Workflow Editor</h1>
+    <div id="onboarding">
+        <strong>Welcome!</strong> Drag and drop blocks to build your AI workflow. Click a block for options. <span class="tip">(Tip: Double-click a block to edit its label.)</span>
+        <button onclick="closeOnboarding()" class="dismiss-btn">Dismiss</button>
+    </div>
+    <div id="toolbar">
+        <button onclick="addBlock('Data Source')" title="Add a data source block">Add Data Source</button>
+        <button onclick="addBlock('Preprocessing')" title="Add a preprocessing step">Add Preprocessing</button>
+        <button onclick="addBlock('Model')" title="Add a model block">Add Model</button>
+        <button onclick="addBlock('Evaluation')" title="Add an evaluation step">Add Evaluation</button>
+        <button onclick="addBlock('Deployment')" title="Add a deployment step">Add Deployment</button>
+        <button onclick="clearCanvas()" title="Remove all blocks">Clear</button>
+    </div>
+    <div id="canvas" aria-label="Workflow canvas" tabindex="0"></div>
+    <div id="error"></div>
+    <script>
+        function closeOnboarding() {
+            document.getElementById('onboarding').style.display = 'none';
+        }
+        function addBlock(type) {
+            const block = document.createElement('div');
+            block.className = 'block';
+            block.textContent = type;
+            block.draggable = true;
+            block.onclick = function() {
+                document.querySelectorAll('.block').forEach(b => b.classList.remove('selected'));
+                block.classList.add('selected');
+            };
+            block.ondblclick = function() {
+                const newLabel = prompt('Edit block label:', block.textContent);
+                if (newLabel) block.textContent = newLabel;
+            };
+            block.onerror = function(e) {
+                showError('Error adding block: ' + e.message);
+            };
+            document.getElementById('canvas').appendChild(block);
+        }
+        function clearCanvas() {
+            document.getElementById('canvas').innerHTML = '';
+        }
+        function showError(msg) {
+            const err = document.getElementById('error');
+            err.textContent = msg;
+            err.style.display = 'block';
+            setTimeout(() => { err.style.display = 'none'; }, 4000);
+        }
+    </script>
+</body>
+</html>

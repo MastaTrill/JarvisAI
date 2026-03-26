@@ -1,0 +1,140 @@
+# Docker Compose for JarvisAI Staging Environment
+version: '3.8'
+
+services:
+  # Main API Service
+  jarvis-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - JARVIS_ENV=staging
+      - DATABASE_URL=postgresql://jarvis:jarvis_password@jarvis-db:5432/jarvis_staging
+      - REDIS_URL=redis://jarvis-redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-staging-secret-key-change-in-production}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,staging.jarvis.ai
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+    command: gunicorn api_enhanced:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+    depends_on:
+      - jarvis-db
+      - jarvis-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Background Worker Service
+  jarvis-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+      - JARVIS_ENV=staging
+      - DATABASE_URL=postgresql://jarvis:jarvis_password@jarvis-db:5432/jarvis_staging
+      - REDIS_URL=redis://jarvis-redis:6379/0
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+    command: python celery_app.py worker --loglevel=info
+    depends_on:
+      - jarvis-db
+      - jarvis-redis
+    restart: unless-stopped
+
+  # Database Service
+  jarvis-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=jarvis_staging
+      - POSTGRES_USER=jarvis
+      - POSTGRES_PASSWORD=jarvis_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jarvis"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for Caching and Sessions
+  jarvis-redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring Service (Prometheus)
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    restart: unless-stopped
+
+  # Monitoring Dashboard (Grafana)
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Load Balancer (NGINX)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./static:/var/www/static
+    depends_on:
+      - jarvis-api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: jarvis-staging-network

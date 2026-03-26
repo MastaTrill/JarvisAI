@@ -1,0 +1,24 @@
+model:
+  name: MyModel
+  type: neural_network
+  architecture:
+    layers:
+      - type: dense
+        units: 128
+        activation: relu
+      - type: dropout
+        rate: 0.2
+      - type: dense
+        units: 64
+        activation: relu
+      - type: output
+        units: 10
+        activation: softmax
+  optimizer:
+    type: adam
+    learning_rate: 0.001
+  loss_function: categorical_crossentropy
+  metrics:
+    - accuracy
+  input_shape: [32, 32, 3]
+  output_shape: [10]

@@ -1,0 +1,157 @@
+# Docker Compose for JarvisAI Aetheron Platform
+
+services:
+  ollama:
+    image: ollama/ollama:0.3.14
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/bin/ollama", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-jarvis}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-jarvis_password}
+      - POSTGRES_DB=${POSTGRES_DB:-jarvisai}
+    ports:
+      - "5432:5432"
+    volumes:
+      - jarvis-postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  jarvis-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - JARVIS_ENV=production
+      - LOG_LEVEL=info
+      - JARVIS_SECRET_KEY=${JARVIS_SECRET_KEY:?Set JARVIS_SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://jarvis:jarvis_password@postgres:5432/jarvisai}
+      - JARVIS_CORS_ORIGINS=${JARVIS_CORS_ORIGINS:-}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - LLM_PROVIDER=${LLM_PROVIDER:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - OPENAI_VISION_MODEL=${OPENAI_VISION_MODEL:-gpt-4.1}
+      - OPENAI_TIMEOUT_S=${OPENAI_TIMEOUT_S:-60}
+      - OPENAI_MAX_RETRIES=${OPENAI_MAX_RETRIES:-2}
+      - OPENAI_RETRY_BACKOFF_S=${OPENAI_RETRY_BACKOFF_S:-1.5}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - OLLAMA_VISION_MODEL=${OLLAMA_VISION_MODEL:-}
+      - OLLAMA_TIMEOUT_S=${OLLAMA_TIMEOUT_S:-300}
+      - VISION_PROVIDER=${VISION_PROVIDER:-auto}
+      - AGENT_MAX_TOOL_STEPS=${AGENT_MAX_TOOL_STEPS:-3}
+      - JARVIS_ALLOW_WRITE=${JARVIS_ALLOW_WRITE:-false}
+      - JARVIS_ALLOW_SHELL=${JARVIS_ALLOW_SHELL:-false}
+      - JARVIS_ALLOW_REPO_WRITE=${JARVIS_ALLOW_REPO_WRITE:-false}
+      - JARVIS_DANGEROUS_FULL_ACCESS=${JARVIS_DANGEROUS_FULL_ACCESS:-false}
+      - JARVIS_AGENT_PROFILE=${JARVIS_AGENT_PROFILE:-dev}
+      - JARVIS_APPROVAL_FOR_DESTRUCTIVE=${JARVIS_APPROVAL_FOR_DESTRUCTIVE:-false}
+      - JARVIS_API_URL=${JARVIS_API_URL:-http://jarvis-api:8000}
+      - JARVIS_SCHEDULER_POLL_S=${JARVIS_SCHEDULER_POLL_S:-15}
+      - JARVIS_QUANTUM_CREATOR_KEY=${JARVIS_QUANTUM_CREATOR_KEY:-AETHERON_QUANTUM_CREATOR_KEY_2025}
+    volumes:
+      - ./:/home/jarvisuser/app
+      - jarvis-data:/home/jarvisuser/app/data
+      - jarvis-models:/home/jarvisuser/app/models
+    command: gunicorn main_api:app -w ${GUNICORN_WORKERS:-1} -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      ollama:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  jarvis-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+      - JARVIS_ENV=production
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://jarvis:jarvis_password@postgres:5432/jarvisai}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - LLM_PROVIDER=${LLM_PROVIDER:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - OPENAI_VISION_MODEL=${OPENAI_VISION_MODEL:-gpt-4.1}
+      - OPENAI_TIMEOUT_S=${OPENAI_TIMEOUT_S:-60}
+      - OPENAI_MAX_RETRIES=${OPENAI_MAX_RETRIES:-2}
+      - OPENAI_RETRY_BACKOFF_S=${OPENAI_RETRY_BACKOFF_S:-1.5}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - OLLAMA_VISION_MODEL=${OLLAMA_VISION_MODEL:-}
+      - OLLAMA_TIMEOUT_S=${OLLAMA_TIMEOUT_S:-300}
+      - VISION_PROVIDER=${VISION_PROVIDER:-auto}
+      - AGENT_MAX_TOOL_STEPS=${AGENT_MAX_TOOL_STEPS:-3}
+      - JARVIS_ALLOW_WRITE=${JARVIS_ALLOW_WRITE:-false}
+      - JARVIS_ALLOW_SHELL=${JARVIS_ALLOW_SHELL:-false}
+      - JARVIS_ALLOW_REPO_WRITE=${JARVIS_ALLOW_REPO_WRITE:-false}
+      - JARVIS_DANGEROUS_FULL_ACCESS=${JARVIS_DANGEROUS_FULL_ACCESS:-false}
+      - JARVIS_AGENT_PROFILE=${JARVIS_AGENT_PROFILE:-dev}
+      - JARVIS_APPROVAL_FOR_DESTRUCTIVE=${JARVIS_APPROVAL_FOR_DESTRUCTIVE:-false}
+      - JARVIS_API_URL=${JARVIS_API_URL:-http://jarvis-api:8000}
+      - JARVIS_SCHEDULER_POLL_S=${JARVIS_SCHEDULER_POLL_S:-15}
+      - JARVIS_QUANTUM_CREATOR_KEY=${JARVIS_QUANTUM_CREATOR_KEY:-AETHERON_QUANTUM_CREATOR_KEY_2025}
+    volumes:
+      - ./:/home/jarvisuser/app
+      - jarvis-data:/home/jarvisuser/app/data
+      - jarvis-models:/home/jarvisuser/app/models
+    command: python -m celery -A celery_app worker --loglevel=info
+    restart: unless-stopped
+    # The Dockerfile defines a web healthcheck for the API container. The worker
+    # doesn't expose HTTP, so we disable healthchecks here to avoid false "unhealthy".
+    healthcheck:
+      disable: true
+    depends_on:
+      ollama:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      jarvis-api:
+        condition: service_healthy
+
+volumes:
+  ollama-data:
+  jarvis-data:
+  jarvis-models:
+  jarvis-postgres:

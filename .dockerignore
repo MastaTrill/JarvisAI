@@ -1,0 +1,99 @@
+# Docker Ignore File
+# Files and directories to exclude from Docker build context
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+.tox/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+docs/
+README.md
+*.md
+!DEPLOYMENT.md
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Development
+.devcontainer/
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+logs/
+
+# Large files and data
+models/large_models/
+data/raw/
+data/temp/
+data/*.csv
+data/*.json
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+*.whl
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Azure
+.azure/
+
+# Infrastructure
+infra/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backups
+*.bak
+*.backup
+backup/
+
+# OS files
+Thumbs.db
+
+# Env files
+.env
+.env.*

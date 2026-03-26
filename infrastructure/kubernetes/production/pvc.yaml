@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jarvis-data-pvc
+  namespace: jarvis-production
+  labels:
+    app.kubernetes.io/name: jarvis-ai
+spec:
+  accessModes:
+    - ReadWriteMany
+  # NOTE: Update storageClassName to match your cloud provider (e.g., gp2 for AWS, standard for GCP, premium for Azure)
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jarvis-models-pvc
+  namespace: jarvis-production
+  labels:
+    app.kubernetes.io/name: jarvis-ai
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 200Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jarvis-logs-pvc
+  namespace: jarvis-production
+  labels:
+    app.kubernetes.io/name: jarvis-ai
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 50Gi
