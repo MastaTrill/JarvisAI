@@ -15,7 +15,7 @@ scipy>=1.14.1
 # Data Processing
 opencv-python>=4.10.0
 Pillow>=11.0.0
-requests>=2.32.3
+requests>=2.33.0
 
 # Web Framework & API
 fastapi>=0.115.0
@@ -50,7 +50,7 @@ hyperopt>=0.2.7
 gymnasium>=1.0.0
 stable-baselines3>=2.4.0
 transformers>=4.46.0
-nltk>=3.9.3
+nltk>=3.9.4
 spacy>=3.8.2
 textblob>=0.18.0
 wordcloud>=1.9.4
