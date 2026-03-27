@@ -15,6 +15,7 @@ from pathlib import Path
 import shlex
 import subprocess
 import shutil
+import sys
 import re
 import math
 import time
@@ -1195,11 +1196,65 @@ def _desktop_control(
 
 
 def _browser_workflow_runtime() -> Dict[str, Any]:
-    chromium_path = (os.getenv("JARVIS_CHROMIUM_PATH") or "").strip() or "/usr/bin/chromium"
+    explicit_path = Path(str(os.getenv("JARVIS_CHROMIUM_PATH") or "").strip()).expanduser() if str(os.getenv("JARVIS_CHROMIUM_PATH") or "").strip() else None
+    candidates: List[Tuple[str, Path]] = []
+    if explicit_path is not None:
+        candidates.append(("env", explicit_path))
+    if sync_playwright is not None:
+        try:
+            with sync_playwright() as p:  # type: ignore[misc]
+                managed_path = Path(str(p.chromium.executable_path)).expanduser()
+                candidates.append(("playwright", managed_path))
+        except Exception:
+            pass
+    if os.name == "nt":
+        local_app_data_raw = str(os.getenv("LOCALAPPDATA") or "").strip()
+        if local_app_data_raw:
+            local_app_data = Path(local_app_data_raw).expanduser()
+            ms_playwright = local_app_data / "ms-playwright"
+            for pattern in ("chromium-*\\chrome-win\\chrome.exe", "chromium-*\\chrome-win64\\chrome.exe"):
+                for match in sorted(ms_playwright.glob(pattern), reverse=True):
+                    candidates.append(("ms-playwright", match))
+        for env_name, relative_path in (
+            ("PROGRAMFILES", Path("Google/Chrome/Application/chrome.exe")),
+            ("PROGRAMFILES(X86)", Path("Google/Chrome/Application/chrome.exe")),
+            ("PROGRAMFILES", Path("Microsoft/Edge/Application/msedge.exe")),
+            ("PROGRAMFILES(X86)", Path("Microsoft/Edge/Application/msedge.exe")),
+        ):
+            base_dir_raw = str(os.getenv(env_name) or "").strip()
+            if base_dir_raw:
+                base_dir = Path(base_dir_raw).expanduser()
+                candidates.append((env_name.lower(), base_dir / relative_path))
+    else:
+        for command_name in ("chromium", "chromium-browser", "google-chrome", "google-chrome-stable", "microsoft-edge"):
+            command_path = shutil.which(command_name)
+            if command_path:
+                candidates.append(("path", Path(command_path)))
+    checked: set[str] = set()
+    selected_source: Optional[str] = None
+    selected_path: Optional[Path] = None
+    for source, candidate in candidates:
+        candidate_str = str(candidate)
+        if candidate_str in checked:
+            continue
+        checked.add(candidate_str)
+        if candidate.exists():
+            selected_source = source
+            selected_path = candidate
+            break
+    install_hint = (
+        f"{sys.executable} -m playwright install chromium"
+        if sync_playwright is not None
+        else "Install the playwright Python package and browser binaries."
+    )
+    reason = None if selected_path else f"Install browser binaries with `{install_hint}` or set JARVIS_CHROMIUM_PATH."
     return {
-        "available": sync_playwright is not None and Path(chromium_path).exists(),
-        "chromium_path": chromium_path,
+        "available": selected_path is not None,
+        "chromium_path": str(selected_path) if selected_path else "",
         "headless_default": True,
+        "source": selected_source,
+        "reason": reason,
+        "install_hint": install_hint,
     }
 
 
@@ -1213,17 +1268,25 @@ def _run_browser_workflow(
 ) -> Dict[str, Any]:
     runtime = _browser_workflow_runtime()
     if not runtime["available"]:
-        raise HTTPException(status_code=503, detail="Playwright browser runtime is unavailable")
+        detail = str(runtime.get("reason") or "Playwright browser runtime is unavailable")
+        raise HTTPException(status_code=503, detail=detail)
     results: List[Dict[str, Any]] = []
     screenshot_b64: Optional[str] = None
     saved_storage_state: Optional[Dict[str, Any]] = None
     final_url = str(start_url or "").strip() or "about:blank"
     with sync_playwright() as p:  # type: ignore[misc]
-        browser = p.chromium.launch(
-            executable_path=runtime["chromium_path"],
-            headless=bool(headless),
-            args=["--no-sandbox", "--disable-dev-shm-usage"],
-        )
+        launch_kwargs: Dict[str, Any] = {
+            "headless": bool(headless),
+            "args": ["--no-sandbox", "--disable-dev-shm-usage"],
+        }
+        chromium_path = str(runtime.get("chromium_path") or "").strip()
+        if chromium_path:
+            launch_kwargs["executable_path"] = chromium_path
+        try:
+            browser = p.chromium.launch(**launch_kwargs)
+        except Exception as exc:
+            message = str(exc).strip() or exc.__class__.__name__
+            raise HTTPException(status_code=503, detail=f"Playwright browser launch failed: {message}") from exc
         context_kwargs: Dict[str, Any] = {"viewport": {"width": 1440, "height": 900}}
         if isinstance(storage_state, dict) and storage_state:
             context_kwargs["storage_state"] = storage_state
