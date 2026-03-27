@@ -1076,6 +1076,54 @@
         .workflow-action-card textarea {
             min-height: 92px;
         }
+        .workflow-brief-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.65rem;
+        }
+        .workflow-brief-card {
+            border-radius: 16px;
+            border: 1px solid rgba(88, 198, 255, 0.14);
+            background: linear-gradient(180deg, rgba(6, 18, 34, 0.84), rgba(6, 12, 22, 0.72));
+            padding: 0.8rem 0.85rem;
+        }
+        .workflow-brief-card.warning {
+            border-color: rgba(255, 215, 123, 0.24);
+        }
+        .workflow-brief-card.danger {
+            border-color: rgba(255, 118, 118, 0.26);
+        }
+        .workflow-brief-label {
+            font-size: 10px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(214, 238, 255, 0.52);
+        }
+        .workflow-brief-value {
+            margin-top: 0.35rem;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(235, 248, 255, 0.94);
+        }
+        .workflow-run-log {
+            margin-top: 0.85rem;
+            border-radius: 18px;
+            border: 1px solid rgba(88, 198, 255, 0.14);
+            background: rgba(5, 14, 25, 0.78);
+            padding: 0.85rem;
+        }
+        .workflow-run-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.55rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .workflow-run-row:first-child {
+            border-top: 0;
+            padding-top: 0;
+        }
 
         .center-chat-head {
             display: flex;
@@ -4464,6 +4512,12 @@
                                             </button>
                                         </div>
                                     </div>
+                                    <div class="mt-3 workflow-chip-badges">
+                                        <span class="workflow-chip-badge" :class="workflowRuntimeState().tone" x-text="workflowRuntimeState().label"></span>
+                                        <span class="workflow-chip-badge unknown" x-text="control.selectedSessionName || 'ephemeral session'"></span>
+                                        <span class="workflow-chip-badge" :class="workflowLastResultBadge().tone" x-text="workflowLastResultBadge().label"></span>
+                                        <span class="workflow-chip-badge unknown" x-text="parseWorkflowSteps().length + ' drafted steps'"></span>
+                                    </div>
                                     <div class="mt-3 flex flex-wrap gap-2">
                                         <template x-for="tpl in (control.authTemplates || []).slice(0, 6)" :key="'auth-template-chip-'+tpl.name">
                                             <button class="chip-soft mono" @click="control.selectedTemplateName = tpl.name; applyBrowserTemplateByName(); workflowModal = true; workflowStage = 1" x-text="tpl.name"></button>
@@ -4486,7 +4540,6 @@
                                             </template>
                                         </div>
                                     </div>
-                                    </details>
                                     <details class="mt-3 section-shell section-shell-compact" open>
                                         <summary class="section-summary"><span><span class="font-semibold text-sm">Daily briefing jobs</span><span class="block compact-note mt-1">Morning and evening automations.</span></span></summary>
                                         <div class="mt-3 space-y-2">
@@ -4555,16 +4608,87 @@
                                                     <div class="flex items-start justify-between gap-3">
                                                         <div>
                                                             <div class="font-semibold text-sm">Browser run</div>
-                                                            <div class="compact-note mt-1">Launch the selected workflow with the current session and trust receipt.</div>
+                                                            <div class="compact-note mt-1">Launch the selected workflow with a quick mission brief, runtime check, and readable outcome feed.</div>
                                                         </div>
-                                                        <span class="workflow-chip-badge preview" x-text="selectedWorkflowTemplate() ? (selectedWorkflowTemplate().provider || 'custom') : 'custom'"></span>
+                                                        <div class="workflow-chip-badges">
+                                                            <span class="workflow-chip-badge preview" x-text="selectedWorkflowTemplate() ? (selectedWorkflowTemplate().provider || 'custom') : 'custom'"></span>
+                                                            <span class="workflow-chip-badge" :class="workflowRuntimeState().tone" x-text="workflowRuntimeState().label"></span>
+                                                        </div>
                                                     </div>
+                                                    <div class="workflow-brief-grid mt-3">
+                                                        <div class="workflow-brief-card">
+                                                            <div class="workflow-brief-label">Template</div>
+                                                            <div class="workflow-brief-value" x-text="selectedWorkflowTemplate() ? selectedWorkflowTemplate().name : 'Ad hoc workflow'"></div>
+                                                        </div>
+                                                        <div class="workflow-brief-card">
+                                                            <div class="workflow-brief-label">Session</div>
+                                                            <div class="workflow-brief-value" x-text="control.selectedSessionName || 'Ephemeral browser'"></div>
+                                                        </div>
+                                                        <div class="workflow-brief-card">
+                                                            <div class="workflow-brief-label">Steps</div>
+                                                            <div class="workflow-brief-value" x-text="parseWorkflowSteps().length + ' queued actions'"></div>
+                                                        </div>
+                                                        <div class="workflow-brief-card">
+                                                            <div class="workflow-brief-label">Last launch</div>
+                                                            <div class="workflow-brief-value" x-text="control.workflowLastStartedAt ? new Date(control.workflowLastStartedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Standby'"></div>
+                                                        </div>
+                                                    </div>
+                                                    <template x-if="workflowRuntimeState().detail">
+                                                        <div class="workflow-brief-card warning mt-3">
+                                                            <div class="workflow-brief-label">Runtime note</div>
+                                                            <div class="workflow-brief-value" x-text="workflowRuntimeState().detail"></div>
+                                                        </div>
+                                                    </template>
+                                                    <template x-if="control.workflowRunError">
+                                                        <div class="workflow-brief-card danger mt-3">
+                                                            <div class="workflow-brief-label">Launch issue</div>
+                                                            <div class="workflow-brief-value" x-text="control.workflowRunError"></div>
+                                                        </div>
+                                                    </template>
                                                     <input class="field-shell text-xs mono mt-3" placeholder="start url" x-model="control.workflowUrl" />
                                                     <textarea class="field-shell mt-2 text-xs mono" style="min-height: 8rem;" x-model="control.workflowSteps"></textarea>
                                                     <div class="mt-3 flex flex-wrap gap-2">
-                                                        <button class="cyber-btn mono" @click="runBrowserWorkflow()">Run Workflow</button>
+                                                        <button class="cyber-btn mono" @click="runBrowserWorkflow()" :disabled="control.workflowRunning">
+                                                            <span x-show="!control.workflowRunning">Run Workflow</span>
+                                                            <span x-show="control.workflowRunning">Running...</span>
+                                                        </button>
                                                         <button class="cyber-btn-soft mono" @click="saveBrowserTemplate()">Save Template</button>
                                                     </div>
+                                                    <template x-if="workflowLastResultCore()">
+                                                        <div class="workflow-run-log">
+                                                            <div class="flex items-start justify-between gap-3">
+                                                                <div>
+                                                                    <div class="font-semibold text-sm">Latest outcome</div>
+                                                                    <div class="compact-note mt-1" x-text="workflowLastResultCore().final_url || workflowLastResultCore().start_url || 'No final URL captured'"></div>
+                                                                </div>
+                                                                <span class="workflow-chip-badge" :class="workflowLastResultBadge().tone" x-text="workflowLastResultBadge().label"></span>
+                                                            </div>
+                                                            <div class="mt-3 workflow-chip-badges">
+                                                                <span class="workflow-chip-badge unknown" x-text="workflowLastResultRows().length + ' steps logged'"></span>
+                                                                <span class="workflow-chip-badge" :class="workflowLastResultCore().approval_required ? 'preview' : 'ok'" x-text="workflowLastResultCore().approval_required ? 'awaiting confirm' : 'executed'"></span>
+                                                                <span class="workflow-chip-badge unknown" x-text="workflowLastResultEnvelope() && workflowLastResultEnvelope().saved_session ? 'session saved' : (control.selectedSessionName ? 'session reused' : 'ephemeral run')"></span>
+                                                            </div>
+                                                            <template x-if="workflowLastResultCore().approval_required">
+                                                                <div class="workflow-brief-card warning mt-3">
+                                                                    <div class="workflow-brief-label">Approval gate</div>
+                                                                    <div class="workflow-brief-value" x-text="workflowLastResultCore().reason || 'Workspace policy requires confirm=true before execution.'"></div>
+                                                                </div>
+                                                            </template>
+                                                            <template x-if="workflowLastResultRows().length">
+                                                                <div class="mt-3 space-y-1">
+                                                                    <template x-for="item in workflowLastResultRows()" :key="'workflow-row-'+item.index+'-'+item.action">
+                                                                        <div class="workflow-run-row">
+                                                                            <div>
+                                                                                <div class="font-semibold text-[11px] mono" x-text="'#' + item.index + ' ' + item.action"></div>
+                                                                                <div class="compact-note mt-1" x-text="item.selector || item.url || item.text || 'No selector captured'"></div>
+                                                                            </div>
+                                                                            <span class="workflow-chip-badge" :class="item.ok ? 'ok' : 'error'" x-text="item.ok ? 'ok' : 'issue'"></span>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
                                                 </div>
                                                 <div class="workflow-form-grid">
                                                     <div class="workflow-action-card" x-show="selectedWorkflowProvider() === 'github'">
@@ -4683,10 +4807,51 @@
                                     </div>
                                 </div>
                                 <template x-if="control.lastResult">
-                                    <details class="mt-3 panel-soft p-3 rounded-xl">
-                                        <summary class="cursor-pointer font-semibold">Last control result</summary>
-                                        <pre class="mono text-xs mt-3 overflow-x-auto" x-text="JSON.stringify(control.lastResult, null, 2)"></pre>
-                                    </details>
+                                    <div class="mt-3 section-shell">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div>
+                                                <div class="section-kicker">Outcome</div>
+                                                <div class="font-semibold text-sm mt-1">Last control result</div>
+                                                <div class="compact-note mt-1">Readable summary first, raw payload on demand.</div>
+                                            </div>
+                                            <span class="workflow-chip-badge" :class="workflowLastResultBadge().tone" x-text="workflowLastResultBadge().label"></span>
+                                        </div>
+                                        <div class="workflow-brief-grid mt-3">
+                                            <div class="workflow-brief-card">
+                                                <div class="workflow-brief-label">Final URL</div>
+                                                <div class="workflow-brief-value" x-text="workflowLastResultCore() ? (workflowLastResultCore().final_url || workflowLastResultCore().start_url || 'n/a') : 'n/a'"></div>
+                                            </div>
+                                            <div class="workflow-brief-card">
+                                                <div class="workflow-brief-label">Steps logged</div>
+                                                <div class="workflow-brief-value" x-text="workflowLastResultRows().length"></div>
+                                            </div>
+                                            <div class="workflow-brief-card">
+                                                <div class="workflow-brief-label">Workspace</div>
+                                                <div class="workflow-brief-value" x-text="(control.lastResult && control.lastResult.workspace && control.lastResult.workspace.name) ? control.lastResult.workspace.name : 'default'"></div>
+                                            </div>
+                                            <div class="workflow-brief-card">
+                                                <div class="workflow-brief-label">Verification</div>
+                                                <div class="workflow-brief-value" x-text="(control.lastResult && control.lastResult.verification && control.lastResult.verification.status) ? control.lastResult.verification.status : 'pending'"></div>
+                                            </div>
+                                        </div>
+                                        <template x-if="workflowLastResultRows().length">
+                                            <div class="workflow-run-log">
+                                                <template x-for="item in workflowLastResultRows()" :key="'result-row-'+item.index+'-'+item.action">
+                                                    <div class="workflow-run-row">
+                                                        <div>
+                                                            <div class="font-semibold text-[11px] mono" x-text="'#' + item.index + ' ' + item.action"></div>
+                                                            <div class="compact-note mt-1" x-text="item.selector || item.url || item.text || 'No selector captured'"></div>
+                                                        </div>
+                                                        <span class="workflow-chip-badge" :class="item.ok ? 'ok' : 'error'" x-text="item.ok ? 'ok' : 'issue'"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <details class="mt-3 panel-soft p-3 rounded-xl">
+                                            <summary class="cursor-pointer font-semibold">Raw payload</summary>
+                                            <pre class="mono text-xs mt-3 overflow-x-auto" x-text="JSON.stringify(control.lastResult, null, 2)"></pre>
+                                        </details>
+                                    </div>
                                 </template>
                                 </div>
                             </div>
@@ -6107,7 +6272,7 @@
                                     </template>
                                     <template x-for="g in ((quantum.correlations && quantum.correlations.groups) ? quantum.correlations.groups.slice(0, 6) : [])" :key="g.signature">
                                         <div class="flex items-center justify-between p-2 rounded-xl mb-1" style="background: rgba(0,0,0,0.22); border: 1px solid var(--border);">
-                                            <div class="text-xs mono truncate pr-2" x-text="g.code + ' • ' + g.service"></div>
+                                            <div class="text-xs mono truncate pr-2" x-text="g.code + ' - ' + g.service"></div>
                                             <div class="text-xs mono px-2 py-0.5 rounded-full" :style="severityBadgeStyle(g.severity_max)" x-text="g.severity_max"></div>
                                         </div>
                                     </template>
@@ -6651,6 +6816,9 @@
                     saveSession: false,
                     sessionNotes: "",
                     confirmActions: false,
+                    workflowRunning: false,
+                    workflowRunError: "",
+                    workflowLastStartedAt: "",
                     githubReview: {
                         repo: "",
                         pullNumber: "",
@@ -8060,6 +8228,44 @@
                     }
                 },
 
+                parseWorkflowSteps() {
+                    try {
+                        const steps = JSON.parse(String(this.control.workflowSteps || "[]"));
+                        return Array.isArray(steps) ? steps : [];
+                    } catch (_err) {
+                        return [];
+                    }
+                },
+                workflowRuntimeState() {
+                    const runtime = this.control.config && this.control.config.browser_runtime ? this.control.config.browser_runtime : null;
+                    if (runtime && runtime.available) {
+                        return { label: runtime.source ? ('runtime ' + runtime.source) : 'runtime ready', tone: 'ok', detail: '' };
+                    }
+                    if (runtime && runtime.reason) {
+                        return { label: 'runtime issue', tone: 'error', detail: runtime.reason };
+                    }
+                    return { label: 'runtime unknown', tone: 'unknown', detail: '' };
+                },
+                workflowLastResultEnvelope() {
+                    return this.control.lastResult || null;
+                },
+                workflowLastResultCore() {
+                    const envelope = this.workflowLastResultEnvelope();
+                    if (!envelope || typeof envelope !== 'object') return null;
+                    return envelope.result && typeof envelope.result === 'object' ? envelope.result : envelope;
+                },
+                workflowLastResultRows() {
+                    const core = this.workflowLastResultCore();
+                    if (!core || !Array.isArray(core.results)) return [];
+                    return core.results.slice(0, 6);
+                },
+                workflowLastResultBadge() {
+                    const core = this.workflowLastResultCore();
+                    if (!core) return { label: 'standby', tone: 'unknown' };
+                    if (core.approval_required) return { label: 'approval required', tone: 'preview' };
+                    if (core.ok) return { label: 'run complete', tone: 'ok' };
+                    return { label: 'run issue', tone: 'error' };
+                },
                 rememberWorkflowOutcome(name, result) {
                     const key = String(name || '').trim();
                     if (!key) return;
@@ -8376,14 +8582,16 @@
                 },
 
                 async runBrowserWorkflow() {
-                    let steps = [];
-                    try {
-                        steps = JSON.parse(String(this.control.workflowSteps || "[]"));
-                        if (!Array.isArray(steps) || !steps.length) throw new Error("No steps");
-                    } catch (_err) {
-                        this.agent.error = "Workflow steps must be valid JSON array";
+                    const steps = this.parseWorkflowSteps();
+                    if (!steps.length) {
+                        this.control.workflowRunError = "Workflow steps must be a valid JSON array with at least one step";
+                        this.agent.error = this.control.workflowRunError;
                         return;
                     }
+                    this.control.workflowRunning = true;
+                    this.control.workflowRunError = "";
+                    this.control.workflowLastStartedAt = new Date().toISOString();
+                    this.agent.error = "";
                     try {
                         const res = await fetch("/agent/control/browser/workflow", {
                             method: "POST",
@@ -8408,7 +8616,11 @@
                         await this.loadTrustReceipts();
                         await this.loadNextBestActions();
                     } catch (err) {
-                        this.agent.error = (err && err.message) ? err.message : "Failed to run browser workflow";
+                        const message = (err && err.message) ? err.message : "Failed to run browser workflow";
+                        this.control.workflowRunError = message;
+                        this.agent.error = message;
+                    } finally {
+                        this.control.workflowRunning = false;
                     }
                 },
 
