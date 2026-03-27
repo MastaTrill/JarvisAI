@@ -3066,6 +3066,350 @@
             padding: 0.72rem 0.9rem 0.95rem 0;
         }
 
+        .hud-command-grid {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: minmax(190px, 230px) minmax(0, 1fr) minmax(190px, 230px);
+            gap: 1.1rem;
+            align-items: center;
+        }
+
+        .hud-column {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .hud-panel {
+            position: relative;
+            overflow: hidden;
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            border: 1px solid rgba(88, 174, 255, 0.16);
+            background: linear-gradient(180deg, rgba(5, 16, 28, 0.92), rgba(6, 20, 34, 0.72));
+            box-shadow: inset 0 0 0 1px rgba(125, 241, 255, 0.04), 0 18px 34px rgba(0, 0, 0, 0.28);
+        }
+
+        .hud-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(86, 232, 255, 0.08), transparent 42%, rgba(86, 232, 255, 0.04));
+            pointer-events: none;
+        }
+
+        .hud-panel-circle {
+            aspect-ratio: 1;
+            padding: 1rem;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .hud-panel-title {
+            position: relative;
+            z-index: 1;
+            font-size: 10px;
+            letter-spacing: 0.26em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .hud-panel-value {
+            position: relative;
+            z-index: 1;
+            margin-top: 0.7rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #f2fbff;
+            line-height: 1.2;
+        }
+
+        .hud-panel-copy {
+            position: relative;
+            z-index: 1;
+            margin-top: 0.45rem;
+            font-size: 11px;
+            line-height: 1.45;
+            color: var(--muted);
+        }
+
+        .hud-circle-readout {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            aspect-ratio: 1;
+            margin-top: 0.9rem;
+            border-radius: 999px;
+            border: 1px solid rgba(86, 232, 255, 0.18);
+            background:
+                radial-gradient(circle at center, rgba(86, 232, 255, 0.2), transparent 32%),
+                radial-gradient(circle at center, rgba(11, 26, 44, 0.95) 34%, rgba(5, 14, 26, 0.9) 35%, transparent 36%),
+                repeating-radial-gradient(circle at center, rgba(86, 232, 255, 0.18) 0 2px, transparent 2px 16px);
+            box-shadow: inset 0 0 24px rgba(86, 232, 255, 0.12), 0 0 32px rgba(24, 135, 255, 0.12);
+        }
+
+        .hud-circle-readout::before,
+        .hud-circle-readout::after {
+            content: "";
+            position: absolute;
+            inset: 14%;
+            border-radius: 999px;
+            border: 1px solid rgba(125, 241, 255, 0.22);
+        }
+
+        .hud-circle-readout::after {
+            inset: 31%;
+            border-color: rgba(82, 169, 255, 0.38);
+            box-shadow: 0 0 18px rgba(82, 169, 255, 0.18);
+        }
+
+        .hud-circle-center {
+            position: absolute;
+            inset: 50% auto auto 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+            text-align: center;
+        }
+
+        .hud-circle-center strong {
+            font-size: 1.35rem;
+            color: #f4fdff;
+        }
+
+        .hud-circle-center span {
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .hud-meter {
+            position: relative;
+            z-index: 1;
+            margin-top: 0.8rem;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(104, 160, 214, 0.14);
+            overflow: hidden;
+        }
+
+        .hud-meter > span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, rgba(53, 212, 255, 0.9), rgba(74, 124, 255, 0.92));
+            box-shadow: 0 0 16px rgba(53, 212, 255, 0.34);
+        }
+
+        .hud-stack {
+            position: relative;
+            z-index: 1;
+            margin-top: 0.85rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .hud-stack-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .hud-stack-row strong {
+            color: #dff9ff;
+            font-weight: 600;
+        }
+
+        .hud-core-stage {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100%;
+        }
+
+        .hud-core-frame {
+            position: absolute;
+            inset: 5% 11% 23%;
+            border-radius: 999px;
+            border: 1px solid rgba(86, 232, 255, 0.12);
+            box-shadow: inset 0 0 40px rgba(86, 232, 255, 0.06), 0 0 40px rgba(82, 169, 255, 0.06);
+            pointer-events: none;
+        }
+
+        .hud-core-frame::before,
+        .hud-core-frame::after {
+            content: "";
+            position: absolute;
+            inset: 8%;
+            border-radius: 999px;
+            border: 1px dashed rgba(82, 169, 255, 0.18);
+        }
+
+        .hud-core-frame::after {
+            inset: 19%;
+            border-style: solid;
+            border-color: rgba(125, 241, 255, 0.24);
+        }
+
+        .command-hero-tall {
+            min-height: 560px;
+            padding: 2rem 1.25rem 1.4rem;
+            border-radius: 30px;
+            background:
+                linear-gradient(135deg, rgba(7, 20, 36, 0.96), rgba(4, 10, 20, 0.98)),
+                radial-gradient(circle at center, rgba(53, 212, 255, 0.12), transparent 42%);
+        }
+
+        .command-hero-tall::before {
+            inset: 8% 7%;
+            border-color: rgba(125, 241, 255, 0.14);
+        }
+
+        .command-hero-tall::after {
+            width: min(760px, 82%);
+            height: 220px;
+            bottom: 23%;
+            background: radial-gradient(circle, rgba(64, 212, 255, 0.16), rgba(52, 215, 255, 0.08) 38%, transparent 72%);
+        }
+
+        .command-hero-tall .orb-shell {
+            width: 320px;
+            height: 320px;
+        }
+
+        .command-hero-tall .orb-trails {
+            inset: -78px;
+        }
+
+        .command-hero-tall .orb-ring {
+            border-width: 1px;
+            box-shadow: 0 0 54px rgba(86, 232, 255, 0.22), inset 0 0 34px rgba(82, 169, 255, 0.18);
+        }
+
+        .command-hero-tall .orb-ring-secondary {
+            inset: 26px;
+            border-width: 1px;
+        }
+
+        .command-hero-tall .orb-ring-tertiary {
+            inset: 54px;
+            border-width: 1px;
+        }
+
+        .command-hero-tall .wave-ring {
+            inset: 18px;
+        }
+
+        .command-hero-tall .orb-core {
+            width: 142px;
+            height: 142px;
+            box-shadow: 0 0 46px rgba(86, 232, 255, 0.5), inset 0 0 36px rgba(86, 232, 255, 0.24);
+        }
+
+        .command-hero-tall .jarvis-avatar {
+            inset: -22px;
+            filter: drop-shadow(0 0 48px rgba(125, 241, 255, 0.54));
+        }
+
+        .command-hero-tall .jarvis-flight-core {
+            width: 246px;
+            height: 284px;
+        }
+
+        .command-core-copy {
+            position: relative;
+            z-index: 2;
+            margin-top: 1.25rem;
+            text-align: center;
+        }
+
+        .command-core-copy .eyebrow {
+            font-size: 10px;
+            letter-spacing: 0.42em;
+            text-transform: uppercase;
+            color: rgba(186, 240, 255, 0.72);
+        }
+
+        .command-core-copy h2 {
+            margin-top: 0.75rem;
+            font-size: 2.15rem;
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            color: #f5fdff;
+        }
+
+        .command-core-copy p {
+            margin: 0.7rem auto 0;
+            max-width: 31rem;
+            font-size: 0.86rem;
+            color: var(--muted);
+        }
+
+        .command-bottom-band {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 1.2rem;
+        }
+
+        @media (max-width: 1100px) {
+            .hud-command-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hud-column {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .hud-core-frame {
+                inset: 12% 6% 31%;
+            }
+
+            .command-bottom-band {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .command-hero-tall {
+                min-height: 0;
+                padding: 1.35rem 0.85rem 1rem;
+            }
+
+            .hud-column {
+                grid-template-columns: 1fr;
+            }
+
+            .command-hero-tall .orb-shell {
+                width: 258px;
+                height: 258px;
+            }
+
+            .command-hero-tall .jarvis-flight-core {
+                width: 208px;
+                height: 240px;
+            }
+
+            .command-core-copy h2 {
+                font-size: 1.7rem;
+            }
+        }
+
+
         .command-hero-tall {
             min-height: 348px;
             padding-top: 1.55rem;
@@ -3680,107 +4024,135 @@
 
                 <div class="mt-3" x-show="currentView === 'agent'">
                     <div class="orb-theater command-hero-tall mb-4">
-                        <div class="orb-overlay-grid">
-                            <div class="orb-overlay-card compact" data-pos="top-left">
-                                <div class="text-[10px] uppercase tracking-[0.22em]" style="color: var(--muted);">Workspace</div>
-                                <div class="mt-2 text-base font-semibold" x-text="memoryCore.activeWorkspace ? memoryCore.activeWorkspace.name : 'Global focus'"></div>
-                                <div class="mt-1 text-[11px] mono" style="color: var(--muted);" x-text="memoryCore.activeWorkspace && memoryCore.activeWorkspace.focus ? memoryCore.activeWorkspace.focus : 'No workspace focus locked'"></div>
-                            </div>
-                            <div class="orb-overlay-card compact" data-pos="top-right">
-                                <div class="text-[10px] uppercase tracking-[0.22em]" style="color: var(--muted);">Priority</div>
-                                <div class="mt-2 text-sm font-semibold" x-text="memoryCore.nextActions && memoryCore.nextActions.actions && memoryCore.nextActions.actions.length ? memoryCore.nextActions.actions[0].title : 'No action queued'"></div>
-                                <div class="mt-1 text-[11px] mono" style="color: var(--muted);" x-text="memoryCore.nextActions && memoryCore.nextActions.actions && memoryCore.nextActions.actions.length ? ('score ' + memoryCore.nextActions.actions[0].score) : 'waiting for a mission prompt'"></div>
-                            </div>
-                        </div>
-
-                        <div class="orb-shell" :class="{ 'command-pulse': missionHud.lastCommandPulse }" @mousemove="updateHoloTilt($event)" @mouseleave="resetHoloTilt()">
-                            <div class="orb-trails">
-                                <div class="orb-trail">
-                                    <template x-for="(item, idx) in ((memoryCore.nextActions && memoryCore.nextActions.actions) ? memoryCore.nextActions.actions.slice(0, 3) : [])" :key="'trail-action-'+idx">
-                                        <div class="trail-chip mono"
-                                            :style="'--trail-angle:' + ((idx * 120) + 18) + 'deg; --trail-radius: 150px;'"
-                                            x-text="item.title"></div>
-                                    </template>
+                        <div class="hud-command-grid">
+                            <div class="hud-column hud-column-left">
+                                <div class="hud-panel">
+                                    <div class="hud-panel-title">Workspace</div>
+                                    <div class="hud-panel-value" x-text="memoryCore.activeWorkspace ? memoryCore.activeWorkspace.name : 'Global focus'"></div>
+                                    <div class="hud-panel-copy" x-text="memoryCore.activeWorkspace && memoryCore.activeWorkspace.focus ? memoryCore.activeWorkspace.focus : 'No workspace focus locked'"></div>
+                                    <div class="hud-meter"><span :style="'width:' + ((autonomy.watchers || []).filter(job => job.enabled).length ? Math.min(100, ((autonomy.watchers || []).filter(job => job.enabled).length * 14)) : 18) + '%'"></span></div>
                                 </div>
-                                <div class="orb-trail reverse">
-                                    <template x-for="(tool, idx) in (agent.tools || []).slice(0, 3)" :key="'trail-tool-'+idx">
-                                        <div class="trail-chip mono"
-                                            :style="'--trail-angle:' + ((idx * 120) + 76) + 'deg; --trail-radius: 182px;'"
-                                            x-text="tool.name"></div>
-                                    </template>
-                                </div>
-                            </div>
-                            <div class="orb-ring"></div>
-                            <div class="orb-ring-secondary"></div>
-                            <div class="orb-ring-tertiary"></div>
-                            <div class="wave-ring" :class="{ 'active': voice.listening || voice.pipelineListening || voice.localRecording || voice.speaking }">
-                                <div class="wave-bars">
-                                    <template x-for="bar in 18" :key="'wave-bar-'+bar">
-                                        <div class="wave-bar" :style="'--bar-index:' + bar + '; transform: translate(-50%, -50%) rotate(' + ((bar - 1) * 20) + 'deg);'"></div>
-                                    </template>
-                                </div>
-                            </div>
-                            <div class="orb-core" :class="{ 'listening': voice.listening || voice.pipelineListening || voice.localRecording, 'speaking': voice.speaking }"></div>
-                            <div class="jarvis-avatar" :class="{ 'listening': voice.listening || voice.pipelineListening || voice.localRecording, 'speaking': voice.speaking }" :style="'transform: translate3d(' + holoTilt.x + 'px,' + holoTilt.y + 'px,0) rotateY(' + (holoTilt.x * 1.8) + 'deg) rotateX(' + (-holoTilt.y * 1.8) + 'deg);'" aria-hidden="true">
-                                <div class="jarvis-avatar-speaking" :class="{ 'active': voice.speaking }"></div>
-                                <div class="jarvis-avatar-lines"></div>
-                                <div class="jarvis-silhouette jarvis-flight-core">
-                                    <div class="jarvis-scanlines"></div>
-                                    <div class="flight-orbit orbit-a"></div>
-                                    <div class="flight-orbit orbit-b"></div>
-                                    <div class="flight-orbit orbit-c"></div>
-                                    <div class="flight-trail trail-a"></div>
-                                    <div class="flight-trail trail-b"></div>
-                                    <div class="flight-core-shell">
-                                        <div class="flight-core-glow"></div>
-                                        <div class="flight-core-lattice"></div>
-                                        <div class="flight-core-pulse"></div>
-                                        <div class="flight-core-nucleus"></div>
-                                        <div class="flight-core-satellite satellite-a"></div>
-                                        <div class="flight-core-satellite satellite-b"></div>
-                                        <div class="flight-core-satellite satellite-c"></div>
-                                        <div class="flight-core-eyes"></div>
+                                <div class="hud-panel hud-panel-circle">
+                                    <div class="hud-panel-title">Awareness</div>
+                                    <div class="hud-circle-readout">
+                                        <div class="hud-circle-center">
+                                            <strong x-text="presence.awareness ? (presence.awareness.focus_mode || 'sync') : 'sync'"></strong>
+                                            <span>focus mode</span>
+                                        </div>
                                     </div>
-                                    <div class="flight-beam"></div>
-                                    <div class="flight-pedestal" aria-hidden="true">
-                                        <div class="flight-pedestal-ring ring-a"></div>
-                                        <div class="flight-pedestal-ring ring-b"></div>
-                                        <div class="flight-pedestal-ring ring-c"></div>
+                                    <div class="hud-panel-copy" x-text="presence.awareness && presence.awareness.signals ? (presence.awareness.signals.app_name || presence.awareness.signals.window_title || 'Awaiting desktop context') : 'Awaiting desktop context'"></div>
+                                </div>
+                            </div>
+                            <div class="hud-core-stage">
+                                <div class="hud-core-frame"></div>
+                                <div class="orb-shell" :class="{ 'command-pulse': missionHud.lastCommandPulse }" @mousemove="updateHoloTilt($event)" @mouseleave="resetHoloTilt()">
+                                    <div class="orb-trails">
+                                        <div class="orb-trail">
+                                            <template x-for="(item, idx) in ((memoryCore.nextActions && memoryCore.nextActions.actions) ? memoryCore.nextActions.actions.slice(0, 3) : [])" :key="'trail-action-'+idx">
+                                                <div class="trail-chip mono"
+                                                    :style="'--trail-angle:' + ((idx * 120) + 18) + 'deg; --trail-radius: 188px;'"
+                                                    x-text="item.title"></div>
+                                            </template>
+                                        </div>
+                                        <div class="orb-trail reverse">
+                                            <template x-for="(tool, idx) in (agent.tools || []).slice(0, 3)" :key="'trail-tool-'+idx">
+                                                <div class="trail-chip mono"
+                                                    :style="'--trail-angle:' + ((idx * 120) + 76) + 'deg; --trail-radius: 220px;'"
+                                                    x-text="tool.name"></div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <div class="orb-ring"></div>
+                                    <div class="orb-ring-secondary"></div>
+                                    <div class="orb-ring-tertiary"></div>
+                                    <div class="wave-ring" :class="{ 'active': voice.listening || voice.pipelineListening || voice.localRecording || voice.speaking }">
+                                        <div class="wave-bars">
+                                            <template x-for="bar in 18" :key="'wave-bar-'+bar">
+                                                <div class="wave-bar" :style="'--bar-index:' + bar + '; transform: translate(-50%, -50%) rotate(' + ((bar - 1) * 20) + 'deg);'"></div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <div class="orb-core" :class="{ 'listening': voice.listening || voice.pipelineListening || voice.localRecording, 'speaking': voice.speaking }"></div>
+                                    <div class="jarvis-avatar" :class="{ 'listening': voice.listening || voice.pipelineListening || voice.localRecording, 'speaking': voice.speaking }" :style="'transform: translate3d(' + holoTilt.x + 'px,' + holoTilt.y + 'px,0) rotateY(' + (holoTilt.x * 1.8) + 'deg) rotateX(' + (-holoTilt.y * 1.8) + 'deg);'" aria-hidden="true">
+                                        <div class="jarvis-avatar-speaking" :class="{ 'active': voice.speaking }"></div>
+                                        <div class="jarvis-avatar-lines"></div>
+                                        <div class="jarvis-silhouette jarvis-flight-core">
+                                            <div class="jarvis-scanlines"></div>
+                                            <div class="flight-orbit orbit-a"></div>
+                                            <div class="flight-orbit orbit-b"></div>
+                                            <div class="flight-orbit orbit-c"></div>
+                                            <div class="flight-trail trail-a"></div>
+                                            <div class="flight-trail trail-b"></div>
+                                            <div class="flight-core-shell">
+                                                <div class="flight-core-glow"></div>
+                                                <div class="flight-core-lattice"></div>
+                                                <div class="flight-core-pulse"></div>
+                                                <div class="flight-core-nucleus"></div>
+                                                <div class="flight-core-satellite satellite-a"></div>
+                                                <div class="flight-core-satellite satellite-b"></div>
+                                                <div class="flight-core-satellite satellite-c"></div>
+                                                <div class="flight-core-eyes"></div>
+                                            </div>
+                                            <div class="flight-beam"></div>
+                                            <div class="flight-pedestal" aria-hidden="true">
+                                                <div class="flight-pedestal-ring ring-a"></div>
+                                                <div class="flight-pedestal-ring ring-b"></div>
+                                                <div class="flight-pedestal-ring ring-c"></div>
+                                            </div>
+                                        </div>
+                                        <div class="jarvis-avatar-label">Jarvis</div>
                                     </div>
                                 </div>
-                                <div class="jarvis-avatar-label">Jarvis</div>
+                                <div class="command-core-copy">
+                                    <div class="eyebrow">Command Reactor</div>
+                                    <h2>Neural command core</h2>
+                                    <p>Primary actions, live voice state, and tactical context orbit the center so the dashboard reads like one focused instrument.</p>
+                                </div>
+                            </div>
+                            <div class="hud-column hud-column-right">
+                                <div class="hud-panel">
+                                    <div class="hud-panel-title">Priority queue</div>
+                                    <div class="hud-panel-value" x-text="memoryCore.nextActions && memoryCore.nextActions.actions && memoryCore.nextActions.actions.length ? memoryCore.nextActions.actions[0].title : 'No action queued'"></div>
+                                    <div class="hud-panel-copy" x-text="memoryCore.nextActions && memoryCore.nextActions.actions && memoryCore.nextActions.actions.length ? ('score ' + memoryCore.nextActions.actions[0].score) : 'Waiting for a mission prompt'"></div>
+                                    <div class="hud-stack">
+                                        <div class="hud-stack-row"><span>Verification</span><strong x-text="trust.report ? (trustScorePct().toFixed(0) + '%') : '--'"></strong></div>
+                                        <div class="hud-stack-row"><span>Watchers</span><strong x-text="((autonomy.watchers || []).filter(job => job.enabled).length) + ' armed'"></strong></div>
+                                        <div class="hud-stack-row"><span>Voice</span><strong x-text="voice.pipelineAvailable ? voice.pipelineStatus : 'browser voice'"></strong></div>
+                                    </div>
+                                </div>
+                                <div class="hud-panel">
+                                    <div class="hud-panel-title">Tool matrix</div>
+                                    <div class="hud-panel-value" x-text="(agent.tools || []).length ? ((agent.tools || []).length + ' live tools') : 'Loading tools'"></div>
+                                    <div class="hud-panel-copy">Readiness bands echo the edge diagnostics in the reference HUD.</div>
+                                    <div class="hud-stack">
+                                        <div class="hud-stack-row"><span>Browser</span><strong x-text="control.browserUrl ? 'hot' : 'standby'"></strong></div>
+                                        <div class="hud-stack-row"><span>Desktop</span><strong x-text="control.config && control.config.execute_on_host ? 'armed' : 'preview'"></strong></div>
+                                        <div class="hud-stack-row"><span>Workflows</span><strong x-text="(control.workflowLibrary || []).length ? ((control.workflowLibrary || []).length + ' ready') : 'syncing'"></strong></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="relative z-10 mt-3 text-center">
-                            <div class="text-xs uppercase tracking-[0.45em]" style="color: var(--muted);">Jarvis Core</div>
-                            <div class="mt-2 text-xl md:text-2xl font-bold tracking-tight">Command presence with live telemetry.</div>
-                            <div class="mt-2 text-sm max-w-xl mx-auto wide-fade-copy" style="color: var(--muted);">
-                                Voice, trust, and the next move stay visible without crowding the stage.
+                        <div class="command-bottom-band">
+                            <div class="orb-meta text-xs mono orb-meta-compact">
+                                <span class="orb-meta-item" x-text="memoryCore.activeWorkspace ? memoryCore.activeWorkspace.name : 'Global focus'"></span>
+                                <span class="orb-meta-item" x-text="voice.pipelineAvailable ? voice.pipelineStatus : 'browser voice'"></span>
+                                <span class="orb-meta-item" x-text="((autonomy.watchers || []).filter(job => job.enabled).length) + ' watchers'"></span>
+                            </div>
+                            <div class="orb-rail orb-rail-compact">
+                                <button class="orb-pill text-xs mono hover:opacity-90" @click="toggleCommandPalette(true)">
+                                    <span class="status-dot"></span>
+                                    <span>Palette</span>
+                                </button>
+                                <button class="orb-pill text-xs mono hover:opacity-90" @click="toggleVoiceListening()">
+                                    <span class="status-dot"></span>
+                                    <span x-text="(voice.pipelineEnabled && voice.pipelineAvailable) ? (voice.pipelineListening ? 'Close Voice' : 'Open Voice') : (voice.listening ? 'Close Voice' : 'Open Voice')"></span>
+                                </button>
+                                <button class="orb-pill text-xs mono hover:opacity-90" @click="memoryCore.nextActions && memoryCore.nextActions.actions && memoryCore.nextActions.actions.length ? executeNextAction(memoryCore.nextActions.actions[0]) : null">
+                                    <span class="status-dot"></span>
+                                    <span>Priority</span>
+                                </button>
                             </div>
                         </div>
-
-                        <div class="orb-rail orb-rail-compact">
-                            <button class="orb-pill text-xs mono hover:opacity-90" @click="toggleCommandPalette(true)">
-                                <span class="status-dot"></span>
-                                <span>Palette</span>
-                            </button>
-                            <button class="orb-pill text-xs mono hover:opacity-90" @click="toggleVoiceListening()">
-                                <span class="status-dot"></span>
-                                <span x-text="(voice.pipelineEnabled && voice.pipelineAvailable) ? (voice.pipelineListening ? 'Close Voice' : 'Open Voice') : (voice.listening ? 'Close Voice' : 'Open Voice')"></span>
-                            </button>
-                            <button class="orb-pill text-xs mono hover:opacity-90" @click="memoryCore.nextActions && memoryCore.nextActions.actions && memoryCore.nextActions.actions.length ? executeNextAction(memoryCore.nextActions.actions[0]) : null">
-                                <span class="status-dot"></span>
-                                <span>Priority</span>
-                            </button>
-                        </div>
-
-                        <div class="orb-meta text-xs mono orb-meta-compact">
-                            <span class="orb-meta-item" x-text="memoryCore.activeWorkspace ? memoryCore.activeWorkspace.name : 'Global focus'"></span>
-                            <span class="orb-meta-item" x-text="voice.pipelineAvailable ? voice.pipelineStatus : 'browser voice'"></span>
-                            <span class="orb-meta-item" x-text="((autonomy.watchers || []).filter(job => job.enabled).length) + ' watchers'"></span>
-                        </div>
-
                         <div class="center-chat-float">
                             <div class="center-chat-head">
                                 <div>
