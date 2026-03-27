@@ -90,7 +90,7 @@ def create_user(
 
 @router.post("/admin/users/delete")
 def delete_user(
-    user_id: int = Form(...),
+    user_id: str = Form(...),
     db: Session = Depends(get_users_db),
     current_user: User = Depends(admin_required),
 ):

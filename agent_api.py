@@ -666,7 +666,13 @@ def _tool_list_files(args: Dict[str, Any]) -> Dict[str, Any]:
 
     target = _safe_path(path, allowed_roots=[_APP_ROOT, _DATA_ROOT, _MODELS_ROOT])
     if not target.exists():
-        raise HTTPException(status_code=404, detail="path does not exist")
+        return {
+            "path": str(target),
+            "entries": [],
+            "truncated": False,
+            "missing": True,
+            "message": "path does not exist",
+        }
 
     if target.is_file():
         st = target.stat()
@@ -1427,7 +1433,7 @@ def _get_local_voice_config() -> Dict[str, Any]:
     cfg["stt_available"] = bool(WhisperModel is not None)
     cfg["tts_available"] = bool(caps.get("espeak_ng"))
     cfg["tts_enhanced_available"] = bool(caps.get("enhanced_local"))
-    cfg["available_tts_providers"] = [name for name, ok in caps.items() if ok]
+    cfg["available_tts_providers"] = list(caps.keys())
     cfg["available_tts_styles"] = ["assistant", "deep", "crisp", "cinematic", "operator", "broadcast"]
     cfg["available_stt_models"] = ["tiny", "base", "small", "medium"]
     cfg["available_voice_presets"] = _local_voice_presets()
@@ -3069,7 +3075,17 @@ def _execute_tool_with_approval(
     safe_args = dict(args or {})
     if approve:
         safe_args["confirm"] = True
-    result = _TOOLS[tool_name].handler(safe_args)
+    try:
+        result = _TOOLS[tool_name].handler(safe_args)
+    except HTTPException as exc:
+        detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+        result = {
+            "ok": False,
+            "blocked": exc.status_code in {401, 403},
+            "status_code": exc.status_code,
+            "error": detail,
+            "reason": detail,
+        }
     pending = None
     needs_approval, reason = _result_needs_approval(result)
     if needs_approval and session_id:

@@ -2893,9 +2893,13 @@ class AgentTaskMemory:
             overlap = sum(1 for w in words if w in hay)
             if overlap <= 0:
                 continue
-            score = overlap + float(item.get("effective_importance") or item.get("importance") or 1)
+            score = (overlap * 10.0) + float(item.get("effective_importance") or item.get("importance") or 1)
+            if q in hay:
+                score += 3.0
+            if words and all(w in hay for w in words):
+                score += 5.0
             scored.append((score, item))
-        scored.sort(key=lambda x: x[0], reverse=True)
+        scored.sort(key=lambda x: (x[0], int(x[1].get("id") or 0)), reverse=True)
         results = [item for _, item in scored[:lim]]
         if results:
             now = _now_iso()
