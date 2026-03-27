@@ -1160,6 +1160,93 @@
             animation-delay: calc(var(--bar-index) * 0.06s);
         }
 
+        .header-flight-deck {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+            gap: 0.9rem;
+            margin: 0.95rem 0 1.1rem;
+        }
+
+        .header-flight-panel {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-flight-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(52, 215, 255, 0.08), transparent 52%, rgba(21, 195, 154, 0.08));
+            pointer-events: none;
+        }
+
+        .header-flight-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .view-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
+        .view-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.62rem 0.84rem;
+            border-radius: 999px;
+            border: 1px solid rgba(77, 169, 216, 0.18);
+            background: rgba(4, 14, 24, 0.68);
+            color: rgba(215, 236, 247, 0.86);
+            transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, color 160ms ease;
+        }
+
+        .view-chip:hover {
+            transform: translateY(-1px);
+            border-color: rgba(83, 203, 255, 0.34);
+            background: rgba(7, 20, 32, 0.92);
+        }
+
+        .view-chip.active {
+            color: #f5fdff;
+            border-color: rgba(83, 203, 255, 0.42);
+            background: linear-gradient(120deg, rgba(18, 44, 72, 0.96), rgba(5, 18, 30, 0.92));
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(200, 241, 255, 0.04);
+        }
+
+        .view-chip-copy {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .view-chip-copy span:last-child {
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .header-signal-strip {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        .header-shortcut {
+            color: #f2fbff;
+            letter-spacing: 0.08em;
+        }
+
+        @media (max-width: 1024px) {
+            .header-flight-deck {
+                grid-template-columns: 1fr;
+            }
+        }
+
+
         .orb-overlay-card {
             position: absolute;
             z-index: 3;
@@ -3538,6 +3625,56 @@
                     <div class="text-right">
                         <div class="text-xs" style="color: var(--muted);">Last update</div>
                         <div class="mono text-xs" x-text="lastUpdatedText"></div>
+                    </div>
+                </div>
+
+                <div class="header-flight-deck">
+                    <div class="panel-soft p-3 header-flight-panel">
+                        <div class="header-flight-inner">
+                            <div class="section-kicker">Flight Deck</div>
+                            <div class="font-semibold mt-1">Move between command surfaces without losing context.</div>
+                            <div class="view-chip-row mt-3">
+                                <button class="view-chip" type="button" :class="{ 'active': currentView === 'agent' }" @click="currentView='agent'; toggleMissionMode(true)">
+                                    <i class="fas fa-comments text-blue-200"></i>
+                                    <div class="view-chip-copy">
+                                        <span>Command</span>
+                                        <span>live control</span>
+                                    </div>
+                                </button>
+                                <button class="view-chip" type="button" :class="{ 'active': currentView === 'system' }" @click="currentView='system'">
+                                    <i class="fas fa-heartbeat text-green-200"></i>
+                                    <div class="view-chip-copy">
+                                        <span>Core</span>
+                                        <span>health + links</span>
+                                    </div>
+                                </button>
+                                <button class="view-chip" type="button" :class="{ 'active': currentView === 'quantum' }" @click="currentView='quantum'">
+                                    <i class="fas fa-atom text-indigo-200"></i>
+                                    <div class="view-chip-copy">
+                                        <span>Quantum</span>
+                                        <span>alerts + signals</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="status-strip status-strip-compact text-[11px] mono header-signal-strip">
+                        <div class="status-pill">
+                            <div class="status-label">Workspace</div>
+                            <div class="status-value" x-text="memoryCore.activeWorkspace ? memoryCore.activeWorkspace.name : 'Global focus'"></div>
+                        </div>
+                        <div class="status-pill">
+                            <div class="status-label">Voice</div>
+                            <div class="status-value" x-text="voice.activePreset ? voice.activePreset : 'prime'"></div>
+                        </div>
+                        <div class="status-pill">
+                            <div class="status-label">Tools</div>
+                            <div class="status-value" x-text="(agent.tools || []).length ? ((agent.tools || []).length + ' live') : 'loading'"></div>
+                        </div>
+                        <div class="status-pill">
+                            <div class="status-label">Shortcuts</div>
+                            <div class="status-value header-shortcut">Ctrl+K / Alt+Enter</div>
+                        </div>
                     </div>
                 </div>
 
