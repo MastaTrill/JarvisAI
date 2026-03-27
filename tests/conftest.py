@@ -2,8 +2,21 @@
 
 import sys
 import os
+import tempfile
+from pathlib import Path
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_TEMP_DIR = PROJECT_ROOT / "scratch" / "pytest-temp"
+PROJECT_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+# Keep pytest and tempfile usage inside the repo so Windows temp directory
+# permission issues do not break the suite.
+os.environ["TMP"] = str(PROJECT_TEMP_DIR)
+os.environ["TEMP"] = str(PROJECT_TEMP_DIR)
+os.environ["TMPDIR"] = str(PROJECT_TEMP_DIR)
+tempfile.tempdir = str(PROJECT_TEMP_DIR)
+
+sys.path.insert(0, str(PROJECT_ROOT))
 
 import pytest
 from fastapi.testclient import TestClient
