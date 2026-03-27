@@ -11,6 +11,7 @@ import glob
 import importlib.util
 import logging
 import asyncio
+import inspect
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -44,6 +45,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
+
+# SlowAPI still calls asyncio.iscoroutinefunction, which is deprecated on Python 3.14+.
+# Point it at inspect.iscoroutinefunction before importing slowapi to avoid warning noise.
+asyncio.iscoroutinefunction = inspect.iscoroutinefunction
+
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
