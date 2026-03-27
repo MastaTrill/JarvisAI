@@ -5186,7 +5186,7 @@
                     </div>
                 </div>
 
-                <div class="mt-6" x-show="currentView === 'quantum'" x-data="{ quantumTab: 'overview' }">
+                <div class="mt-6" x-show="currentView === 'quantum'">
                     <div class="tab-strip mb-3">
                         <button class="tab-pill mono" :class="{ 'active': quantumTab === 'overview' }" @click="quantumTab = 'overview'">Overview</button>
                         <button class="tab-pill mono" :class="{ 'active': quantumTab === 'signals' }" @click="quantumTab = 'signals'">Signals</button>
@@ -5370,7 +5370,7 @@
                             </div>
                         </details>
                     </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-2 mt-3" x-show="quantumTab === 'alerts'">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-2 mt-3" x-show="currentView === 'quantum' && quantumTab === 'alerts'">
                         <div class="operator-card">
                             <div class="operator-label">Step 1</div>
                             <div class="operator-value">Watch signal</div>
@@ -5387,7 +5387,7 @@
                             <div class="compact-note mt-2">Run pattern interpretation once thresholds are in place.</div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-2" x-show="quantumTab === 'alerts'">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-2" x-show="currentView === 'quantum' && quantumTab === 'alerts'">
                         <div class="panel-soft p-3">
                             <div class="flex items-center justify-between">
                                 <div class="font-semibold">Quantum Alerts</div>
@@ -5440,8 +5440,12 @@
                             </div>
                         </details>
                     </div>
-                    <details class="panel-soft p-3 mt-3 section-shell-compact" x-show="quantumTab === 'alerts'">
-                        <summary class="section-summary"><span><span class="font-semibold">Quantum Deciphering</span><span class="block compact-note mt-1">Interpretation, cadence, and actionability in one lighter ops block.</span></span><button class="cyber-btn-soft mono" @click.stop="runQuantumDecipher()">Decipher 24h</button></summary>
+                    <details class="panel-soft p-3 mt-3 section-shell-compact" x-show="currentView === 'quantum' && quantumTab === 'alerts'">
+                        <summary class="section-summary"><span><span class="font-semibold">Quantum Deciphering</span><span class="block compact-note mt-1">Interpretation, cadence, and actionability in one lighter ops block.</span></span></summary>
+                        <div class="flex justify-end mt-3">
+                            <button class="cyber-btn-soft mono" type="button" @click.stop="runQuantumDecipher()">Decipher 24h</button>
+                        </div>
+                        <div class="mt-3 operator-stack-tight">
                         <div class="mt-3 operator-stack-tight">
                             <div class="operator-inline-note">Interprets recent quantum patterns and converts them into plain-language operator guidance.</div>
                             <div class="operator-micro-grid">
@@ -5457,7 +5461,7 @@
                             </div>
                         </div>
                     </details>
-                    <div class="panel-soft p-3 mt-4">
+                    <div class="panel-soft p-3 mt-4" x-show="currentView === 'quantum'">
                         <div class="flex items-center justify-between gap-2">
                             <div>
                                 <div class="section-kicker">Advanced Quantum Ops</div>
@@ -5918,6 +5922,7 @@
         function jarvisDashboard() {
             return {
                 currentView: "agent",
+                quantumTab: 'overview',
                 commandPalette: { open: false, query: "", recent: [], activeIndex: 0, favorites: ["Open Voice Channel", "Execute Priority", "Open Mission Mode"], usage: {}, dragFavoriteIndex: null },
                 missionMode: true,
                 missionHud: { sidebandCollapsed: false, actionIndex: 0, lastCommandPulse: false },
