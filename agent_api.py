@@ -9390,7 +9390,11 @@ def agent_chat(payload: AgentChatRequest):
                 plan=plan,
             )
         except Exception as exc:
-            reply = f"Ollama request failed; falling back to basic mode. Error: {exc}"
+            detail = str(exc).strip()
+            if detail.startswith("Ollama "):
+                reply = f"{detail} Falling back to basic mode."
+            else:
+                reply = f"Ollama request failed; falling back to basic mode. Error: {detail}"
             _memory.append(session_id, StoredMessage(role="assistant", text=reply))
             return AgentChatResponse(
                 session_id=session_id,

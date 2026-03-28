@@ -5,12 +5,45 @@ import os
 import re
 import json
 from typing import Any, Dict, Iterator, List, Optional
+from urllib.parse import SplitResult, urlsplit, urlunsplit
 
 import requests
 
 
+class OllamaUnavailableError(RuntimeError):
+    pass
+
+
+def _build_base_url(parts: SplitResult, host: str) -> str:
+    netloc = host
+    if parts.port:
+        netloc = f"{host}:{parts.port}"
+    return urlunsplit((parts.scheme or "http", netloc, parts.path, parts.query, parts.fragment)).rstrip("/")
+
+
+def _candidate_ollama_base_urls() -> List[str]:
+    configured = (os.getenv("OLLAMA_BASE_URL") or "http://ollama:11434").strip().rstrip("/")
+    parts = urlsplit(configured)
+    candidates: List[str] = [configured]
+    host = (parts.hostname or "").strip().lower()
+
+    # Docker-style hostnames are convenient in containers but fail on many
+    # local Windows runs. Retry localhost variants automatically.
+    if host in {"ollama", "host.docker.internal", "docker.internal"}:
+        candidates.append(_build_base_url(parts, "127.0.0.1"))
+
+    seen = set()
+    deduped: List[str] = []
+    for item in candidates:
+        if not item or item in seen:
+            continue
+        seen.add(item)
+        deduped.append(item)
+    return deduped
+
+
 def ollama_base_url() -> str:
-    return os.getenv("OLLAMA_BASE_URL", "http://ollama:11434").rstrip("/")
+    return _candidate_ollama_base_urls()[0]
 
 
 def ollama_model() -> str:
@@ -19,6 +52,54 @@ def ollama_model() -> str:
 
 def is_ollama_configured() -> bool:
     return bool(ollama_model())
+
+
+def _summarize_ollama_error(attempted: List[str], exc: Exception) -> str:
+    attempted_list = ", ".join(attempted)
+    detail = str(exc or "").strip()
+    preferred = next((url for url in attempted if "127.0.0.1" in url or "localhost" in url), attempted[-1] if attempted else ollama_base_url())
+    lower = detail.lower()
+
+    if "failed to resolve" in lower or "nameresolutionerror" in lower or "getaddrinfo failed" in lower:
+        return (
+            f"Ollama is not reachable. Tried {attempted_list}. "
+            "Start Ollama locally or update OLLAMA_BASE_URL."
+        )
+    if "failed to establish a new connection" in lower or "actively refused" in lower or "connection refused" in lower:
+        return (
+            f"Ollama is not running at {preferred}. "
+            "Start Ollama locally or update OLLAMA_BASE_URL."
+        )
+    if isinstance(exc, requests.Timeout) or "read timed out" in lower or "connect timeout" in lower:
+        return (
+            f"Ollama timed out at {preferred}. "
+            "Start Ollama locally or update OLLAMA_BASE_URL."
+        )
+    return (
+        f"Ollama request failed after trying {attempted_list}. "
+        "Start Ollama locally or update OLLAMA_BASE_URL."
+    )
+
+
+def _ollama_request(method: str, path: str, *, timeout_s: int, **kwargs: Any) -> requests.Response:
+    attempted: List[str] = []
+    last_exc: Optional[Exception] = None
+    connect_timeout = 1
+    for base_url in _candidate_ollama_base_urls():
+        attempted.append(base_url)
+        try:
+            resp = requests.request(
+                method,
+                f"{base_url}{path}",
+                timeout=(connect_timeout, timeout_s),
+                **kwargs,
+            )
+            resp.raise_for_status()
+            return resp
+        except requests.RequestException as exc:
+            last_exc = exc
+            continue
+    raise OllamaUnavailableError(_summarize_ollama_error(attempted, last_exc or RuntimeError("unknown ollama error")))
 
 
 def _to_ollama_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, str]]:
@@ -44,7 +125,6 @@ def ollama_chat(
     options: Optional[Dict[str, Any]] = None,
     timeout_s: int = 60,
 ) -> str:
-    url = f"{ollama_base_url()}/api/chat"
     ollama_messages: List[Dict[str, str]] = list(messages or [])
     if system:
         # Some models follow instructions more reliably when the system prompt is
@@ -65,8 +145,7 @@ def ollama_chat(
         payload["options"] = opts
     if format_json:
         payload["format"] = "json"
-    resp = requests.post(url, json=payload, timeout=timeout_s)
-    resp.raise_for_status()
+    resp = _ollama_request("POST", "/api/chat", json=payload, timeout_s=timeout_s)
     data = resp.json()
     message = data.get("message") or {}
     content = message.get("content")
@@ -86,7 +165,6 @@ def ollama_chat_with_images(
     options: Optional[Dict[str, Any]] = None,
     timeout_s: int = 120,
 ) -> str:
-    url = f"{ollama_base_url()}/api/chat"
     user_message: Dict[str, Any] = {
         "role": "user",
         "content": prompt,
@@ -110,8 +188,7 @@ def ollama_chat_with_images(
         payload["options"] = opts
     if format_json:
         payload["format"] = "json"
-    resp = requests.post(url, json=payload, timeout=timeout_s)
-    resp.raise_for_status()
+    resp = _ollama_request("POST", "/api/chat", json=payload, timeout_s=timeout_s)
     data = resp.json()
     message = data.get("message") or {}
     content = message.get("content")
@@ -128,7 +205,6 @@ def ollama_chat_stream(
     temperature: Optional[float] = None,
     timeout_s: int = 120,
 ) -> Iterator[str]:
-    url = f"{ollama_base_url()}/api/chat"
     ollama_messages: List[Dict[str, str]] = list(messages or [])
     if system:
         ollama_messages = [{"role": "system", "content": system}] + ollama_messages
@@ -136,8 +212,7 @@ def ollama_chat_stream(
     if isinstance(temperature, (int, float)):
         payload["options"] = {"temperature": float(temperature)}
 
-    with requests.post(url, json=payload, timeout=timeout_s, stream=True) as resp:
-        resp.raise_for_status()
+    with _ollama_request("POST", "/api/chat", json=payload, timeout_s=timeout_s, stream=True) as resp:
         for raw in resp.iter_lines(decode_unicode=True):
             if not raw:
                 continue
@@ -153,10 +228,8 @@ def ollama_chat_stream(
 
 
 def ollama_list_models(timeout_s: int = 10) -> List[str]:
-    url = f"{ollama_base_url()}/api/tags"
     try:
-        resp = requests.get(url, timeout=timeout_s)
-        resp.raise_for_status()
+        resp = _ollama_request("GET", "/api/tags", timeout_s=timeout_s)
         data = resp.json()
     except Exception:
         return []

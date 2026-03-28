@@ -9,6 +9,8 @@ from uuid import uuid4
 from datetime import datetime, timedelta, timezone
 
 import agent_api
+import llm_ollama
+import requests
 from agent_api import router
 
 
@@ -56,6 +58,61 @@ def test_chat_returns_plan() -> None:
     body = res.json()
     assert isinstance(body.get("plan"), list)
     assert len(body["plan"]) >= 1
+
+
+def test_ollama_list_models_falls_back_to_localhost(monkeypatch) -> None:
+    calls = []
+
+    class _Response:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self):
+            return self._payload
+
+    def fake_request(method, url, timeout=None, **kwargs):
+        calls.append(url)
+        if url == "http://ollama:11434/api/tags":
+            raise requests.ConnectionError(
+                "HTTPConnectionPool(host='ollama', port=11434): "
+                "Failed to resolve 'ollama' ([Errno 11001] getaddrinfo failed)"
+            )
+        if url == "http://127.0.0.1:11434/api/tags":
+            return _Response({"models": [{"name": "llama3.2:3b"}]})
+        raise AssertionError(f"unexpected url {url}")
+
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://ollama:11434")
+    monkeypatch.setattr(llm_ollama.requests, "request", fake_request)
+
+    assert llm_ollama.ollama_list_models(timeout_s=2) == ["llama3.2:3b"]
+    assert calls[:2] == [
+        "http://ollama:11434/api/tags",
+        "http://127.0.0.1:11434/api/tags",
+    ]
+
+
+def test_agent_chat_ollama_failure_is_human_readable(monkeypatch) -> None:
+    client = _client()
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setattr(agent_api, "ollama_list_models", lambda timeout_s=5: [])
+    monkeypatch.setattr(agent_api, "ollama_model", lambda: "llama3.2:3b")
+    monkeypatch.setattr(
+        agent_api,
+        "ollama_chat",
+        lambda **kwargs: (_ for _ in ()).throw(
+            RuntimeError("Ollama is not running at http://127.0.0.1:11434. Start Ollama locally or update OLLAMA_BASE_URL.")
+        ),
+    )
+
+    res = client.post("/agent/chat", json={"message": "hello", "session_id": "ollama-friendly-error"})
+    assert res.status_code == 200
+    reply = res.json()["reply"]
+    assert "Ollama is not running at http://127.0.0.1:11434." in reply
+    assert "Falling back to basic mode." in reply
+    assert "HTTPConnectionPool" not in reply
 
 
 def test_risky_shell_requires_confirm_in_safe_profile() -> None:
