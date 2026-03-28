@@ -37,7 +37,7 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from fastapi.responses import JSONResponse, PlainTextResponse, HTMLResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 from pydantic import BaseModel
@@ -238,11 +238,7 @@ def serve_dashboard():
     static_path = os.path.join(
         os.path.dirname(__file__), "static", "dashboard", "index.html"
     )
-    with open(static_path, "r", encoding="utf-8") as f:
-        html = f.read()
-    # Unique marker for debug
-    html += "<!-- JARVIS_DEBUG_MARKER_2026 -->"
-    return HTMLResponse(content=html, status_code=200)
+    return FileResponse(static_path, media_type="text/html")
 
 
 # --- XAI/Interpretability Endpoints ---
@@ -1724,4 +1720,4 @@ def gdpr_delete(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("api:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8080, reload=False)
