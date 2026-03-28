@@ -60,6 +60,19 @@ def test_chat_returns_plan() -> None:
     assert len(body["plan"]) >= 1
 
 
+def test_basic_chat_mode_supports_normal_conversation(monkeypatch) -> None:
+    client = _client()
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    monkeypatch.setattr(agent_api, "is_openai_configured", lambda: False)
+    monkeypatch.setattr(agent_api, "is_ollama_configured", lambda: False)
+
+    res = client.post("/agent/chat", json={"message": "can we just talk normally?", "session_id": "basic-open-chat"})
+    assert res.status_code == 200
+    reply = res.json()["reply"].lower()
+    assert "normal conversation" in reply or "lightweight mode" in reply
+    assert "use /tool get_time" not in reply
+
+
 def test_ollama_list_models_falls_back_to_localhost(monkeypatch) -> None:
     calls = []
 

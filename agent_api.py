@@ -4338,12 +4338,40 @@ def _parse_tool_message(message: str) -> Optional[tuple[str, Dict[str, Any]]]:
 
 
 def _basic_brain(message: str) -> str:
-    msg = message.strip().lower()
-    if msg in {"hi", "hello", "hey"}:
-        return "Hello. Try /tool get_time or /tool echo {\"text\":\"...\"}."
+    raw = str(message or "").strip()
+    msg = raw.lower()
+    if not raw:
+        return "I'm here. We can chat in lightweight mode, or you can ask me to run a tool."
+    if msg in {"hi", "hello", "hey", "yo", "sup"}:
+        return "Hey. I'm in lightweight mode right now, but we can still talk. What's on your mind?"
     if "help" in msg:
-        return "Commands: /tool <name> <json_args>. See GET /agent/tools for available tools."
-    return "I'm running. Use /tool get_time, or ask for help."
+        return (
+            "I can still chat in lightweight mode, think through next steps, and use tools when you ask. "
+            "For direct actions, use `/tool <name> <json_args>`, or ask me what you want to do."
+        )
+    if "who are you" in msg:
+        return "I'm Jarvis. Right now I'm running in lightweight mode, so my replies are simpler, but I can still chat and help you work through things."
+    if "what can you do" in msg or "what do you do" in msg:
+        return (
+            "I can chat in lightweight mode, help you reason through a problem, and point you to tool actions when needed. "
+            "If you want something concrete, just ask normally or use a `/tool ...` command."
+        )
+    if "can we just talk" in msg or "open chat" in msg or "talk normally" in msg:
+        return (
+            "Yes. I'm in lightweight mode, so I won't sound as smart as the full model, "
+            "but we can still have a normal conversation. Tell me what you want to talk about."
+        )
+    if raw.startswith("/tool"):
+        return "Tool command received. If it didn't run, check the tool name and JSON args."
+    if "?" in raw:
+        return (
+            f"I can help with that in lightweight mode. On `{raw}`, give me a bit more context "
+            "or ask it more directly and I'll do my best to work through it with you."
+        )
+    return (
+        f"I hear you: `{raw}`. I'm in lightweight mode right now, but I'm still here with you. "
+        "If you want, keep talking normally and I'll help as best I can."
+    )
 
 
 def _multi_agent_fast_model(available: List[str], fallback: str) -> str:
