@@ -9000,7 +9000,33 @@ async def agent_chat_stream(payload: AgentChatRequest):
             }
             yield f"event: done\ndata: {json.dumps(done)}\n\n"
         except Exception as exc:
-            err_text = f"Streaming failed: {exc}"
+            detail = str(exc).strip()
+            if provider == "ollama":
+                if detail.startswith("Ollama "):
+                    fallback_reply = f"{detail} Falling back to basic mode.\n\n{_basic_brain(payload.message)}"
+                else:
+                    fallback_reply = (
+                        f"Ollama streaming failed; falling back to basic mode. Error: {detail}\n\n"
+                        f"{_basic_brain(payload.message)}"
+                    )
+                emitted = fallback_reply if not full_text else ("\n\n" + fallback_reply)
+                full_text += emitted
+                for part in emitted.split(" "):
+                    chunk = part + " "
+                    yield f"event: delta\ndata: {json.dumps({'text': chunk})}\n\n"
+                    await asyncio.sleep(0)
+                final_reply = full_text.strip()
+                _memory.append(session_id, StoredMessage(role="assistant", text=final_reply))
+                done = {
+                    "session_id": session_id,
+                    "reply": final_reply,
+                    "timestamp": _now_iso(),
+                    "plan": plan,
+                }
+                yield f"event: done\ndata: {json.dumps(done)}\n\n"
+                return
+
+            err_text = f"Streaming failed: {detail}"
             _memory.append(session_id, StoredMessage(role="assistant", text=err_text))
             yield f"event: error\ndata: {json.dumps({'error': err_text, 'session_id': session_id, 'plan': plan})}\n\n"
 

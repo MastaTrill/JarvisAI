@@ -115,6 +115,33 @@ def test_agent_chat_ollama_failure_is_human_readable(monkeypatch) -> None:
     assert "HTTPConnectionPool" not in reply
 
 
+def test_agent_chat_stream_ollama_failure_falls_back_to_basic(monkeypatch) -> None:
+    client = _client()
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setattr(agent_api, "ollama_list_models", lambda timeout_s=5: [])
+    monkeypatch.setattr(agent_api, "ollama_model", lambda: "llama3.2:3b")
+    monkeypatch.setattr(
+        agent_api,
+        "ollama_chat_stream",
+        lambda **kwargs: (_ for _ in ()).throw(
+            RuntimeError("Ollama timed out at http://127.0.0.1:11434. Start Ollama locally or update OLLAMA_BASE_URL.")
+        ),
+    )
+
+    with client.stream(
+        "POST",
+        "/agent/chat/stream",
+        json={"message": "hello", "session_id": "ollama-stream-friendly-error"},
+    ) as response:
+        body = "".join(response.iter_text())
+
+    assert response.status_code == 200
+    assert "event: error" not in body
+    assert "event: done" in body
+    assert "Ollama timed out at http://127.0.0.1:11434." in body
+    assert "Falling back to basic mode." in body
+
+
 def test_risky_shell_requires_confirm_in_safe_profile() -> None:
     client = _client()
     client.post("/agent/profile", json={"profile": "safe"})
