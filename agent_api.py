@@ -4487,8 +4487,6 @@ def _agent_role_reason(role: str, task: str, session_id: str, force_fast: bool =
     if not provider:
         if is_openai_configured():
             provider = "openai"
-        elif is_ollama_configured():
-            provider = "ollama"
         else:
             provider = "basic"
     if provider != "ollama":
@@ -8957,8 +8955,6 @@ async def agent_chat_stream(payload: AgentChatRequest):
     if not provider:
         if is_openai_configured():
             provider = "openai"
-        elif is_ollama_configured():
-            provider = "ollama"
         else:
             provider = "basic"
 
@@ -9321,8 +9317,6 @@ def agent_chat(payload: AgentChatRequest):
     if not provider:
         if is_openai_configured():
             provider = "openai"
-        elif is_ollama_configured():
-            provider = "ollama"
         else:
             provider = "basic"
 
