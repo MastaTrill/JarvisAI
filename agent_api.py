@@ -9480,7 +9480,7 @@ def agent_chat(payload: AgentChatRequest):
             "name": t.name,
             "description": t.description,
             "parameters": t.args_schema,
-            "strict": True,
+            "strict": False,
         }
         for t in sorted(_TOOLS.values(), key=lambda x: x.name)
     ]
