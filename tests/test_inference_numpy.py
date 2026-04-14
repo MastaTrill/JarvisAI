@@ -75,9 +75,9 @@ class TestNumpyInference:
         # Create and train a simple model
         model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
 
-        # Get sample data
+        # Get sample data - slice to match model input size
         data = self.processor.load_sample_data()
-        X = data["data"][:10]  # Use first 10 samples
+        X = data["data"][:10, :4]  # Use first 10 samples, first 4 features
 
         # Make predictions
         predictions = model.predict(X)
@@ -97,7 +97,7 @@ class TestNumpyInference:
 
             # Create and save preprocessor
             data = self.processor.load_sample_data()
-            X_train = data["data"][:50]
+            X_train = data["data"][:50, :4]  # Limit to 4 features
             _, scaler_stats = self.processor.scale_features(X_train)
 
             preprocessor_path = os.path.join(temp_dir, "preprocessor.pkl")
@@ -106,7 +106,7 @@ class TestNumpyInference:
             # Load model and preprocessor, then predict
             loaded_model = SimpleNeuralNetwork.load(model_path)
             loaded_stats = self.processor.load_processor(preprocessor_path)
-            X_test = data["data"][50:55]
+            X_test = data["data"][50:55, :4]  # Limit to 4 features
             X_scaled = self.processor.apply_scaling(X_test, loaded_stats)
             predictions = loaded_model.predict(X_scaled)
 
