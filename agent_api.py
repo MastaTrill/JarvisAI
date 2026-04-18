@@ -1,4 +1,4 @@
-﻿"""
+"""
 Jarvis "brain" API.
 
 This is intentionally minimal: it provides a single chat endpoint plus a small
@@ -35,9 +35,15 @@ import json
 import base64
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
-from fastapi.responses import PlainTextResponse, JSONResponse, Response, StreamingResponse
+from fastapi.responses import (
+    PlainTextResponse,
+    JSONResponse,
+    Response,
+    StreamingResponse,
+)
 from pydantic import BaseModel, Field
 from PIL import Image, ImageStat
+
 try:
     import numpy as np
 except Exception:  # pragma: no cover - optional dependency at runtime
@@ -240,7 +246,10 @@ class DesktopControlRequest(BaseModel):
 
 
 class BrowserWorkflowStep(BaseModel):
-    action: str = Field(..., pattern="^(goto|click|fill|press|wait_for|extract_text|extract_html|screenshot)$")
+    action: str = Field(
+        ...,
+        pattern="^(goto|click|fill|press|wait_for|extract_text|extract_html|screenshot)$",
+    )
     selector: Optional[str] = Field(default=None, max_length=500)
     value: Optional[str] = Field(default=None, max_length=4000)
     timeout_ms: Optional[int] = Field(default=None, ge=100, le=120000)
@@ -307,7 +316,9 @@ class AutonomousMissionRequest(BaseModel):
 class AutonomousJobCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     goal: str = Field(..., min_length=1, max_length=4000)
-    mode: str = Field(default="multi_agent", pattern="^(goal|multi_agent|briefing|watcher)$")
+    mode: str = Field(
+        default="multi_agent", pattern="^(goal|multi_agent|briefing|watcher)$"
+    )
     interval_minutes: int = Field(..., ge=1, le=10080)
     session_id: Optional[str] = None
     auto_approve: bool = False
@@ -322,7 +333,9 @@ class AutonomousJobCreateRequest(BaseModel):
 class AutonomousJobUpdateRequest(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=200)
     goal: Optional[str] = Field(default=None, min_length=1, max_length=4000)
-    mode: Optional[str] = Field(default=None, pattern="^(goal|multi_agent|briefing|watcher)$")
+    mode: Optional[str] = Field(
+        default=None, pattern="^(goal|multi_agent|briefing|watcher)$"
+    )
     interval_minutes: Optional[int] = Field(default=None, ge=1, le=10080)
     auto_approve: Optional[bool] = None
     enabled: Optional[bool] = None
@@ -441,7 +454,9 @@ class BrowserSessionHealthCheckRequest(BaseModel):
 
 class ProjectWatcherRequest(BaseModel):
     workspace_id: Optional[int] = Field(default=None, ge=1)
-    watcher_type: str = Field(default="project", pattern="^(project|github|calendar|email|desktop)$")
+    watcher_type: str = Field(
+        default="project", pattern="^(project|github|calendar|email|desktop)$"
+    )
     interval_minutes: int = Field(default=20, ge=5, le=10080)
     session_id: Optional[str] = None
     auto_approve: bool = False
@@ -534,7 +549,9 @@ class QuantumEntangleRequest(BaseModel):
 
 
 class QuantumMeasureRequest(BaseModel):
-    measurement_basis: str = Field(default="computational", min_length=1, max_length=100)
+    measurement_basis: str = Field(
+        default="computational", min_length=1, max_length=100
+    )
 
 
 class QuantumAlertConfigRequest(BaseModel):
@@ -593,7 +610,9 @@ class QuantumRbacConfigRequest(BaseModel):
 class QuantumSandboxRunRequest(BaseModel):
     name: str = Field(default="simulated_outage", min_length=1, max_length=200)
     hours: int = Field(default=24, ge=1, le=24 * 365)
-    inject_alert_code: Optional[str] = Field(default="measurement_outcome_bias", max_length=128)
+    inject_alert_code: Optional[str] = Field(
+        default="measurement_outcome_bias", max_length=128
+    )
     inject_severity: str = Field(default="warning", pattern="^(info|warning|critical)$")
     drift_pct: float = Field(default=15.0, ge=0.0, le=100.0)
 
@@ -733,7 +752,8 @@ def _tool_read_file(args: Dict[str, Any]) -> Dict[str, Any]:
 def _tool_write_file(args: Dict[str, Any]) -> Dict[str, Any]:
     if os.getenv("JARVIS_ALLOW_WRITE", "").strip().lower() not in {"1", "true", "yes"}:
         raise HTTPException(
-            status_code=403, detail="write tools are disabled (set JARVIS_ALLOW_WRITE=true)"
+            status_code=403,
+            detail="write tools are disabled (set JARVIS_ALLOW_WRITE=true)",
         )
 
     path = str(args.get("path", ""))
@@ -860,7 +880,7 @@ def _effective_ollama_runtime() -> Dict[str, Any]:
 
 
 def _vision_provider_default() -> str:
-    raw = (os.getenv("VISION_PROVIDER", "").strip().lower() or "auto")
+    raw = os.getenv("VISION_PROVIDER", "").strip().lower() or "auto"
     return raw if raw in {"auto", "heuristic", "ollama", "openai"} else "auto"
 
 
@@ -897,7 +917,11 @@ def _effective_vision_runtime() -> Dict[str, Any]:
     available = ollama_list_models(timeout_s=5)
     chosen_model = override or os.getenv("OLLAMA_VISION_MODEL", "").strip() or ""
     if provider == "openai":
-        chosen_model = override or os.getenv("OPENAI_VISION_MODEL", "").strip() or os.getenv("OPENAI_MODEL", "gpt-4.1").strip()
+        chosen_model = (
+            override
+            or os.getenv("OPENAI_VISION_MODEL", "").strip()
+            or os.getenv("OPENAI_MODEL", "gpt-4.1").strip()
+        )
     elif provider in {"auto", "ollama"}:
         chosen_model = chosen_model or (_pick_ollama_vision_model() or "")
     return {
@@ -962,7 +986,9 @@ def _get_control_config() -> Dict[str, Any]:
         except Exception:
             pass
     cfg["host_control_available"] = _is_truthy(os.getenv("JARVIS_HOST_CONTROL", ""))
-    cfg["execute_on_host"] = bool(cfg.get("execute_on_host")) and bool(cfg["host_control_available"])
+    cfg["execute_on_host"] = bool(cfg.get("execute_on_host")) and bool(
+        cfg["host_control_available"]
+    )
     return cfg
 
 
@@ -972,7 +998,9 @@ def _set_control_config(data: Dict[str, Any]) -> Dict[str, Any]:
         cfg.update(data)
     cfg["browser_enabled"] = bool(cfg.get("browser_enabled", True))
     cfg["desktop_enabled"] = bool(cfg.get("desktop_enabled", True))
-    cfg["execute_on_host"] = bool(cfg.get("execute_on_host", False)) and _is_truthy(os.getenv("JARVIS_HOST_CONTROL", ""))
+    cfg["execute_on_host"] = bool(cfg.get("execute_on_host", False)) and _is_truthy(
+        os.getenv("JARVIS_HOST_CONTROL", "")
+    )
     browser_name = str(cfg.get("browser_name") or "default").strip().lower()
     cfg["browser_name"] = browser_name or "default"
     search_engine = str(cfg.get("search_engine") or "google").strip().lower()
@@ -984,7 +1012,9 @@ def _set_control_config(data: Dict[str, Any]) -> Dict[str, Any]:
     return cfg
 
 
-def _host_control_command_result(*, kind: str, target: str, command: List[str], enabled: bool) -> Dict[str, Any]:
+def _host_control_command_result(
+    *, kind: str, target: str, command: List[str], enabled: bool
+) -> Dict[str, Any]:
     preview = " ".join(command)
     if not enabled:
         return {
@@ -1017,14 +1047,24 @@ def _browser_search_url(query: str, engine: str) -> str:
     return f"https://www.google.com/search?q={q}"
 
 
-def _resolve_workspace_context(workspace_id: Optional[int] = None) -> Tuple[Optional[int], Optional[Dict[str, Any]], Dict[str, Any]]:
-    resolved_workspace_id = int(workspace_id) if workspace_id else _task_memory.get_active_workspace_id()
-    workspace = _task_memory.get_project_workspace(resolved_workspace_id) if resolved_workspace_id else None
+def _resolve_workspace_context(
+    workspace_id: Optional[int] = None,
+) -> Tuple[Optional[int], Optional[Dict[str, Any]], Dict[str, Any]]:
+    resolved_workspace_id = (
+        int(workspace_id) if workspace_id else _task_memory.get_active_workspace_id()
+    )
+    workspace = (
+        _task_memory.get_project_workspace(resolved_workspace_id)
+        if resolved_workspace_id
+        else None
+    )
     policy = _task_memory.get_workspace_policy(resolved_workspace_id)
     return resolved_workspace_id, workspace, policy
 
 
-def _enforce_workspace_capability(capability: str, *, workspace_id: Optional[int] = None) -> Tuple[Optional[int], Optional[Dict[str, Any]], Dict[str, Any]]:
+def _enforce_workspace_capability(
+    capability: str, *, workspace_id: Optional[int] = None
+) -> Tuple[Optional[int], Optional[Dict[str, Any]], Dict[str, Any]]:
     resolved_workspace_id, workspace, policy = _resolve_workspace_context(workspace_id)
     flag_map = {
         "browser": "browser_allowed",
@@ -1035,7 +1075,10 @@ def _enforce_workspace_capability(capability: str, *, workspace_id: Optional[int
     flag = flag_map.get(capability)
     if flag and not bool(policy.get(flag, True)):
         workspace_label = f" for workspace {workspace.get('name')}" if workspace else ""
-        raise HTTPException(status_code=403, detail=f"{capability} actions are disabled{workspace_label}")
+        raise HTTPException(
+            status_code=403,
+            detail=f"{capability} actions are disabled{workspace_label}",
+        )
     return resolved_workspace_id, workspace, policy
 
 
@@ -1043,15 +1086,21 @@ def _policy_confirmation_required(policy: Dict[str, Any], *, confirm: bool) -> b
     return bool(policy.get("require_confirmation")) and not bool(confirm)
 
 
-def _browser_open(url: str, *, workspace_id: Optional[int] = None, confirm: bool = False) -> Dict[str, Any]:
+def _browser_open(
+    url: str, *, workspace_id: Optional[int] = None, confirm: bool = False
+) -> Dict[str, Any]:
     cfg = _get_control_config()
     if not cfg.get("browser_enabled", True):
         raise HTTPException(status_code=403, detail="browser control is disabled")
-    resolved_workspace_id, workspace, policy = _enforce_workspace_capability("browser", workspace_id=workspace_id)
+    resolved_workspace_id, workspace, policy = _enforce_workspace_capability(
+        "browser", workspace_id=workspace_id
+    )
     target = str(url or "").strip()
     if not re.match(r"^https?://", target, flags=re.IGNORECASE):
         target = "https://" + target
-    approval_required = _policy_confirmation_required(policy, confirm=confirm) and bool(cfg.get("execute_on_host"))
+    approval_required = _policy_confirmation_required(policy, confirm=confirm) and bool(
+        cfg.get("execute_on_host")
+    )
     result = _host_control_command_result(
         kind="browser_open",
         target=target,
@@ -1063,17 +1112,27 @@ def _browser_open(url: str, *, workspace_id: Optional[int] = None, confirm: bool
     result["workspace_policy"] = policy
     if approval_required:
         result["approval_required"] = True
-        result["reason"] = "Workspace policy requires confirm=true before host browser actions execute"
+        result["reason"] = (
+            "Workspace policy requires confirm=true before host browser actions execute"
+        )
     return result
 
 
-def _browser_search(query: str, *, workspace_id: Optional[int] = None, confirm: bool = False) -> Dict[str, Any]:
+def _browser_search(
+    query: str, *, workspace_id: Optional[int] = None, confirm: bool = False
+) -> Dict[str, Any]:
     cfg = _get_control_config()
     if not cfg.get("browser_enabled", True):
         raise HTTPException(status_code=403, detail="browser control is disabled")
-    resolved_workspace_id, workspace, policy = _enforce_workspace_capability("browser", workspace_id=workspace_id)
-    target_url = _browser_search_url(str(query or "").strip(), str(cfg.get("search_engine") or "google"))
-    approval_required = _policy_confirmation_required(policy, confirm=confirm) and bool(cfg.get("execute_on_host"))
+    resolved_workspace_id, workspace, policy = _enforce_workspace_capability(
+        "browser", workspace_id=workspace_id
+    )
+    target_url = _browser_search_url(
+        str(query or "").strip(), str(cfg.get("search_engine") or "google")
+    )
+    approval_required = _policy_confirmation_required(policy, confirm=confirm) and bool(
+        cfg.get("execute_on_host")
+    )
     result = _host_control_command_result(
         kind="browser_search",
         target=str(query or "").strip(),
@@ -1086,15 +1145,21 @@ def _browser_search(query: str, *, workspace_id: Optional[int] = None, confirm: 
     result["workspace_policy"] = policy
     if approval_required:
         result["approval_required"] = True
-        result["reason"] = "Workspace policy requires confirm=true before host browser actions execute"
+        result["reason"] = (
+            "Workspace policy requires confirm=true before host browser actions execute"
+        )
     return result
 
 
-def _desktop_launch(app_name: str, *, workspace_id: Optional[int] = None, confirm: bool = False) -> Dict[str, Any]:
+def _desktop_launch(
+    app_name: str, *, workspace_id: Optional[int] = None, confirm: bool = False
+) -> Dict[str, Any]:
     cfg = _get_control_config()
     if not cfg.get("desktop_enabled", True):
         raise HTTPException(status_code=403, detail="desktop control is disabled")
-    resolved_workspace_id, workspace, policy = _enforce_workspace_capability("desktop", workspace_id=workspace_id)
+    resolved_workspace_id, workspace, policy = _enforce_workspace_capability(
+        "desktop", workspace_id=workspace_id
+    )
     safe_name = str(app_name or "").strip().lower()
     presets = {
         "files": ["xdg-open", str(_APP_ROOT)],
@@ -1107,7 +1172,9 @@ def _desktop_launch(app_name: str, *, workspace_id: Optional[int] = None, confir
     command = presets.get(safe_name)
     if command is None:
         command = ["xdg-open", safe_name]
-    approval_required = _policy_confirmation_required(policy, confirm=confirm) and bool(cfg.get("execute_on_host"))
+    approval_required = _policy_confirmation_required(policy, confirm=confirm) and bool(
+        cfg.get("execute_on_host")
+    )
     result = _host_control_command_result(
         kind="desktop_launch",
         target=safe_name,
@@ -1119,7 +1186,9 @@ def _desktop_launch(app_name: str, *, workspace_id: Optional[int] = None, confir
     result["workspace_policy"] = policy
     if approval_required:
         result["approval_required"] = True
-        result["reason"] = "Workspace policy requires confirm=true before host desktop actions execute"
+        result["reason"] = (
+            "Workspace policy requires confirm=true before host desktop actions execute"
+        )
     result["runtime"] = _desktop_runtime()
     return result
 
@@ -1146,15 +1215,23 @@ def _desktop_control(
     cfg = _get_control_config()
     if not cfg.get("desktop_enabled", True):
         raise HTTPException(status_code=403, detail="desktop control is disabled")
-    resolved_workspace_id, workspace, policy = _enforce_workspace_capability("desktop", workspace_id=workspace_id)
+    resolved_workspace_id, workspace, policy = _enforce_workspace_capability(
+        "desktop", workspace_id=workspace_id
+    )
     safe_action = str(action or "").strip().lower()
     if safe_action == "launch":
-        result = _desktop_launch(str(target or text or ""), workspace_id=resolved_workspace_id, confirm=confirm)
+        result = _desktop_launch(
+            str(target or text or ""),
+            workspace_id=resolved_workspace_id,
+            confirm=confirm,
+        )
         result["action"] = safe_action
         return result
 
     runtime = _desktop_runtime()
-    approval_required = _policy_confirmation_required(policy, confirm=confirm) and bool(cfg.get("execute_on_host"))
+    approval_required = _policy_confirmation_required(policy, confirm=confirm) and bool(
+        cfg.get("execute_on_host")
+    )
     enabled = bool(cfg.get("execute_on_host")) and not approval_required
     safe_target = str(target or "").strip()
 
@@ -1165,13 +1242,17 @@ def _desktop_control(
     elif safe_action == "type_text":
         typed = str(text or target or "").strip()
         if not typed:
-            raise HTTPException(status_code=400, detail="text is required for type_text")
+            raise HTTPException(
+                status_code=400, detail="text is required for type_text"
+            )
         if not runtime.get("xdotool_available"):
             enabled = False
         command = ["xdotool", "type", "--delay", "12", typed]
         safe_target = typed[:120]
     elif safe_action == "hotkey":
-        combo = [str(item).strip() for item in list(keys or []) if str(item).strip()][:8]
+        combo = [str(item).strip() for item in list(keys or []) if str(item).strip()][
+            :8
+        ]
         if not combo:
             raise HTTPException(status_code=400, detail="keys are required for hotkey")
         if not runtime.get("xdotool_available"):
@@ -1181,7 +1262,9 @@ def _desktop_control(
     else:
         raise HTTPException(status_code=400, detail="unsupported desktop action")
 
-    result = _host_control_command_result(kind="desktop_control", target=safe_target, command=command, enabled=enabled)
+    result = _host_control_command_result(
+        kind="desktop_control", target=safe_target, command=command, enabled=enabled
+    )
     result["action"] = safe_action
     result["workspace_id"] = resolved_workspace_id
     result["workspace_name"] = workspace.get("name") if workspace else None
@@ -1189,14 +1272,24 @@ def _desktop_control(
     result["runtime"] = runtime
     if approval_required:
         result["approval_required"] = True
-        result["reason"] = "Workspace policy requires confirm=true before host desktop actions execute"
-    elif safe_action in {"type_text", "hotkey"} and not runtime.get("xdotool_available"):
-        result["reason"] = "Desktop automation runtime is missing xdotool; preview only."
+        result["reason"] = (
+            "Workspace policy requires confirm=true before host desktop actions execute"
+        )
+    elif safe_action in {"type_text", "hotkey"} and not runtime.get(
+        "xdotool_available"
+    ):
+        result["reason"] = (
+            "Desktop automation runtime is missing xdotool; preview only."
+        )
     return result
 
 
 def _browser_workflow_runtime() -> Dict[str, Any]:
-    explicit_path = Path(str(os.getenv("JARVIS_CHROMIUM_PATH") or "").strip()).expanduser() if str(os.getenv("JARVIS_CHROMIUM_PATH") or "").strip() else None
+    explicit_path = (
+        Path(str(os.getenv("JARVIS_CHROMIUM_PATH") or "").strip()).expanduser()
+        if str(os.getenv("JARVIS_CHROMIUM_PATH") or "").strip()
+        else None
+    )
     candidates: List[Tuple[str, Path]] = []
     if explicit_path is not None:
         candidates.append(("env", explicit_path))
@@ -1212,7 +1305,10 @@ def _browser_workflow_runtime() -> Dict[str, Any]:
         if local_app_data_raw:
             local_app_data = Path(local_app_data_raw).expanduser()
             ms_playwright = local_app_data / "ms-playwright"
-            for pattern in ("chromium-*\\chrome-win\\chrome.exe", "chromium-*\\chrome-win64\\chrome.exe"):
+            for pattern in (
+                "chromium-*\\chrome-win\\chrome.exe",
+                "chromium-*\\chrome-win64\\chrome.exe",
+            ):
                 for match in sorted(ms_playwright.glob(pattern), reverse=True):
                     candidates.append(("ms-playwright", match))
         for env_name, relative_path in (
@@ -1226,7 +1322,13 @@ def _browser_workflow_runtime() -> Dict[str, Any]:
                 base_dir = Path(base_dir_raw).expanduser()
                 candidates.append((env_name.lower(), base_dir / relative_path))
     else:
-        for command_name in ("chromium", "chromium-browser", "google-chrome", "google-chrome-stable", "microsoft-edge"):
+        for command_name in (
+            "chromium",
+            "chromium-browser",
+            "google-chrome",
+            "google-chrome-stable",
+            "microsoft-edge",
+        ):
             command_path = shutil.which(command_name)
             if command_path:
                 candidates.append(("path", Path(command_path)))
@@ -1247,7 +1349,11 @@ def _browser_workflow_runtime() -> Dict[str, Any]:
         if sync_playwright is not None
         else "Install the playwright Python package and browser binaries."
     )
-    reason = None if selected_path else f"Install browser binaries with `{install_hint}` or set JARVIS_CHROMIUM_PATH."
+    reason = (
+        None
+        if selected_path
+        else f"Install browser binaries with `{install_hint}` or set JARVIS_CHROMIUM_PATH."
+    )
     return {
         "available": selected_path is not None,
         "chromium_path": str(selected_path) if selected_path else "",
@@ -1268,7 +1374,9 @@ def _run_browser_workflow(
 ) -> Dict[str, Any]:
     runtime = _browser_workflow_runtime()
     if not runtime["available"]:
-        detail = str(runtime.get("reason") or "Playwright browser runtime is unavailable")
+        detail = str(
+            runtime.get("reason") or "Playwright browser runtime is unavailable"
+        )
         raise HTTPException(status_code=503, detail=detail)
     results: List[Dict[str, Any]] = []
     screenshot_b64: Optional[str] = None
@@ -1286,7 +1394,9 @@ def _run_browser_workflow(
             browser = p.chromium.launch(**launch_kwargs)
         except Exception as exc:
             message = str(exc).strip() or exc.__class__.__name__
-            raise HTTPException(status_code=503, detail=f"Playwright browser launch failed: {message}") from exc
+            raise HTTPException(
+                status_code=503, detail=f"Playwright browser launch failed: {message}"
+            ) from exc
         context_kwargs: Dict[str, Any] = {"viewport": {"width": 1440, "height": 900}}
         if isinstance(storage_state, dict) and storage_state:
             context_kwargs["storage_state"] = storage_state
@@ -1298,11 +1408,19 @@ def _run_browser_workflow(
             selector = str(step.get("selector") or "").strip() or None
             value = str(step.get("value") or "")
             timeout_ms = int(step.get("timeout_ms") or 15000)
-            entry: Dict[str, Any] = {"index": idx, "action": action, "selector": selector}
+            entry: Dict[str, Any] = {
+                "index": idx,
+                "action": action,
+                "selector": selector,
+            }
             try:
                 if action == "goto":
                     target = value.strip() or selector or ""
-                    if not re.match(r"^https?://", target, flags=re.IGNORECASE) and not target.startswith("data:") and target != "about:blank":
+                    if (
+                        not re.match(r"^https?://", target, flags=re.IGNORECASE)
+                        and not target.startswith("data:")
+                        and target != "about:blank"
+                    ):
                         target = "https://" + target
                     page.goto(target, wait_until="domcontentloaded", timeout=timeout_ms)
                     entry["url"] = page.url
@@ -1317,22 +1435,32 @@ def _run_browser_workflow(
                 elif action == "press":
                     if not selector:
                         raise ValueError("selector is required for press")
-                    page.locator(selector).first.press(value or "Enter", timeout=timeout_ms)
+                    page.locator(selector).first.press(
+                        value or "Enter", timeout=timeout_ms
+                    )
                 elif action == "wait_for":
                     if selector:
-                        page.locator(selector).first.wait_for(state="visible", timeout=timeout_ms)
+                        page.locator(selector).first.wait_for(
+                            state="visible", timeout=timeout_ms
+                        )
                     else:
                         page.wait_for_timeout(timeout_ms)
                 elif action == "extract_text":
                     if not selector:
                         raise ValueError("selector is required for extract_text")
-                    entry["text"] = page.locator(selector).first.inner_text(timeout=timeout_ms)
+                    entry["text"] = page.locator(selector).first.inner_text(
+                        timeout=timeout_ms
+                    )
                 elif action == "extract_html":
                     if not selector:
                         raise ValueError("selector is required for extract_html")
-                    entry["html"] = page.locator(selector).first.inner_html(timeout=timeout_ms)[:4000]
+                    entry["html"] = page.locator(selector).first.inner_html(
+                        timeout=timeout_ms
+                    )[:4000]
                 elif action == "screenshot":
-                    raw = page.screenshot(full_page=True, type="png", timeout=timeout_ms)
+                    raw = page.screenshot(
+                        full_page=True, type="png", timeout=timeout_ms
+                    )
                     screenshot_b64 = raw.hex()
                     entry["bytes"] = len(raw)
                 else:
@@ -1370,15 +1498,32 @@ def _run_browser_workflow(
 def _due_reminder_text(reminder: Dict[str, Any]) -> str:
     workspace_name = str(reminder.get("workspace_name") or "").strip()
     prefix = f"Workspace {workspace_name}. " if workspace_name else ""
-    return prefix + f"Reminder: {str(reminder.get('title') or '').strip()}. {str(reminder.get('content') or '').strip()}"
+    return (
+        prefix
+        + f"Reminder: {str(reminder.get('title') or '').strip()}. {str(reminder.get('content') or '').strip()}"
+    )
 
 
-def _dispatch_due_reminders(limit: int = 10, *, include_discord: bool = True, include_voice: bool = True) -> Dict[str, Any]:
+def _dispatch_due_reminders(
+    limit: int = 10, *, include_discord: bool = True, include_voice: bool = True
+) -> Dict[str, Any]:
     cfg = _get_briefing_delivery_config()
-    due_for_discord = _task_memory.list_due_proactive_reminders(limit=limit, for_discord=True) if include_discord else []
-    due_for_voice = _task_memory.list_due_proactive_reminders(limit=limit, for_voice=True) if include_voice else []
+    due_for_discord = (
+        _task_memory.list_due_proactive_reminders(limit=limit, for_discord=True)
+        if include_discord
+        else []
+    )
+    due_for_voice = (
+        _task_memory.list_due_proactive_reminders(limit=limit, for_voice=True)
+        if include_voice
+        else []
+    )
     sent: List[Dict[str, Any]] = []
-    if bool(cfg.get("enabled")) and bool(cfg.get("discord_enabled")) and str(cfg.get("discord_webhook_url") or "").strip():
+    if (
+        bool(cfg.get("enabled"))
+        and bool(cfg.get("discord_enabled"))
+        and str(cfg.get("discord_webhook_url") or "").strip()
+    ):
         for reminder in due_for_discord:
             payload = {
                 "text": _due_reminder_text(reminder),
@@ -1386,12 +1531,20 @@ def _dispatch_due_reminders(limit: int = 10, *, include_discord: bool = True, in
                 "workspace": reminder.get("workspace_name"),
                 "priority": reminder.get("priority"),
             }
-            result = _dispatch_briefing_discord(str(cfg.get("discord_webhook_url")), payload)
-            _task_memory.update_proactive_reminder(int(reminder["id"]), discord_delivered=True, delivered=True)
-            sent.append({"channel": "discord", "reminder_id": int(reminder["id"]), **result})
+            result = _dispatch_briefing_discord(
+                str(cfg.get("discord_webhook_url")), payload
+            )
+            _task_memory.update_proactive_reminder(
+                int(reminder["id"]), discord_delivered=True, delivered=True
+            )
+            sent.append(
+                {"channel": "discord", "reminder_id": int(reminder["id"]), **result}
+            )
     queued_voice: List[Dict[str, Any]] = []
     for reminder in due_for_voice:
-        _task_memory.update_proactive_reminder(int(reminder["id"]), voice_announced=True, delivered=True)
+        _task_memory.update_proactive_reminder(
+            int(reminder["id"]), voice_announced=True, delivered=True
+        )
         queued_voice.append(
             {
                 "id": int(reminder["id"]),
@@ -1486,18 +1639,30 @@ def _get_local_voice_config() -> Dict[str, Any]:
     cfg["enabled"] = bool(cfg.get("enabled", True))
     cfg["stt_model"] = str(cfg.get("stt_model") or "base").strip() or "base"
     cfg["stt_device"] = str(cfg.get("stt_device") or "cpu").strip() or "cpu"
-    cfg["tts_provider"] = str(cfg.get("tts_provider") or "enhanced_local").strip().lower() or "enhanced_local"
+    cfg["tts_provider"] = (
+        str(cfg.get("tts_provider") or "enhanced_local").strip().lower()
+        or "enhanced_local"
+    )
     if cfg["tts_provider"] == "enhanced_local" and not caps.get("enhanced_local"):
         cfg["tts_provider"] = "espeak_ng"
     cfg["tts_voice"] = str(cfg.get("tts_voice") or "mb-en1").strip() or "mb-en1"
     cfg["tts_rate"] = max(80, min(int(cfg.get("tts_rate", 145) or 145), 320))
     cfg["tts_pitch"] = max(0, min(int(cfg.get("tts_pitch", 34) or 34), 99))
-    cfg["tts_style"] = str(cfg.get("tts_style") or "assistant").strip().lower() or "assistant"
+    cfg["tts_style"] = (
+        str(cfg.get("tts_style") or "assistant").strip().lower() or "assistant"
+    )
     cfg["stt_available"] = bool(WhisperModel is not None)
     cfg["tts_available"] = bool(caps.get("espeak_ng"))
     cfg["tts_enhanced_available"] = bool(caps.get("enhanced_local"))
     cfg["available_tts_providers"] = list(caps.keys())
-    cfg["available_tts_styles"] = ["assistant", "deep", "crisp", "cinematic", "operator", "broadcast"]
+    cfg["available_tts_styles"] = [
+        "assistant",
+        "deep",
+        "crisp",
+        "cinematic",
+        "operator",
+        "broadcast",
+    ]
     cfg["available_stt_models"] = ["tiny", "base", "small", "medium"]
     cfg["available_voice_presets"] = _local_voice_presets()
     return cfg
@@ -1510,11 +1675,16 @@ def _set_local_voice_config(data: Dict[str, Any]) -> Dict[str, Any]:
     cfg["enabled"] = bool(cfg.get("enabled", True))
     cfg["stt_model"] = str(cfg.get("stt_model") or "base").strip() or "base"
     cfg["stt_device"] = str(cfg.get("stt_device") or "cpu").strip() or "cpu"
-    cfg["tts_provider"] = str(cfg.get("tts_provider") or "enhanced_local").strip().lower() or "enhanced_local"
+    cfg["tts_provider"] = (
+        str(cfg.get("tts_provider") or "enhanced_local").strip().lower()
+        or "enhanced_local"
+    )
     cfg["tts_voice"] = str(cfg.get("tts_voice") or "mb-en1").strip() or "mb-en1"
     cfg["tts_rate"] = max(80, min(int(cfg.get("tts_rate", 145) or 145), 320))
     cfg["tts_pitch"] = max(0, min(int(cfg.get("tts_pitch", 34) or 34), 99))
-    cfg["tts_style"] = str(cfg.get("tts_style") or "assistant").strip().lower() or "assistant"
+    cfg["tts_style"] = (
+        str(cfg.get("tts_style") or "assistant").strip().lower() or "assistant"
+    )
     _task_memory.set_setting("local_voice_config", json.dumps(cfg))
     return _get_local_voice_config()
 
@@ -1539,9 +1709,13 @@ def _get_integration_config() -> Dict[str, Any]:
         cfg.update(raw)
     cfg["github_enabled"] = bool(cfg.get("github_enabled", False))
     cfg["github_repo"] = str(cfg.get("github_repo") or "").strip()
-    cfg["github_token_set"] = bool(cfg.get("github_token_set", False) or os.getenv("GITHUB_TOKEN"))
+    cfg["github_token_set"] = bool(
+        cfg.get("github_token_set", False) or os.getenv("GITHUB_TOKEN")
+    )
     cfg["calendar_enabled"] = bool(cfg.get("calendar_enabled", False))
-    cfg["calendar_provider"] = str(cfg.get("calendar_provider") or "local").strip() or "local"
+    cfg["calendar_provider"] = (
+        str(cfg.get("calendar_provider") or "local").strip() or "local"
+    )
     cfg["calendar_id"] = str(cfg.get("calendar_id") or "").strip()
     cfg["email_enabled"] = bool(cfg.get("email_enabled", False))
     cfg["email_to"] = str(cfg.get("email_to") or "").strip()
@@ -1572,9 +1746,13 @@ def _set_integration_config(data: Dict[str, Any]) -> Dict[str, Any]:
         cfg.update(data)
     cfg["github_enabled"] = bool(cfg.get("github_enabled", False))
     cfg["github_repo"] = str(cfg.get("github_repo") or "").strip()
-    cfg["github_token_set"] = bool(cfg.get("github_token_set", False) or os.getenv("GITHUB_TOKEN"))
+    cfg["github_token_set"] = bool(
+        cfg.get("github_token_set", False) or os.getenv("GITHUB_TOKEN")
+    )
     cfg["calendar_enabled"] = bool(cfg.get("calendar_enabled", False))
-    cfg["calendar_provider"] = str(cfg.get("calendar_provider") or "local").strip() or "local"
+    cfg["calendar_provider"] = (
+        str(cfg.get("calendar_provider") or "local").strip() or "local"
+    )
     cfg["calendar_id"] = str(cfg.get("calendar_id") or "").strip()
     cfg["email_enabled"] = bool(cfg.get("email_enabled", False))
     cfg["email_to"] = str(cfg.get("email_to") or "").strip()
@@ -1602,9 +1780,17 @@ def _desktop_presence_payload(*, workspace_id: Optional[int] = None) -> Dict[str
         active_workspace_id = _task_memory.get_active_workspace_id()
         if active_workspace_id:
             active_workspace = _task_memory.get_project_workspace(active_workspace_id)
-    snapshot = _task_memory.latest_desktop_presence_snapshot(workspace_id=workspace_id if isinstance(workspace_id, int) else None)
-    reminders = _task_memory.list_proactive_reminders(limit=5, status="open", workspace_id=workspace_id if isinstance(workspace_id, int) else None)
-    next_actions = _task_memory.next_best_actions(workspace_id=workspace_id if isinstance(workspace_id, int) else None, limit=3)
+    snapshot = _task_memory.latest_desktop_presence_snapshot(
+        workspace_id=workspace_id if isinstance(workspace_id, int) else None
+    )
+    reminders = _task_memory.list_proactive_reminders(
+        limit=5,
+        status="open",
+        workspace_id=workspace_id if isinstance(workspace_id, int) else None,
+    )
+    next_actions = _task_memory.next_best_actions(
+        workspace_id=workspace_id if isinstance(workspace_id, int) else None, limit=3
+    )
     recent_vision = _task_memory.list_vision_observations(limit=1)
     return {
         "workspace": active_workspace,
@@ -1612,7 +1798,9 @@ def _desktop_presence_payload(*, workspace_id: Optional[int] = None) -> Dict[str
         "reminders": reminders,
         "next_actions": next_actions,
         "recent_vision": recent_vision[:1],
-        "host_control_available": bool(_get_control_config().get("host_control_available")),
+        "host_control_available": bool(
+            _get_control_config().get("host_control_available")
+        ),
     }
 
 
@@ -1639,7 +1827,11 @@ def _run_and_store_mission(
         retry_limit=retry_limit,
         prior_result=prior_result,
     )
-    status = "blocked" if mission.get("blocked") else ("completed" if mission.get("ok") else "partial")
+    status = (
+        "blocked"
+        if mission.get("blocked")
+        else ("completed" if mission.get("ok") else "partial")
+    )
     saved = _task_memory.save_mission_run(
         mission_id=mission_id,
         workspace_id=workspace_id,
@@ -1697,7 +1889,9 @@ def _github_issue_create(payload: GitHubIssueCreateRequest) -> Dict[str, Any]:
     issue_payload = {
         "title": payload.title.strip(),
         "body": payload.body.strip(),
-        "labels": [str(label).strip() for label in payload.labels if str(label).strip()][:20],
+        "labels": [
+            str(label).strip() for label in payload.labels if str(label).strip()
+        ][:20],
     }
     token = str(os.getenv("GITHUB_TOKEN") or "").strip()
     if not token:
@@ -1718,7 +1912,13 @@ def _github_issue_create(payload: GitHubIssueCreateRequest) -> Dict[str, Any]:
     try:
         with urlrequest.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8") or "{}")
-        return {"ok": True, "preview": False, "provider": "github", "repo": repo, "issue": data}
+        return {
+            "ok": True,
+            "preview": False,
+            "provider": "github",
+            "repo": repo,
+            "issue": data,
+        }
     except Exception as exc:
         return {
             "ok": False,
@@ -1789,8 +1989,12 @@ def _github_pull_summary(payload: GitHubPullSummaryRequest) -> Dict[str, Any]:
     number = int(payload.pull_number)
     pull_url = f"https://api.github.com/repos/{repo}/pulls/{number}"
     files_url = f"https://api.github.com/repos/{repo}/pulls/{number}/files?per_page=20"
-    reviews_url = f"https://api.github.com/repos/{repo}/pulls/{number}/reviews?per_page=10"
-    issue_comments_url = f"https://api.github.com/repos/{repo}/issues/{number}/comments?per_page=10"
+    reviews_url = (
+        f"https://api.github.com/repos/{repo}/pulls/{number}/reviews?per_page=10"
+    )
+    issue_comments_url = (
+        f"https://api.github.com/repos/{repo}/issues/{number}/comments?per_page=10"
+    )
     try:
         pr = _github_api_json(pull_url, token=token)
         files = _github_api_json_list(files_url, token=token)
@@ -1840,9 +2044,15 @@ def _github_pull_summary(payload: GitHubPullSummaryRequest) -> Dict[str, Any]:
             "state": pr.get("state"),
             "draft": bool(pr.get("draft")),
             "mergeable_state": pr.get("mergeable_state"),
-            "author": ((pr.get("user") or {}) if isinstance(pr.get("user"), dict) else {}).get("login"),
-            "base_ref": ((pr.get("base") or {}) if isinstance(pr.get("base"), dict) else {}).get("ref"),
-            "head_ref": ((pr.get("head") or {}) if isinstance(pr.get("head"), dict) else {}).get("ref"),
+            "author": (
+                (pr.get("user") or {}) if isinstance(pr.get("user"), dict) else {}
+            ).get("login"),
+            "base_ref": (
+                (pr.get("base") or {}) if isinstance(pr.get("base"), dict) else {}
+            ).get("ref"),
+            "head_ref": (
+                (pr.get("head") or {}) if isinstance(pr.get("head"), dict) else {}
+            ).get("ref"),
             "commits": int(pr.get("commits") or 0),
             "additions": int(pr.get("additions") or 0),
             "deletions": int(pr.get("deletions") or 0),
@@ -1854,7 +2064,11 @@ def _github_pull_summary(payload: GitHubPullSummaryRequest) -> Dict[str, Any]:
         "reviews": review_rollup,
         "recent_comments": [
             {
-                "author": ((item.get("user") or {}) if isinstance(item.get("user"), dict) else {}).get("login"),
+                "author": (
+                    (item.get("user") or {})
+                    if isinstance(item.get("user"), dict)
+                    else {}
+                ).get("login"),
                 "body_preview": str(item.get("body") or "").strip()[:240],
                 "created_at": item.get("created_at"),
             }
@@ -1922,7 +2136,13 @@ def _calendar_event_create(payload: CalendarEventCreateRequest) -> Dict[str, Any
     items = _calendar_events_get()
     items.insert(0, event)
     _calendar_events_set(items)
-    return {"ok": True, "preview": provider != "local", "provider": provider or "local", "event": event, "items": _calendar_events_get()[:20]}
+    return {
+        "ok": True,
+        "preview": provider != "local",
+        "provider": provider or "local",
+        "event": event,
+        "items": _calendar_events_get()[:20],
+    }
 
 
 def _email_action_send(payload: EmailSendRequest) -> Dict[str, Any]:
@@ -2027,8 +2247,16 @@ def _integration_intelligence() -> Dict[str, Any]:
         ],
         "recommendations": recommendations[:6],
         "summary": {
-            "connected": sum(1 for item in cfg.get("connections", {}).values() if bool(item.get("connected"))),
-            "enabled": sum(1 for item in cfg.get("connections", {}).values() if bool(item.get("enabled"))),
+            "connected": sum(
+                1
+                for item in cfg.get("connections", {}).values()
+                if bool(item.get("connected"))
+            ),
+            "enabled": sum(
+                1
+                for item in cfg.get("connections", {}).values()
+                if bool(item.get("enabled"))
+            ),
             "upcoming_events": len(upcoming),
             "active_workspace": active_workspace.get("name"),
         },
@@ -2038,13 +2266,21 @@ def _integration_intelligence() -> Dict[str, Any]:
 def _desktop_awareness_payload(*, workspace_id: Optional[int] = None) -> Dict[str, Any]:
     presence = _desktop_presence_payload(workspace_id=workspace_id)
     snapshot = presence.get("snapshot") or {}
-    details = snapshot.get("details") if isinstance(snapshot.get("details"), dict) else {}
+    details = (
+        snapshot.get("details") if isinstance(snapshot.get("details"), dict) else {}
+    )
     app_name = str(snapshot.get("app_name") or details.get("app_name") or "").strip()
-    window_title = str(snapshot.get("window_title") or details.get("window_title") or "").strip()
+    window_title = str(
+        snapshot.get("window_title") or details.get("window_title") or ""
+    ).strip()
     focus_file = str(details.get("focus_file") or "").strip()
     summary_text = "Desktop idle"
     mode = "standby"
-    if focus_file or "code" in str(details.get("mode") or "").lower() or "code" in app_name.lower():
+    if (
+        focus_file
+        or "code" in str(details.get("mode") or "").lower()
+        or "code" in app_name.lower()
+    ):
         mode = "coding"
         summary_text = f"Focused on {focus_file or app_name or 'development work'}."
     elif "mail" in app_name.lower() or "outlook" in app_name.lower():
@@ -2052,12 +2288,16 @@ def _desktop_awareness_payload(*, workspace_id: Optional[int] = None) -> Dict[st
         summary_text = f"Handling communications in {app_name}."
     elif "calendar" in app_name.lower() or "meet" in window_title.lower():
         mode = "meeting"
-        summary_text = f"Calendar or meeting context detected in {window_title or app_name}."
+        summary_text = (
+            f"Calendar or meeting context detected in {window_title or app_name}."
+        )
 
     now = datetime.now(timezone.utc)
     next_events = []
     for event in _calendar_events_get():
-        starts = _parse_iso_dt(event.get("starts_at") if isinstance(event, dict) else None)
+        starts = _parse_iso_dt(
+            event.get("starts_at") if isinstance(event, dict) else None
+        )
         if starts is None:
             continue
         if starts.tzinfo is None:
@@ -2077,7 +2317,9 @@ def _desktop_awareness_payload(*, workspace_id: Optional[int] = None) -> Dict[st
             "focus_file": focus_file or None,
             "recent_vision_count": len(presence.get("recent_vision") or []),
             "open_reminders": len(presence.get("reminders") or []),
-            "next_actions": len((presence.get("next_actions") or {}).get("actions") or []),
+            "next_actions": len(
+                (presence.get("next_actions") or {}).get("actions") or []
+            ),
         },
         "nearby_calendar_events": next_events,
     }
@@ -2090,8 +2332,12 @@ def _watcher_network_payload() -> Dict[str, Any]:
     coverage: Dict[str, Dict[str, Any]] = {}
     for watcher_type in ["project", "github", "calendar", "email", "desktop"]:
         matching = [
-            job for job in jobs
-            if str((job.get("metadata") or {}).get("watcher_type") or "project").strip().lower() == watcher_type
+            job
+            for job in jobs
+            if str((job.get("metadata") or {}).get("watcher_type") or "project")
+            .strip()
+            .lower()
+            == watcher_type
         ]
         coverage[watcher_type] = {
             "enabled": sum(1 for item in matching if bool(item.get("enabled"))),
@@ -2100,15 +2346,46 @@ def _watcher_network_payload() -> Dict[str, Any]:
 
     recommendations: List[Dict[str, Any]] = []
     if not coverage["project"]["enabled"]:
-        recommendations.append({"watcher_type": "project", "reason": "No project watcher is active yet."})
-    if bool(cfg.get("connections", {}).get("github", {}).get("enabled")) and not coverage["github"]["enabled"]:
-        recommendations.append({"watcher_type": "github", "reason": "GitHub is connected but no repo watcher is active."})
-    if bool(cfg.get("connections", {}).get("calendar", {}).get("enabled")) and not coverage["calendar"]["enabled"]:
-        recommendations.append({"watcher_type": "calendar", "reason": "Calendar is enabled but no schedule watcher is active."})
-    if bool(cfg.get("connections", {}).get("email", {}).get("enabled")) and not coverage["email"]["enabled"]:
-        recommendations.append({"watcher_type": "email", "reason": "Email delivery is ready but no inbox watcher is active."})
+        recommendations.append(
+            {"watcher_type": "project", "reason": "No project watcher is active yet."}
+        )
+    if (
+        bool(cfg.get("connections", {}).get("github", {}).get("enabled"))
+        and not coverage["github"]["enabled"]
+    ):
+        recommendations.append(
+            {
+                "watcher_type": "github",
+                "reason": "GitHub is connected but no repo watcher is active.",
+            }
+        )
+    if (
+        bool(cfg.get("connections", {}).get("calendar", {}).get("enabled"))
+        and not coverage["calendar"]["enabled"]
+    ):
+        recommendations.append(
+            {
+                "watcher_type": "calendar",
+                "reason": "Calendar is enabled but no schedule watcher is active.",
+            }
+        )
+    if (
+        bool(cfg.get("connections", {}).get("email", {}).get("enabled"))
+        and not coverage["email"]["enabled"]
+    ):
+        recommendations.append(
+            {
+                "watcher_type": "email",
+                "reason": "Email delivery is ready but no inbox watcher is active.",
+            }
+        )
     if latest_presence and not coverage["desktop"]["enabled"]:
-        recommendations.append({"watcher_type": "desktop", "reason": "Desktop presence is available but no desktop watcher is active."})
+        recommendations.append(
+            {
+                "watcher_type": "desktop",
+                "reason": "Desktop presence is available but no desktop watcher is active.",
+            }
+        )
 
     return {
         "watchers": jobs,
@@ -2117,36 +2394,60 @@ def _watcher_network_payload() -> Dict[str, Any]:
         "summary": {
             "total_watchers": len(jobs),
             "enabled_watchers": sum(1 for item in jobs if bool(item.get("enabled"))),
-            "connected_integrations": sum(1 for item in cfg.get("connections", {}).values() if bool(item.get("connected"))),
+            "connected_integrations": sum(
+                1
+                for item in cfg.get("connections", {}).values()
+                if bool(item.get("connected"))
+            ),
             "desktop_presence_available": bool(latest_presence),
-            "typed_watchers": sorted([key for key, value in coverage.items() if int(value.get("enabled") or 0) > 0]),
+            "typed_watchers": sorted(
+                [
+                    key
+                    for key, value in coverage.items()
+                    if int(value.get("enabled") or 0) > 0
+                ]
+            ),
         },
     }
 
 
-def _trust_receipts_payload(*, limit: int = 20, session_id: Optional[str] = None) -> Dict[str, Any]:
+def _trust_receipts_payload(
+    *, limit: int = 20, session_id: Optional[str] = None
+) -> Dict[str, Any]:
     tool_runs = _task_memory.list_tool_executions(limit=limit, session_id=session_id)
     missions = _task_memory.list_mission_runs(limit=max(5, min(limit, 20)))
     receipts = []
     rollback_receipts = []
     for item in tool_runs:
-        verification = item.get("verification") if isinstance(item.get("verification"), dict) else {}
+        verification = (
+            item.get("verification")
+            if isinstance(item.get("verification"), dict)
+            else {}
+        )
         detail = item.get("detail") if isinstance(item.get("detail"), dict) else {}
         args = detail.get("args") if isinstance(detail.get("args"), dict) else {}
         tool_name = str(item.get("tool_name") or "")
         rollback_receipt = None
         if tool_name in {"repo_write_file", "write_file"}:
-            target_path = str((detail.get("result") or {}).get("path") or args.get("path") or "").strip()
+            target_path = str(
+                (detail.get("result") or {}).get("path") or args.get("path") or ""
+            ).strip()
             append_mode = bool(args.get("append"))
             rollback_receipt = {
                 "kind": "file_write",
                 "target": target_path or None,
-                "strategy": "manual review" if append_mode else "restore previous contents or remove the file if it was newly created",
+                "strategy": "manual review"
+                if append_mode
+                else "restore previous contents or remove the file if it was newly created",
                 "ready": bool(target_path),
-                "command_preview": f"git diff -- {target_path}" if target_path else "inspect changed file",
+                "command_preview": f"git diff -- {target_path}"
+                if target_path
+                else "inspect changed file",
             }
         elif tool_name == "shell_run":
-            command = str((detail.get("result") or {}).get("command") or args.get("command") or "").strip()
+            command = str(
+                (detail.get("result") or {}).get("command") or args.get("command") or ""
+            ).strip()
             lowered = command.lower()
             if any(token in lowered for token in ["git", "rm ", "mv ", "cp "]):
                 rollback_receipt = {
@@ -2165,8 +2466,15 @@ def _trust_receipts_payload(*, limit: int = 20, session_id: Optional[str] = None
                 "confidence": item.get("confidence"),
                 "created_at": item.get("created_at"),
                 "verified": str(item.get("status")) == "verified",
-                "summary": verification.get("summary") or verification.get("status") or "tool run recorded",
-                "rollback_hint": (rollback_receipt or {}).get("strategy") or ("manual review" if tool_name.startswith(("repo_", "shell_")) else "re-run safe"),
+                "summary": verification.get("summary")
+                or verification.get("status")
+                or "tool run recorded",
+                "rollback_hint": (rollback_receipt or {}).get("strategy")
+                or (
+                    "manual review"
+                    if tool_name.startswith(("repo_", "shell_"))
+                    else "re-run safe"
+                ),
                 "rollback_receipt": rollback_receipt,
                 "detail": detail,
             }
@@ -2183,11 +2491,15 @@ def _trust_receipts_payload(*, limit: int = 20, session_id: Optional[str] = None
     mission_receipts = []
     for item in missions[:5]:
         result = item.get("result") if isinstance(item.get("result"), dict) else {}
-        executed = result.get("executed") if isinstance(result.get("executed"), list) else []
+        executed = (
+            result.get("executed") if isinstance(result.get("executed"), list) else []
+        )
         verified_steps = sum(
             1
             for step in executed
-            if isinstance(step, dict) and isinstance(step.get("verification"), dict) and str(step["verification"].get("status") or "") == "verified"
+            if isinstance(step, dict)
+            and isinstance(step.get("verification"), dict)
+            and str(step["verification"].get("status") or "") == "verified"
         )
         mission_receipts.append(
             {
@@ -2211,7 +2523,9 @@ def _trust_receipts_payload(*, limit: int = 20, session_id: Optional[str] = None
             "mission_receipts": len(mission_receipts),
             "verified_receipts": sum(1 for item in receipts if item.get("verified")),
             "rollback_receipts": len(rollback_receipts),
-            "rollback_ready": any(item.get("rollback_ready") for item in mission_receipts),
+            "rollback_ready": any(
+                item.get("rollback_ready") for item in mission_receipts
+            ),
         },
     }
 
@@ -2286,11 +2600,19 @@ def _get_wakeword_model() -> Tuple[Optional[Any], List[str]]:
     return _WAKEWORD_MODEL, list(_WAKEWORD_MODEL_NAMES)
 
 
-def _get_whisper_model(model_name: Optional[str] = None, device: Optional[str] = None) -> Optional[Any]:
+def _get_whisper_model(
+    model_name: Optional[str] = None, device: Optional[str] = None
+) -> Optional[Any]:
     if WhisperModel is None:
         return None
-    safe_model = str(model_name or _get_local_voice_config().get("stt_model") or "base").strip() or "base"
-    safe_device = str(device or _get_local_voice_config().get("stt_device") or "cpu").strip() or "cpu"
+    safe_model = (
+        str(model_name or _get_local_voice_config().get("stt_model") or "base").strip()
+        or "base"
+    )
+    safe_device = (
+        str(device or _get_local_voice_config().get("stt_device") or "cpu").strip()
+        or "cpu"
+    )
     key = f"{safe_model}:{safe_device}"
     cached = _WHISPER_MODELS.get(key)
     if cached is not None:
@@ -2304,7 +2626,9 @@ def _get_whisper_model(model_name: Optional[str] = None, device: Optional[str] =
     return model
 
 
-def _transcribe_audio_local(data: bytes, *, filename: str = "voice.wav") -> Dict[str, Any]:
+def _transcribe_audio_local(
+    data: bytes, *, filename: str = "voice.wav"
+) -> Dict[str, Any]:
     cfg = _get_local_voice_config()
     model = _get_whisper_model(cfg.get("stt_model"), cfg.get("stt_device"))
     if model is None:
@@ -2353,14 +2677,19 @@ def _enhance_speech_wav(audio: bytes, *, style: str = "assistant") -> bytes:
         "broadcast": "highpass=f=90,lowpass=f=7200,acompressor=threshold=0.05:ratio=3.2:attack=2:release=35,deesser=i=0.4:m=0.5:f=0.5,loudnorm=I=-14:TP=-1.0:LRA=4",
     }
     af = filters.get(style_name) or filters["assistant"]
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as src, tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as dst:
+    with (
+        tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as src,
+        tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as dst,
+    ):
         src.write(audio)
         src_path = src.name
         dst_path = dst.name
     try:
-        proc = subprocess.run([
-            "ffmpeg", "-y", "-i", src_path, "-af", af, dst_path
-        ], capture_output=True, timeout=30)
+        proc = subprocess.run(
+            ["ffmpeg", "-y", "-i", src_path, "-af", af, dst_path],
+            capture_output=True,
+            timeout=30,
+        )
         if proc.returncode != 0:
             return audio
         return Path(dst_path).read_bytes() if Path(dst_path).exists() else audio
@@ -2399,10 +2728,17 @@ def _synthesize_speech_local(text: str) -> bytes:
     ]
     proc = subprocess.run(command, capture_output=True, timeout=30)
     if proc.returncode != 0 or not proc.stdout:
-        raise HTTPException(status_code=503, detail=(proc.stderr or b"speech synthesis failed").decode(errors="ignore")[:400])
+        raise HTTPException(
+            status_code=503,
+            detail=(proc.stderr or b"speech synthesis failed").decode(errors="ignore")[
+                :400
+            ],
+        )
     provider = str(cfg.get("tts_provider") or "enhanced_local").strip().lower()
     if provider in {"enhanced_local", "auto"}:
-        return _enhance_speech_wav(proc.stdout, style=str(cfg.get("tts_style") or "assistant"))
+        return _enhance_speech_wav(
+            proc.stdout, style=str(cfg.get("tts_style") or "assistant")
+        )
     return proc.stdout
 
 
@@ -2425,7 +2761,9 @@ def _pcm16_to_16k_mono(data: bytes, *, sample_rate: int, channels: int) -> Any:
         audio = frames.mean(axis=1).astype(np.int16)
     if int(sample_rate) == 16000:
         return audio.astype(np.int16)
-    target_len = max(1, int(round(audio.size * (16000.0 / float(sample_rate or 16000)))))
+    target_len = max(
+        1, int(round(audio.size * (16000.0 / float(sample_rate or 16000))))
+    )
     src_x = np.linspace(0, 1, num=audio.size, endpoint=False)
     dst_x = np.linspace(0, 1, num=target_len, endpoint=False)
     resampled = np.interp(dst_x, src_x, audio.astype(np.float32))
@@ -2468,10 +2806,20 @@ def _wakeword_detect(payload: VoiceWakeDetectRequest) -> Dict[str, Any]:
     try:
         raw = base64.b64decode(payload.pcm16_b64)
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"invalid pcm16 payload: {exc}") from exc
-    audio = _pcm16_to_16k_mono(raw, sample_rate=payload.sample_rate, channels=payload.channels)
+        raise HTTPException(
+            status_code=400, detail=f"invalid pcm16 payload: {exc}"
+        ) from exc
+    audio = _pcm16_to_16k_mono(
+        raw, sample_rate=payload.sample_rate, channels=payload.channels
+    )
     if int(getattr(audio, "size", 0) or 0) == 0:
-        return {"ok": False, "available": True, "detected": False, "error": "empty audio buffer", "available_models": available_models}
+        return {
+            "ok": False,
+            "available": True,
+            "detected": False,
+            "error": "empty audio buffer",
+            "available_models": available_models,
+        }
     if hasattr(model, "reset"):
         try:
             model.reset()
@@ -2480,7 +2828,7 @@ def _wakeword_detect(payload: VoiceWakeDetectRequest) -> Dict[str, Any]:
     chunk = 1280
     max_scores: Dict[str, float] = {}
     for idx in range(0, int(audio.size), chunk):
-        segment = audio[idx: idx + chunk]
+        segment = audio[idx : idx + chunk]
         if int(segment.size) < chunk:
             pad = np.zeros(chunk, dtype=np.int16)
             pad[: int(segment.size)] = segment
@@ -2493,7 +2841,11 @@ def _wakeword_detect(payload: VoiceWakeDetectRequest) -> Dict[str, Any]:
                     max_scores[str(key)] = score
     wake_word = payload.wake_word or str(cfg.get("wake_word") or "hey jarvis")
     matched_name, matched_score = _match_wakeword_score(max_scores, wake_word)
-    threshold = float(payload.threshold if payload.threshold is not None else cfg.get("threshold", 0.45))
+    threshold = float(
+        payload.threshold
+        if payload.threshold is not None
+        else cfg.get("threshold", 0.45)
+    )
     detected = matched_score >= threshold
     return {
         "ok": True,
@@ -2900,7 +3252,11 @@ def _get_browser_workflow_templates() -> List[Dict[str, Any]]:
 
 
 def _auth_browser_workflow_templates() -> List[Dict[str, Any]]:
-    return [item for item in _get_browser_workflow_templates() if bool(item.get("auth_template"))]
+    return [
+        item
+        for item in _get_browser_workflow_templates()
+        if bool(item.get("auth_template"))
+    ]
 
 
 def _workflow_library_templates(provider: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -2911,11 +3267,17 @@ def _workflow_library_templates(provider: Optional[str] = None) -> List[Dict[str
         if str(item.get("category") or "").strip().lower() == "workflow"
     ]
     if target:
-        items = [item for item in items if str(item.get("provider") or "").strip().lower() == target]
+        items = [
+            item
+            for item in items
+            if str(item.get("provider") or "").strip().lower() == target
+        ]
     return items
 
 
-def _set_browser_workflow_templates(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _set_browser_workflow_templates(
+    items: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
     normalized: List[Dict[str, Any]] = []
     for item in items[:50]:
         if not isinstance(item, dict):
@@ -2930,13 +3292,32 @@ def _set_browser_workflow_templates(items: List[Dict[str, Any]]) -> List[Dict[st
                 "start_url": str(item.get("start_url") or "").strip() or None,
                 "category": str(item.get("category") or "custom").strip() or "custom",
                 "auth_template": bool(item.get("auth_template")),
-                "recommended_session_name": str(item.get("recommended_session_name") or "").strip() or None,
+                "recommended_session_name": str(
+                    item.get("recommended_session_name") or ""
+                ).strip()
+                or None,
                 "provider": str(item.get("provider") or "").strip() or None,
-                "healthcheck_url": str(item.get("healthcheck_url") or "").strip() or None,
-                "healthcheck_selector": str(item.get("healthcheck_selector") or "").strip() or None,
-                "logged_out_markers": [str(v).strip() for v in list(item.get("logged_out_markers") or []) if str(v).strip()][:12],
-                "healthy_markers": [str(v).strip() for v in list(item.get("healthy_markers") or []) if str(v).strip()][:12],
-                "steps": [dict(step) for step in list(item.get("steps") or []) if isinstance(step, dict)][:40],
+                "healthcheck_url": str(item.get("healthcheck_url") or "").strip()
+                or None,
+                "healthcheck_selector": str(
+                    item.get("healthcheck_selector") or ""
+                ).strip()
+                or None,
+                "logged_out_markers": [
+                    str(v).strip()
+                    for v in list(item.get("logged_out_markers") or [])
+                    if str(v).strip()
+                ][:12],
+                "healthy_markers": [
+                    str(v).strip()
+                    for v in list(item.get("healthy_markers") or [])
+                    if str(v).strip()
+                ][:12],
+                "steps": [
+                    dict(step)
+                    for step in list(item.get("steps") or [])
+                    if isinstance(step, dict)
+                ][:40],
             }
         )
     _task_memory.set_setting("browser_workflow_templates", json.dumps(normalized))
@@ -2967,9 +3348,18 @@ def _browser_template_for_session(session: Dict[str, Any]) -> Optional[Dict[str,
     return None
 
 
-def _session_health_from_run(session: Dict[str, Any], template: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def _session_health_from_run(
+    session: Dict[str, Any], template: Optional[Dict[str, Any]]
+) -> Dict[str, Any]:
     template = template or {}
-    start_url = str(template.get("healthcheck_url") or template.get("start_url") or "about:blank").strip() or "about:blank"
+    start_url = (
+        str(
+            template.get("healthcheck_url")
+            or template.get("start_url")
+            or "about:blank"
+        ).strip()
+        or "about:blank"
+    )
     selector = str(template.get("healthcheck_selector") or "body").strip() or "body"
     steps = [
         {"action": "wait_for", "selector": selector, "timeout_ms": 20000},
@@ -2979,13 +3369,26 @@ def _session_health_from_run(session: Dict[str, Any], template: Optional[Dict[st
         start_url=start_url,
         steps=steps,
         headless=True,
-        storage_state=session.get("storage_state") if isinstance(session.get("storage_state"), dict) else None,
+        storage_state=session.get("storage_state")
+        if isinstance(session.get("storage_state"), dict)
+        else None,
         capture_storage_state=False,
     )
-    extracted = " ".join(str(item.get("text") or "").strip() for item in list(result.get("extracted") or []))
+    extracted = " ".join(
+        str(item.get("text") or "").strip()
+        for item in list(result.get("extracted") or [])
+    )
     haystack = f"{str(result.get('final_url') or '')} {extracted}".lower()
-    logged_out_markers = [str(v).strip().lower() for v in list(template.get("logged_out_markers") or []) if str(v).strip()]
-    healthy_markers = [str(v).strip().lower() for v in list(template.get("healthy_markers") or []) if str(v).strip()]
+    logged_out_markers = [
+        str(v).strip().lower()
+        for v in list(template.get("logged_out_markers") or [])
+        if str(v).strip()
+    ]
+    healthy_markers = [
+        str(v).strip().lower()
+        for v in list(template.get("healthy_markers") or [])
+        if str(v).strip()
+    ]
     status = "healthy"
     if any(marker in haystack for marker in logged_out_markers):
         status = "login_required"
@@ -2996,8 +3399,12 @@ def _session_health_from_run(session: Dict[str, Any], template: Optional[Dict[st
         "details": {
             "checked_url": start_url,
             "final_url": result.get("final_url"),
-            "matched_logged_out": [marker for marker in logged_out_markers if marker in haystack],
-            "matched_healthy": [marker for marker in healthy_markers if marker in haystack],
+            "matched_logged_out": [
+                marker for marker in logged_out_markers if marker in haystack
+            ],
+            "matched_healthy": [
+                marker for marker in healthy_markers if marker in haystack
+            ],
             "provider": template.get("provider"),
             "template_name": template.get("name"),
             "text_preview": extracted[:500],
@@ -3005,7 +3412,9 @@ def _session_health_from_run(session: Dict[str, Any], template: Optional[Dict[st
     }
 
 
-def _verify_tool_result(tool_name: str, result: Dict[str, Any], args: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def _verify_tool_result(
+    tool_name: str, result: Dict[str, Any], args: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     payload = result if isinstance(result, dict) else {"value": result}
     tool = str(tool_name or "unknown").strip()
     checks: List[Dict[str, Any]] = []
@@ -3040,11 +3449,20 @@ def _verify_tool_result(tool_name: str, result: Dict[str, Any], args: Optional[D
         ok = isinstance(exit_code, int) and int(exit_code) == 0
         checks.append({"name": "exit_code_zero", "ok": ok, "value": exit_code})
         confidence = 0.86 if ok else 0.42
-    elif tool in {"browser_open", "browser_search", "desktop_launch", "desktop_control"}:
+    elif tool in {
+        "browser_open",
+        "browser_search",
+        "desktop_launch",
+        "desktop_control",
+    }:
         preview = not bool(payload.get("executed"))
         ok = bool(payload.get("kind")) and bool(payload.get("target"))
         checks.append({"name": "control_response_shape", "ok": ok})
-        status = "preview" if preview else ("verified" if bool(payload.get("ok")) else "failed")
+        status = (
+            "preview"
+            if preview
+            else ("verified" if bool(payload.get("ok")) else "failed")
+        )
         confidence = 0.74 if preview else (0.9 if bool(payload.get("ok")) else 0.35)
     elif tool == "browser_workflow":
         if not bool(payload.get("executed", True)):
@@ -3054,10 +3472,20 @@ def _verify_tool_result(tool_name: str, result: Dict[str, Any], args: Optional[D
         else:
             steps = list(payload.get("results") or [])
             ok_steps = [step for step in steps if bool(step.get("ok"))]
-            checks.append({"name": "steps_ok", "ok": len(ok_steps) == len(steps), "value": f"{len(ok_steps)}/{len(steps)}"})
+            checks.append(
+                {
+                    "name": "steps_ok",
+                    "ok": len(ok_steps) == len(steps),
+                    "value": f"{len(ok_steps)}/{len(steps)}",
+                }
+            )
             extracted = list(payload.get("extracted") or [])
             checks.append({"name": "extracted_output", "ok": len(extracted) > 0})
-            confidence = 0.93 if len(ok_steps) == len(steps) and extracted else (0.82 if len(ok_steps) == len(steps) else 0.4)
+            confidence = (
+                0.93
+                if len(ok_steps) == len(steps) and extracted
+                else (0.82 if len(ok_steps) == len(steps) else 0.4)
+            )
             status = "verified" if len(ok_steps) == len(steps) else "failed"
     else:
         ok = not bool(payload.get("error"))
@@ -3114,7 +3542,15 @@ def _message_is_approval(text: str) -> bool:
 
 def _message_is_rejection(text: str) -> bool:
     value = str(text or "").strip().lower()
-    return value in {"cancel", "deny", "reject", "stop", "never mind", "dont do it", "don't do it"}
+    return value in {
+        "cancel",
+        "deny",
+        "reject",
+        "stop",
+        "never mind",
+        "dont do it",
+        "don't do it",
+    }
 
 
 def _result_needs_approval(result: Any) -> Tuple[bool, str]:
@@ -3122,7 +3558,10 @@ def _result_needs_approval(result: Any) -> Tuple[bool, str]:
         return False, ""
     if bool(result.get("approval_required")):
         return True, str(result.get("reason") or "approval required")
-    if bool(result.get("blocked")) and "confirm=true" in str(result.get("reason") or "").lower():
+    if (
+        bool(result.get("blocked"))
+        and "confirm=true" in str(result.get("reason") or "").lower()
+    ):
         return True, str(result.get("reason") or "approval required")
     return False, ""
 
@@ -3163,7 +3602,9 @@ def _execute_tool_with_approval(
         )
         result = dict(result)
         result["pending_approval"] = pending
-    verification = _record_verified_tool_run(tool_name=tool_name, result=result, args=safe_args, session_id=session_id)
+    verification = _record_verified_tool_run(
+        tool_name=tool_name, result=result, args=safe_args, session_id=session_id
+    )
     return result, verification, pending
 
 
@@ -3176,12 +3617,16 @@ def _approval_prompt_text(entry: Dict[str, Any]) -> str:
 def _execute_pending_approval(session_id: str) -> Tuple[str, Dict[str, Any]]:
     pending = _get_pending_approval(session_id)
     if pending is None:
-        return "There is no pending approval in this chat right now.", {"pending_approval": None}
+        return "There is no pending approval in this chat right now.", {
+            "pending_approval": None
+        }
     tool_name = str(pending.get("tool") or "").strip()
     args = pending.get("args") if isinstance(pending.get("args"), dict) else {}
     if tool_name not in _TOOLS:
         _clear_pending_approval(session_id)
-        return "The pending action is no longer available, so I cleared it.", {"pending_approval": None}
+        return "The pending action is no longer available, so I cleared it.", {
+            "pending_approval": None
+        }
     result, verification, new_pending = _execute_tool_with_approval(
         tool_name=tool_name,
         args=args,
@@ -3195,7 +3640,12 @@ def _execute_pending_approval(session_id: str) -> Tuple[str, Dict[str, Any]]:
             f"Approved and executed `{tool_name}`.",
             {"tool": tool_name, "result": result, "verification": verification},
         )
-    return _approval_prompt_text(new_pending), {"tool": tool_name, "result": result, "verification": verification, "pending_approval": new_pending}
+    return _approval_prompt_text(new_pending), {
+        "tool": tool_name,
+        "result": result,
+        "verification": verification,
+        "pending_approval": new_pending,
+    }
 
 
 def _run_autonomous_mission(
@@ -3208,18 +3658,34 @@ def _run_autonomous_mission(
     prior_result: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     sid = session_id or str(uuid4())
-    prior_checkpoint = (prior_result or {}).get("checkpoint") if isinstance(prior_result, dict) else {}
-    stored_remaining = list(prior_checkpoint.get("remaining_actions") or []) if isinstance(prior_checkpoint, dict) else []
+    prior_checkpoint = (
+        (prior_result or {}).get("checkpoint") if isinstance(prior_result, dict) else {}
+    )
+    stored_remaining = (
+        list(prior_checkpoint.get("remaining_actions") or [])
+        if isinstance(prior_checkpoint, dict)
+        else []
+    )
     plan = _task_memory.next_best_actions(workspace_id=workspace_id, limit=limit)
-    actions = stored_remaining[:limit] if stored_remaining else list(plan.get("actions") or [])[:limit]
+    actions = (
+        stored_remaining[:limit]
+        if stored_remaining
+        else list(plan.get("actions") or [])[:limit]
+    )
     executed: List[Dict[str, Any]] = []
     blocked: List[Dict[str, Any]] = []
     failed: List[Dict[str, Any]] = []
     retries_used = 0
-    completed_titles: List[str] = list(prior_checkpoint.get("completed_titles") or []) if isinstance(prior_checkpoint, dict) else []
+    completed_titles: List[str] = (
+        list(prior_checkpoint.get("completed_titles") or [])
+        if isinstance(prior_checkpoint, dict)
+        else []
+    )
 
     for index, item in enumerate(actions):
-        execution = item.get("execution") if isinstance(item.get("execution"), dict) else {}
+        execution = (
+            item.get("execution") if isinstance(item.get("execution"), dict) else {}
+        )
         kind = str(execution.get("kind") or "").strip().lower()
         attempts = 0
         max_attempts = max(1, int(retry_limit) + 1)
@@ -3227,16 +3693,31 @@ def _run_autonomous_mission(
             attempts += 1
             try:
                 if kind in {"activate_workspace", "reminder_done", "workspace_policy"}:
-                    result = execute_next_action(NextActionExecuteRequest(action=item, session_id=sid, approve=auto_approve))
-                    executed.append({"title": item.get("title"), "kind": kind, "result": result, "attempt": attempts})
+                    result = execute_next_action(
+                        NextActionExecuteRequest(
+                            action=item, session_id=sid, approve=auto_approve
+                        )
+                    )
+                    executed.append(
+                        {
+                            "title": item.get("title"),
+                            "kind": kind,
+                            "result": result,
+                            "attempt": attempts,
+                        }
+                    )
                     completed_titles.append(str(item.get("title") or kind))
                     break
 
                 if kind == "chat":
-                    message = str(execution.get("message") or item.get("action") or "").strip()
+                    message = str(
+                        execution.get("message") or item.get("action") or ""
+                    ).strip()
                     if not message:
                         break
-                    response = agent_chat(AgentChatRequest(message=message, session_id=sid))
+                    response = agent_chat(
+                        AgentChatRequest(message=message, session_id=sid)
+                    )
                     entry = {
                         "title": item.get("title"),
                         "kind": "chat",
@@ -3244,7 +3725,11 @@ def _run_autonomous_mission(
                         "tool_result": response.tool_result,
                         "attempt": attempts,
                     }
-                    pending = response.tool_result.get("pending_approval") if isinstance(response.tool_result, dict) else None
+                    pending = (
+                        response.tool_result.get("pending_approval")
+                        if isinstance(response.tool_result, dict)
+                        else None
+                    )
                     if pending and not auto_approve:
                         blocked.append(entry)
                         remaining_actions = actions[index:]
@@ -3276,7 +3761,14 @@ def _run_autonomous_mission(
                     completed_titles.append(str(item.get("title") or kind))
                     break
 
-                executed.append({"title": item.get("title"), "kind": kind or "noop", "result": None, "attempt": attempts})
+                executed.append(
+                    {
+                        "title": item.get("title"),
+                        "kind": kind or "noop",
+                        "result": None,
+                        "attempt": attempts,
+                    }
+                )
                 completed_titles.append(str(item.get("title") or kind or "noop"))
                 break
             except Exception as exc:
@@ -3343,7 +3835,9 @@ def _record_verified_tool_run(
     log_id = _task_memory.log_tool_execution(
         tool_name=tool_name,
         status=str(verification.get("status") or "unknown"),
-        confidence=verification.get("confidence") if isinstance(verification.get("confidence"), (int, float)) else None,
+        confidence=verification.get("confidence")
+        if isinstance(verification.get("confidence"), (int, float))
+        else None,
         verification=verification,
         detail={"args": args or {}, "result": result},
         session_id=session_id,
@@ -3391,10 +3885,26 @@ def _build_plan(message: str) -> List[str]:
     if msg.startswith("/tool "):
         return ["Validate tool arguments", "Execute tool", "Return result"]
     if any(k in msg for k in ["fix", "edit", "write", "update", "change"]):
-        return ["Understand requested change", "Inspect target files", "Apply edits", "Verify behavior", "Summarize"]
+        return [
+            "Understand requested change",
+            "Inspect target files",
+            "Apply edits",
+            "Verify behavior",
+            "Summarize",
+        ]
     if any(k in msg for k in ["run", "command", "shell", "terminal"]):
-        return ["Parse command intent", "Assess risk profile", "Execute command", "Report output"]
-    return ["Understand request", "Select tools if needed", "Execute steps", "Summarize result"]
+        return [
+            "Parse command intent",
+            "Assess risk profile",
+            "Execute command",
+            "Report output",
+        ]
+    return [
+        "Understand request",
+        "Select tools if needed",
+        "Execute steps",
+        "Summarize result",
+    ]
 
 
 def _get_quantum_processor() -> Any:
@@ -3402,28 +3912,38 @@ def _get_quantum_processor() -> Any:
     if _quantum_processor is not None:
         return _quantum_processor
     if _quantum_error:
-        raise HTTPException(status_code=503, detail=f"Quantum processor unavailable: {_quantum_error}")
+        raise HTTPException(
+            status_code=503, detail=f"Quantum processor unavailable: {_quantum_error}"
+        )
 
     try:
         from src.quantum.quantum_processor import QuantumProcessor
 
         qp = QuantumProcessor()
-        creator_key = (os.getenv("JARVIS_QUANTUM_CREATOR_KEY") or _DEFAULT_QUANTUM_CREATOR_KEY).strip()
+        creator_key = (
+            os.getenv("JARVIS_QUANTUM_CREATOR_KEY") or _DEFAULT_QUANTUM_CREATOR_KEY
+        ).strip()
         qp.authenticate_creator(creator_key)
         _quantum_processor = qp
         return _quantum_processor
     except Exception as exc:
         _quantum_error = str(exc)
-        raise HTTPException(status_code=503, detail=f"Quantum processor unavailable: {_quantum_error}")
+        raise HTTPException(
+            status_code=503, detail=f"Quantum processor unavailable: {_quantum_error}"
+        )
 
 
 def _tool_quantum_superposition(args: Dict[str, Any]) -> Dict[str, Any]:
     states_raw = args.get("states")
     if not isinstance(states_raw, list) or len(states_raw) < 2:
-        raise HTTPException(status_code=400, detail="states must be a list with at least 2 entries")
+        raise HTTPException(
+            status_code=400, detail="states must be a list with at least 2 entries"
+        )
     states = [str(s) for s in states_raw if str(s).strip()]
     if len(states) < 2:
-        raise HTTPException(status_code=400, detail="states must contain at least 2 non-empty values")
+        raise HTTPException(
+            status_code=400, detail="states must contain at least 2 non-empty values"
+        )
     qp = _get_quantum_processor()
     result = _json_safe(qp.create_quantum_superposition(states))
     _task_memory.add_quantum_event(
@@ -3437,29 +3957,45 @@ def _tool_quantum_entangle(args: Dict[str, Any]) -> Dict[str, Any]:
     system_a = str(args.get("system_a", "")).strip()
     system_b = str(args.get("system_b", "")).strip()
     if not system_a or not system_b:
-        raise HTTPException(status_code=400, detail="system_a and system_b are required")
+        raise HTTPException(
+            status_code=400, detail="system_a and system_b are required"
+        )
     qp = _get_quantum_processor()
     result = _json_safe(qp.quantum_entangle_systems(system_a, system_b))
-    ent = result.get("entanglement") if isinstance(result.get("entanglement"), dict) else {}
+    ent = (
+        result.get("entanglement")
+        if isinstance(result.get("entanglement"), dict)
+        else {}
+    )
     _task_memory.add_quantum_event(
         event_type="entangle",
-        entanglement_strength=ent.get("entanglement_strength") if isinstance(ent.get("entanglement_strength"), (int, float)) else None,
-        correlation_coefficient=ent.get("correlation_coefficient") if isinstance(ent.get("correlation_coefficient"), (int, float)) else None,
+        entanglement_strength=ent.get("entanglement_strength")
+        if isinstance(ent.get("entanglement_strength"), (int, float))
+        else None,
+        correlation_coefficient=ent.get("correlation_coefficient")
+        if isinstance(ent.get("correlation_coefficient"), (int, float))
+        else None,
         states=[system_a, system_b],
     )
     return result
 
 
 def _tool_quantum_measure(args: Dict[str, Any]) -> Dict[str, Any]:
-    basis = str(args.get("measurement_basis", "computational")).strip() or "computational"
+    basis = (
+        str(args.get("measurement_basis", "computational")).strip() or "computational"
+    )
     qp = _get_quantum_processor()
     result = _json_safe(qp.measure_quantum_state(basis))
-    meas = result.get("measurement") if isinstance(result.get("measurement"), dict) else {}
+    meas = (
+        result.get("measurement") if isinstance(result.get("measurement"), dict) else {}
+    )
     _task_memory.add_quantum_event(
         event_type="measurement",
         measurement_basis=basis,
         outcome=meas.get("outcome") if isinstance(meas.get("outcome"), int) else None,
-        measurement_probability=meas.get("measurement_probability") if isinstance(meas.get("measurement_probability"), (int, float)) else None,
+        measurement_probability=meas.get("measurement_probability")
+        if isinstance(meas.get("measurement_probability"), (int, float))
+        else None,
     )
     return result
 
@@ -3474,7 +4010,9 @@ def _tool_quantum_decipher(args: Dict[str, Any]) -> Dict[str, Any]:
     event_type = str(event_type_raw).strip() if event_type_raw is not None else None
     if event_type == "":
         event_type = None
-    events = _task_memory.list_quantum_events(limit=500, event_type=event_type, since_hours=hours)
+    events = _task_memory.list_quantum_events(
+        limit=500, event_type=event_type, since_hours=hours
+    )
     return _quantum_decipher_analysis(events, hours=hours)
 
 
@@ -3484,7 +4022,24 @@ def _tool_quantum_experiment(args: Dict[str, Any]) -> Dict[str, Any]:
         preset = "quick"
     measure_count = args.get("measure_count")
     entangle_count = args.get("entangle_count")
-    return _run_quantum_experiment(preset=preset, measure_count=measure_count, entangle_count=entangle_count)
+    return _run_quantum_experiment(
+        preset=preset, measure_count=measure_count, entangle_count=entangle_count
+    )
+
+
+def _tool_quantum_random(args: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate quantum random numbers using quantum superposition or entanglement."""
+    from src.quantum.quantum_processor import QuantumProcessor
+
+    bits = int(args.get("bits", 32))
+    method = str(args.get("method", "superposition"))
+
+    try:
+        processor = QuantumProcessor()
+        result = processor.generate_quantum_random(bits=bits, method=method)
+        return result
+    except Exception as e:
+        return {"error": f"Quantum random generation failed: {str(e)}"}
 
 
 def _tool_quantum_remediate(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -3548,16 +4103,26 @@ def _set_quantum_alert_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     safe_cfg["window_hours"] = max(1, min(safe_cfg["window_hours"], 24 * 30))
     safe_cfg["min_measurements"] = max(1, min(safe_cfg["min_measurements"], 5000))
     safe_cfg["min_entangles"] = max(1, min(safe_cfg["min_entangles"], 5000))
-    safe_cfg["outcome_one_min_pct"] = max(0.0, min(safe_cfg["outcome_one_min_pct"], 100.0))
-    safe_cfg["outcome_one_max_pct"] = max(0.0, min(safe_cfg["outcome_one_max_pct"], 100.0))
-    safe_cfg["entanglement_strength_min"] = max(0.0, min(safe_cfg["entanglement_strength_min"], 1.0))
+    safe_cfg["outcome_one_min_pct"] = max(
+        0.0, min(safe_cfg["outcome_one_min_pct"], 100.0)
+    )
+    safe_cfg["outcome_one_max_pct"] = max(
+        0.0, min(safe_cfg["outcome_one_max_pct"], 100.0)
+    )
+    safe_cfg["entanglement_strength_min"] = max(
+        0.0, min(safe_cfg["entanglement_strength_min"], 1.0)
+    )
     _task_memory.set_setting("quantum_alert_config", json.dumps(safe_cfg))
     return safe_cfg
 
 
 def _evaluate_quantum_alerts(cfg: Dict[str, Any]) -> Dict[str, Any]:
     if not bool(cfg.get("enabled", True)):
-        return {"active": False, "alerts": [], "stats": _task_memory.quantum_stats(hours=int(cfg.get("window_hours", 24)))}
+        return {
+            "active": False,
+            "alerts": [],
+            "stats": _task_memory.quantum_stats(hours=int(cfg.get("window_hours", 24))),
+        }
 
     stats = _task_memory.quantum_stats(hours=int(cfg.get("window_hours", 24)))
     alerts: List[Dict[str, Any]] = []
@@ -3569,7 +4134,9 @@ def _evaluate_quantum_alerts(cfg: Dict[str, Any]) -> Dict[str, Any]:
     one_pct = (ones / measurements * 100.0) if measurements > 0 else None
 
     if measurements >= int(cfg.get("min_measurements", 5)) and one_pct is not None:
-        if one_pct < float(cfg.get("outcome_one_min_pct", 20.0)) or one_pct > float(cfg.get("outcome_one_max_pct", 80.0)):
+        if one_pct < float(cfg.get("outcome_one_min_pct", 20.0)) or one_pct > float(
+            cfg.get("outcome_one_max_pct", 80.0)
+        ):
             alerts.append(
                 {
                     "code": "measurement_outcome_drift",
@@ -3580,7 +4147,9 @@ def _evaluate_quantum_alerts(cfg: Dict[str, Any]) -> Dict[str, Any]:
             )
 
     avg_ent = stats.get("avg_entanglement_strength")
-    if entangles >= int(cfg.get("min_entangles", 3)) and isinstance(avg_ent, (int, float)):
+    if entangles >= int(cfg.get("min_entangles", 3)) and isinstance(
+        avg_ent, (int, float)
+    ):
         if float(avg_ent) < float(cfg.get("entanglement_strength_min", 0.90)):
             alerts.append(
                 {
@@ -3611,22 +4180,36 @@ def _goal_to_actions(goal: str) -> List[Dict[str, Any]]:
     if "time" in lower:
         actions.append({"tool": "get_time", "args": {}, "label": "Fetch UTC time"})
     if "system info" in lower or "system status" in lower:
-        actions.append({"tool": "system_info", "args": {}, "label": "Collect system info"})
+        actions.append(
+            {"tool": "system_info", "args": {}, "label": "Collect system info"}
+        )
     if "db ping" in lower or "database" in lower:
-        actions.append({"tool": "db_ping", "args": {}, "label": "Check DB connectivity"})
+        actions.append(
+            {"tool": "db_ping", "args": {}, "label": "Check DB connectivity"}
+        )
 
     # Quantum templates
     if "quantum status" in lower:
-        actions.append({"tool": "system_info", "args": {}, "label": "Collect system info (quantum context)"})
+        actions.append(
+            {
+                "tool": "system_info",
+                "args": {},
+                "label": "Collect system info (quantum context)",
+            }
+        )
         actions.append(
             {
                 "tool": "__chat__",
-                "args": {"message": "/tool quantum_measure {\"measurement_basis\":\"computational\"}"},
+                "args": {
+                    "message": '/tool quantum_measure {"measurement_basis":"computational"}'
+                },
                 "label": "Run baseline quantum measurement",
             }
         )
 
-    m_q_measure = re.search(r"\bquantum measure(?:\s+(?:basis|in)\s+([a-zA-Z0-9_\-]+))?", lower)
+    m_q_measure = re.search(
+        r"\bquantum measure(?:\s+(?:basis|in)\s+([a-zA-Z0-9_\-]+))?", lower
+    )
     if m_q_measure:
         basis = m_q_measure.group(1) if m_q_measure.group(1) else "computational"
         actions.append(
@@ -3637,7 +4220,9 @@ def _goal_to_actions(goal: str) -> List[Dict[str, Any]]:
             }
         )
 
-    m_q_sup = re.search(r"\bquantum superposition(?:\s*:\s*|\s+)(.+)$", goal, flags=re.IGNORECASE)
+    m_q_sup = re.search(
+        r"\bquantum superposition(?:\s*:\s*|\s+)(.+)$", goal, flags=re.IGNORECASE
+    )
     if m_q_sup:
         raw = m_q_sup.group(1).strip()
         states = [s.strip() for s in raw.split(",") if s.strip()]
@@ -3650,7 +4235,11 @@ def _goal_to_actions(goal: str) -> List[Dict[str, Any]]:
                 }
             )
 
-    m_q_ent = re.search(r"\bquantum entangle(?:\s*:\s*|\s+)([^,]+),\s*([^,\n]+)", goal, flags=re.IGNORECASE)
+    m_q_ent = re.search(
+        r"\bquantum entangle(?:\s*:\s*|\s+)([^,]+),\s*([^,\n]+)",
+        goal,
+        flags=re.IGNORECASE,
+    )
     if m_q_ent:
         a = m_q_ent.group(1).strip()
         b = m_q_ent.group(2).strip()
@@ -3663,7 +4252,9 @@ def _goal_to_actions(goal: str) -> List[Dict[str, Any]]:
                 }
             )
 
-    m_q_decipher = re.search(r"\bquantum (?:de?cipher|decypher)(?:\s+(\d+)\s*h(?:ours?)?)?", lower)
+    m_q_decipher = re.search(
+        r"\bquantum (?:de?cipher|decypher)(?:\s+(\d+)\s*h(?:ours?)?)?", lower
+    )
     if m_q_decipher:
         hours = int(m_q_decipher.group(1)) if m_q_decipher.group(1) else 24
         hours = max(1, min(hours, 24 * 365))
@@ -3675,7 +4266,9 @@ def _goal_to_actions(goal: str) -> List[Dict[str, Any]]:
             }
         )
 
-    m_q_experiment = re.search(r"\bquantum experiment(?:\s+(quick|balanced|deep))?", lower)
+    m_q_experiment = re.search(
+        r"\bquantum experiment(?:\s+(quick|balanced|deep))?", lower
+    )
     if m_q_experiment:
         preset = m_q_experiment.group(1) if m_q_experiment.group(1) else "quick"
         actions.append(
@@ -3686,7 +4279,9 @@ def _goal_to_actions(goal: str) -> List[Dict[str, Any]]:
             }
         )
 
-    m_q_remediate = re.search(r"\bquantum remediation(?:\s+(\d+)\s*h(?:ours?)?)?", lower)
+    m_q_remediate = re.search(
+        r"\bquantum remediation(?:\s+(\d+)\s*h(?:ours?)?)?", lower
+    )
     if m_q_remediate:
         hours = int(m_q_remediate.group(1)) if m_q_remediate.group(1) else 24
         actions.append(
@@ -3738,7 +4333,9 @@ def _goal_to_actions(goal: str) -> List[Dict[str, Any]]:
             }
         )
 
-    m_launch = re.search(r"\blaunch (?:app|desktop|program)?\s*:?(.+)$", g, flags=re.IGNORECASE)
+    m_launch = re.search(
+        r"\blaunch (?:app|desktop|program)?\s*:?(.+)$", g, flags=re.IGNORECASE
+    )
     if m_launch and m_launch.group(1).strip():
         actions.append(
             {
@@ -3748,12 +4345,18 @@ def _goal_to_actions(goal: str) -> List[Dict[str, Any]]:
             }
         )
 
-    m_switch_workspace = re.search(r"\b(?:switch|set|activate)\s+workspace(?:\s+to)?\s+(.+)$", g, flags=re.IGNORECASE)
+    m_switch_workspace = re.search(
+        r"\b(?:switch|set|activate)\s+workspace(?:\s+to)?\s+(.+)$",
+        g,
+        flags=re.IGNORECASE,
+    )
     if m_switch_workspace:
         actions.append(
             {
                 "tool": "__chat__",
-                "args": {"message": f"switch workspace to {m_switch_workspace.group(1).strip()}"},
+                "args": {
+                    "message": f"switch workspace to {m_switch_workspace.group(1).strip()}"
+                },
                 "label": f"Switch workspace to {m_switch_workspace.group(1).strip()}",
             }
         )
@@ -3771,7 +4374,9 @@ def _goal_to_actions(goal: str) -> List[Dict[str, Any]]:
 
     # Fallback: use LLM reasoning through /chat if no deterministic action was found.
     if not actions:
-        actions.append({"tool": "__chat__", "args": {"message": g}, "label": "Ask Jarvis brain"})
+        actions.append(
+            {"tool": "__chat__", "args": {"message": g}, "label": "Ask Jarvis brain"}
+        )
 
     return actions
 
@@ -3780,9 +4385,16 @@ def _action_requires_approval(action: Dict[str, Any], profile: str) -> bool:
     tool = str(action.get("tool", ""))
     args = action.get("args") if isinstance(action.get("args"), dict) else {}
     workspace_id = args.get("workspace_id")
-    _resolved_workspace_id, _workspace, policy = _resolve_workspace_context(workspace_id if isinstance(workspace_id, int) else None)
+    _resolved_workspace_id, _workspace, policy = _resolve_workspace_context(
+        workspace_id if isinstance(workspace_id, int) else None
+    )
 
-    if tool in {"browser_open", "browser_search", "desktop_launch", "browser_workflow"} and bool(policy.get("require_confirmation")):
+    if tool in {
+        "browser_open",
+        "browser_search",
+        "desktop_launch",
+        "browser_workflow",
+    } and bool(policy.get("require_confirmation")):
         return True
     if tool == "shell_run":
         if not bool(policy.get("shell_allowed", True)):
@@ -3829,17 +4441,26 @@ def _tool_shell_run(args: Dict[str, Any]) -> Dict[str, Any]:
     - Allowlist of commands and subcommands
     """
     if not _is_truthy(os.getenv("JARVIS_ALLOW_SHELL", "")):
-        raise HTTPException(status_code=403, detail="shell tool is disabled (set JARVIS_ALLOW_SHELL=true)")
+        raise HTTPException(
+            status_code=403,
+            detail="shell tool is disabled (set JARVIS_ALLOW_SHELL=true)",
+        )
 
     command = args.get("command", "")
     confirm = bool(args.get("confirm", False))
-    workspace_id = args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None
+    workspace_id = (
+        args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None
+    )
     timeout_s = int(args.get("timeout_s", 30))
     timeout_s = max(1, min(timeout_s, 300))
-    _resolved_workspace_id, workspace, policy = _enforce_workspace_capability("shell", workspace_id=workspace_id)
+    _resolved_workspace_id, workspace, policy = _enforce_workspace_capability(
+        "shell", workspace_id=workspace_id
+    )
 
     if not isinstance(command, str) or not command.strip():
-        raise HTTPException(status_code=400, detail="command must be a non-empty string")
+        raise HTTPException(
+            status_code=400, detail="command must be a non-empty string"
+        )
 
     if _policy_confirmation_required(policy, confirm=confirm):
         return {
@@ -3850,7 +4471,11 @@ def _tool_shell_run(args: Dict[str, Any]) -> Dict[str, Any]:
             "workspace_name": workspace.get("name") if workspace else None,
         }
 
-    if (_requires_confirm_for_risk() or _strict_confirm_enabled()) and _is_risky_command(command) and not confirm:
+    if (
+        (_requires_confirm_for_risk() or _strict_confirm_enabled())
+        and _is_risky_command(command)
+        and not confirm
+    ):
         return {
             "blocked": True,
             "reason": "Risky command requires confirm=true under current policy",
@@ -3871,7 +4496,9 @@ def _tool_shell_run(args: Dict[str, Any]) -> Dict[str, Any]:
         # Block common shell metacharacters to prevent chaining/exfil via redirection.
         forbidden = ["|", "&&", "||", ";", ">", "<", "$(", "`"]
         if any(tok in command for tok in forbidden):
-            raise HTTPException(status_code=400, detail="command contains forbidden shell operators")
+            raise HTTPException(
+                status_code=400, detail="command contains forbidden shell operators"
+            )
 
         argv = shlex.split(command)
         if not argv:
@@ -3885,11 +4512,21 @@ def _tool_shell_run(args: Dict[str, Any]) -> Dict[str, Any]:
         if exe == "python":
             # Allow only safe invocations.
             if argv[1:] not in (["--version"], ["-V"], ["-m", "pytest"]):
-                raise HTTPException(status_code=403, detail="python invocation not allowed")
+                raise HTTPException(
+                    status_code=403, detail="python invocation not allowed"
+                )
 
         if exe == "git":
-            if len(argv) < 2 or argv[1] not in {"status", "diff", "log", "show", "rev-parse"}:
-                raise HTTPException(status_code=403, detail="git subcommand not allowed")
+            if len(argv) < 2 or argv[1] not in {
+                "status",
+                "diff",
+                "log",
+                "show",
+                "rev-parse",
+            }:
+                raise HTTPException(
+                    status_code=403, detail="git subcommand not allowed"
+                )
 
         proc = subprocess.run(
             argv,
@@ -3913,14 +4550,21 @@ def _tool_shell_run(args: Dict[str, Any]) -> Dict[str, Any]:
 
 def _tool_repo_write_file(args: Dict[str, Any]) -> Dict[str, Any]:
     if not _is_truthy(os.getenv("JARVIS_ALLOW_REPO_WRITE", "")):
-        raise HTTPException(status_code=403, detail="repo write is disabled (set JARVIS_ALLOW_REPO_WRITE=true)")
+        raise HTTPException(
+            status_code=403,
+            detail="repo write is disabled (set JARVIS_ALLOW_REPO_WRITE=true)",
+        )
 
     path = str(args.get("path", ""))
     content = args.get("content", "")
     append = bool(args.get("append", False))
     confirm = bool(args.get("confirm", False))
-    workspace_id = args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None
-    _resolved_workspace_id, workspace, policy = _enforce_workspace_capability("repo_write", workspace_id=workspace_id)
+    workspace_id = (
+        args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None
+    )
+    _resolved_workspace_id, workspace, policy = _enforce_workspace_capability(
+        "repo_write", workspace_id=workspace_id
+    )
 
     if not isinstance(content, str):
         raise HTTPException(status_code=400, detail="content must be a string")
@@ -3938,7 +4582,11 @@ def _tool_repo_write_file(args: Dict[str, Any]) -> Dict[str, Any]:
             "workspace_name": workspace.get("name") if workspace else None,
         }
 
-    if (_requires_confirm_for_risk() or _strict_confirm_enabled()) and _is_sensitive_path(target) and not confirm:
+    if (
+        (_requires_confirm_for_risk() or _strict_confirm_enabled())
+        and _is_sensitive_path(target)
+        and not confirm
+    ):
         return {
             "blocked": True,
             "reason": "Sensitive file write requires confirm=true under current policy",
@@ -3959,13 +4607,19 @@ def _tool_repo_write_file(args: Dict[str, Any]) -> Dict[str, Any]:
     with open(target, mode) as f:
         f.write(content.encode("utf-8"))
 
-    return {"path": str(target), "bytes_written": len(content.encode("utf-8")), "append": append}
+    return {
+        "path": str(target),
+        "bytes_written": len(content.encode("utf-8")),
+        "append": append,
+    }
 
 
 def _tool_browser_open(args: Dict[str, Any]) -> Dict[str, Any]:
     return _browser_open(
         str(args.get("url", "")),
-        workspace_id=args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None,
+        workspace_id=args.get("workspace_id")
+        if isinstance(args.get("workspace_id"), int)
+        else None,
         confirm=bool(args.get("confirm", False)),
     )
 
@@ -3973,7 +4627,9 @@ def _tool_browser_open(args: Dict[str, Any]) -> Dict[str, Any]:
 def _tool_browser_search(args: Dict[str, Any]) -> Dict[str, Any]:
     return _browser_search(
         str(args.get("query", "")),
-        workspace_id=args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None,
+        workspace_id=args.get("workspace_id")
+        if isinstance(args.get("workspace_id"), int)
+        else None,
         confirm=bool(args.get("confirm", False)),
     )
 
@@ -3981,7 +4637,9 @@ def _tool_browser_search(args: Dict[str, Any]) -> Dict[str, Any]:
 def _tool_desktop_launch(args: Dict[str, Any]) -> Dict[str, Any]:
     return _desktop_launch(
         str(args.get("app", "")),
-        workspace_id=args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None,
+        workspace_id=args.get("workspace_id")
+        if isinstance(args.get("workspace_id"), int)
+        else None,
         confirm=bool(args.get("confirm", False)),
     )
 
@@ -3992,7 +4650,9 @@ def _tool_desktop_control(args: Dict[str, Any]) -> Dict[str, Any]:
         target=args.get("target") if isinstance(args.get("target"), str) else None,
         text=args.get("text") if isinstance(args.get("text"), str) else None,
         keys=[str(item) for item in list(args.get("keys") or []) if str(item).strip()],
-        workspace_id=args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None,
+        workspace_id=args.get("workspace_id")
+        if isinstance(args.get("workspace_id"), int)
+        else None,
         confirm=bool(args.get("confirm", False)),
     )
 
@@ -4001,8 +4661,12 @@ def _tool_browser_workflow(args: Dict[str, Any]) -> Dict[str, Any]:
     steps = args.get("steps")
     if not isinstance(steps, list) or not steps:
         raise HTTPException(status_code=400, detail="steps are required")
-    workspace_id = args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None
-    _resolved_workspace_id, workspace, policy = _enforce_workspace_capability("browser", workspace_id=workspace_id)
+    workspace_id = (
+        args.get("workspace_id") if isinstance(args.get("workspace_id"), int) else None
+    )
+    _resolved_workspace_id, workspace, policy = _enforce_workspace_capability(
+        "browser", workspace_id=workspace_id
+    )
     if _policy_confirmation_required(policy, confirm=bool(args.get("confirm", False))):
         return {
             "ok": True,
@@ -4015,7 +4679,9 @@ def _tool_browser_workflow(args: Dict[str, Any]) -> Dict[str, Any]:
             "runtime": _browser_workflow_runtime(),
         }
     session_name = str(args.get("session_name") or "").strip() or None
-    stored_session = _task_memory.get_browser_session(session_name) if session_name else None
+    stored_session = (
+        _task_memory.get_browser_session(session_name) if session_name else None
+    )
     return _run_browser_workflow(
         start_url=str(args.get("start_url") or "").strip() or None,
         steps=[dict(step) if isinstance(step, dict) else {} for step in steps],
@@ -4027,6 +4693,61 @@ def _tool_browser_workflow(args: Dict[str, Any]) -> Dict[str, Any]:
         ),
         capture_storage_state=bool(args.get("capture_storage_state", False)),
     )
+
+
+def _tool_data_fetch(args: Dict[str, Any]) -> Dict[str, Any]:
+    """Fetch data from a URL or API endpoint."""
+    import requests
+
+    url = str(args.get("url", "")).strip()
+    if not url:
+        return {"error": "URL is required"}
+
+    method = str(args.get("method", "GET")).upper()
+    headers = args.get("headers", {})
+    params = args.get("params", {})
+    data = args.get("data", {})
+    timeout = int(args.get("timeout", 30))
+
+    try:
+        response = requests.request(
+            method=method,
+            url=url,
+            headers=headers,
+            params=params,
+            json=data if isinstance(data, dict) else None,
+            data=data if not isinstance(data, dict) else None,
+            timeout=timeout,
+        )
+
+        # Return structured response
+        result = {
+            "url": url,
+            "method": method,
+            "status_code": response.status_code,
+            "headers": dict(response.headers),
+            "response_time": response.elapsed.total_seconds(),
+        }
+
+        # Include response content (truncated for safety)
+        try:
+            if response.headers.get("content-type", "").startswith("application/json"):
+                result["json_data"] = response.json()
+            else:
+                content = response.text
+                if len(content) > 10000:  # Truncate large responses
+                    result["text_data"] = content[:10000] + "... [truncated]"
+                else:
+                    result["text_data"] = content
+        except Exception as e:
+            result["content_error"] = str(e)
+
+        return result
+
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Request failed: {str(e)}", "url": url}
+    except Exception as e:
+        return {"error": f"Unexpected error: {str(e)}", "url": url}
 
 
 _TOOLS: Dict[str, _Tool] = {
@@ -4053,15 +4774,66 @@ _TOOLS: Dict[str, _Tool] = {
         },
         handler=_tool_echo,
     ),
+    "data_fetch": _Tool(
+        name="data_fetch",
+        description="Fetch data from a URL or API endpoint with customizable HTTP methods and parameters.",
+        args_schema={
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL to fetch data from",
+                },
+                "method": {
+                    "type": "string",
+                    "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+                    "description": "HTTP method to use",
+                    "default": "GET",
+                },
+                "headers": {
+                    "type": "object",
+                    "description": "HTTP headers to include",
+                    "additionalProperties": {"type": "string"},
+                },
+                "params": {
+                    "type": "object",
+                    "description": "URL query parameters",
+                    "additionalProperties": True,
+                },
+                "data": {
+                    "description": "Request body data (JSON or form data)",
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Request timeout in seconds",
+                    "default": 30,
+                    "minimum": 1,
+                    "maximum": 300,
+                },
+            },
+            "required": ["url"],
+            "additionalProperties": False,
+        },
+        handler=_tool_data_fetch,
+    ),
     "list_files": _Tool(
         name="list_files",
         description="List files under the app/data/models directories.",
         args_schema={
             "type": "object",
             "properties": {
-                "path": {"type": "string", "description": "Path to list (relative to app root or absolute)."},
-                "recursive": {"type": "boolean", "description": "Recurse into subdirectories."},
-                "max_entries": {"type": "integer", "description": "Maximum entries to return (<=2000)."},
+                "path": {
+                    "type": "string",
+                    "description": "Path to list (relative to app root or absolute).",
+                },
+                "recursive": {
+                    "type": "boolean",
+                    "description": "Recurse into subdirectories.",
+                },
+                "max_entries": {
+                    "type": "integer",
+                    "description": "Maximum entries to return (<=2000).",
+                },
             },
             "required": ["path"],
             "additionalProperties": False,
@@ -4074,8 +4846,14 @@ _TOOLS: Dict[str, _Tool] = {
         args_schema={
             "type": "object",
             "properties": {
-                "path": {"type": "string", "description": "File path (relative to app root or absolute)."},
-                "max_bytes": {"type": "integer", "description": "Max bytes to return (<=200000)."},
+                "path": {
+                    "type": "string",
+                    "description": "File path (relative to app root or absolute).",
+                },
+                "max_bytes": {
+                    "type": "integer",
+                    "description": "Max bytes to return (<=200000).",
+                },
             },
             "required": ["path"],
             "additionalProperties": False,
@@ -4088,9 +4866,15 @@ _TOOLS: Dict[str, _Tool] = {
         args_schema={
             "type": "object",
             "properties": {
-                "path": {"type": "string", "description": "Destination path under /home/jarvisuser/app/data."},
+                "path": {
+                    "type": "string",
+                    "description": "Destination path under /home/jarvisuser/app/data.",
+                },
                 "content": {"type": "string", "description": "UTF-8 text content."},
-                "append": {"type": "boolean", "description": "Append instead of overwrite."},
+                "append": {
+                    "type": "boolean",
+                    "description": "Append instead of overwrite.",
+                },
             },
             "required": ["path", "content"],
             "additionalProperties": False,
@@ -4145,7 +4929,11 @@ _TOOLS: Dict[str, _Tool] = {
         description="Open a URL in the default browser or preview the action when host control is disabled.",
         args_schema={
             "type": "object",
-            "properties": {"url": {"type": "string"}, "workspace_id": {"type": "integer"}, "confirm": {"type": "boolean"}},
+            "properties": {
+                "url": {"type": "string"},
+                "workspace_id": {"type": "integer"},
+                "confirm": {"type": "boolean"},
+            },
             "required": ["url"],
             "additionalProperties": False,
         },
@@ -4156,7 +4944,11 @@ _TOOLS: Dict[str, _Tool] = {
         description="Search the configured search engine in the browser or preview the action when host control is disabled.",
         args_schema={
             "type": "object",
-            "properties": {"query": {"type": "string"}, "workspace_id": {"type": "integer"}, "confirm": {"type": "boolean"}},
+            "properties": {
+                "query": {"type": "string"},
+                "workspace_id": {"type": "integer"},
+                "confirm": {"type": "boolean"},
+            },
             "required": ["query"],
             "additionalProperties": False,
         },
@@ -4167,7 +4959,11 @@ _TOOLS: Dict[str, _Tool] = {
         description="Launch a named desktop target like dashboard, files, terminal, or browser.",
         args_schema={
             "type": "object",
-            "properties": {"app": {"type": "string"}, "workspace_id": {"type": "integer"}, "confirm": {"type": "boolean"}},
+            "properties": {
+                "app": {"type": "string"},
+                "workspace_id": {"type": "integer"},
+                "confirm": {"type": "boolean"},
+            },
             "required": ["app"],
             "additionalProperties": False,
         },
@@ -4227,7 +5023,9 @@ _TOOLS: Dict[str, _Tool] = {
         description="Create a quantum superposition from a list of states.",
         args_schema={
             "type": "object",
-            "properties": {"states": {"type": "array", "items": {"type": "string"}, "minItems": 2}},
+            "properties": {
+                "states": {"type": "array", "items": {"type": "string"}, "minItems": 2}
+            },
             "required": ["states"],
             "additionalProperties": False,
         },
@@ -4238,7 +5036,10 @@ _TOOLS: Dict[str, _Tool] = {
         description="Entangle two named systems.",
         args_schema={
             "type": "object",
-            "properties": {"system_a": {"type": "string"}, "system_b": {"type": "string"}},
+            "properties": {
+                "system_a": {"type": "string"},
+                "system_b": {"type": "string"},
+            },
             "required": ["system_a", "system_b"],
             "additionalProperties": False,
         },
@@ -4293,6 +5094,30 @@ _TOOLS: Dict[str, _Tool] = {
             "additionalProperties": False,
         },
         handler=_tool_quantum_remediate,
+    ),
+    "quantum_random": _Tool(
+        name="quantum_random",
+        description="Generate true quantum random numbers using superposition or entanglement.",
+        args_schema={
+            "type": "object",
+            "properties": {
+                "bits": {
+                    "type": "integer",
+                    "description": "Number of random bits to generate",
+                    "minimum": 1,
+                    "maximum": 256,
+                    "default": 32,
+                },
+                "method": {
+                    "type": "string",
+                    "enum": ["superposition", "entanglement"],
+                    "description": "Quantum random generation method",
+                    "default": "superposition",
+                },
+            },
+            "additionalProperties": False,
+        },
+        handler=_tool_quantum_random,
     ),
 }
 
@@ -4396,13 +5221,18 @@ def _multi_agent_workers(provider: str) -> int:
                 return max(1, min(int(configured_parallel), 4))
             except Exception:
                 pass
-        if (os.getenv("NVIDIA_VISIBLE_DEVICES", "").strip() or "").lower() not in {"", "none"}:
+        if (os.getenv("NVIDIA_VISIBLE_DEVICES", "").strip() or "").lower() not in {
+            "",
+            "none",
+        }:
             return 4
         return 2
     return 4
 
 
-def _normalize_role_payload(role: str, task: str, data: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_role_payload(
+    role: str, task: str, data: Dict[str, Any]
+) -> Dict[str, Any]:
     summary = str(data.get("summary") or "").strip()
     if not summary:
         summary = _basic_brain(f"{role}: {task}")
@@ -4412,7 +5242,9 @@ def _normalize_role_payload(role: str, task: str, data: Dict[str, Any]) -> Dict[
         if not s:
             return ""
         # Unwrap quoted python/json list strings: "['a','b']" -> a | b
-        if (s.startswith("[") and s.endswith("]")) or (s.startswith("(") and s.endswith(")")):
+        if (s.startswith("[") and s.endswith("]")) or (
+            s.startswith("(") and s.endswith(")")
+        ):
             try:
                 parsed = ast.literal_eval(s)
                 if isinstance(parsed, (list, tuple)):
@@ -4464,7 +5296,9 @@ def _parse_role_tagged_text(role: str, task: str, text: str) -> Dict[str, Any]:
         elif upper.startswith("RISKS:"):
             risks = [x.strip() for x in ln.split(":", 1)[1].split("|") if x.strip()][:3]
         elif upper.startswith("ACTIONS:"):
-            actions = [x.strip() for x in ln.split(":", 1)[1].split("|") if x.strip()][:3]
+            actions = [x.strip() for x in ln.split(":", 1)[1].split("|") if x.strip()][
+                :3
+            ]
     return _normalize_role_payload(
         role,
         task,
@@ -4472,8 +5306,14 @@ def _parse_role_tagged_text(role: str, task: str, text: str) -> Dict[str, Any]:
     )
 
 
-def _multi_agent_role_models(runtime: Dict[str, Any], force_fast: bool = True) -> List[str]:
-    available = [str(m).strip() for m in (runtime.get("available_models") or []) if str(m).strip()]
+def _multi_agent_role_models(
+    runtime: Dict[str, Any], force_fast: bool = True
+) -> List[str]:
+    available = [
+        str(m).strip()
+        for m in (runtime.get("available_models") or [])
+        if str(m).strip()
+    ]
     selected = str(runtime.get("model") or ollama_model()).strip()
     if force_fast:
         preferred = ["llama3.2:1b", "phi3:mini", "qwen2.5:1.5b", selected]
@@ -4510,7 +5350,9 @@ def _parse_role_output(role: str, task: str, raw: str) -> Dict[str, Any]:
     return _normalize_role_payload(role, task, {"summary": txt})
 
 
-def _agent_role_reason(role: str, task: str, session_id: str, force_fast: bool = True) -> Dict[str, Any]:
+def _agent_role_reason(
+    role: str, task: str, session_id: str, force_fast: bool = True
+) -> Dict[str, Any]:
     provider = os.getenv("LLM_PROVIDER", "").strip().lower()
     if not provider:
         if is_openai_configured():
@@ -4539,7 +5381,9 @@ def _agent_role_reason(role: str, task: str, session_id: str, force_fast: bool =
         "Each array may contain up to 3 concise items.\n"
         f"Task: {task}\n"
     )
-    base_timeout = max(8, min(int(os.getenv("JARVIS_MULTI_AGENT_ROLE_TIMEOUT_S", "40")), 180))
+    base_timeout = max(
+        8, min(int(os.getenv("JARVIS_MULTI_AGENT_ROLE_TIMEOUT_S", "40")), 180)
+    )
     attempts: List[Tuple[str, int]] = []
     errors: List[str] = []
     for model_name in models:
@@ -4594,7 +5438,7 @@ def _score_multi_agent_run(result: Dict[str, Any], latency_ms: int) -> Dict[str,
             values = role_data.get(key)
             if isinstance(values, list) and any(str(v).strip() for v in values):
                 structure_points += 1
-        for v in (role_data.get("actions") or []):
+        for v in role_data.get("actions") or []:
             if isinstance(v, str) and v.strip():
                 actions_flat.append(v.strip().lower())
 
@@ -4602,7 +5446,9 @@ def _score_multi_agent_run(result: Dict[str, Any], latency_ms: int) -> Dict[str,
     unique_actions = len(set(actions_flat))
     actionability_score = min(1.0, unique_actions / 6.0)
     latency_score = max(0.0, 1.0 - (latency_ms / 120000.0))
-    overall = (0.55 * structure_score) + (0.25 * actionability_score) + (0.20 * latency_score)
+    overall = (
+        (0.55 * structure_score) + (0.25 * actionability_score) + (0.20 * latency_score)
+    )
     return {
         "overall_score_pct": round(overall * 100.0, 1),
         "structure_score_pct": round(structure_score * 100.0, 1),
@@ -4626,9 +5472,15 @@ def _memory_quality_report(session_id: str, max_messages: int = 120) -> Dict[str
     assistant_msgs = [m.text for m in msgs if m.role == "assistant"]
     turn_balance = min(1.0, len(assistant_msgs) / max(1, len(user_msgs)))
     avg_user_len = sum(len(t) for t in user_msgs) / max(1, len(user_msgs))
-    avg_assistant_len = sum(len(t) for t in assistant_msgs) / max(1, len(assistant_msgs))
-    user_unique_ratio = len(set(t.strip().lower() for t in user_msgs if t.strip())) / max(1, len(user_msgs))
-    assistant_unique_ratio = len(set(t.strip().lower() for t in assistant_msgs if t.strip())) / max(1, len(assistant_msgs))
+    avg_assistant_len = sum(len(t) for t in assistant_msgs) / max(
+        1, len(assistant_msgs)
+    )
+    user_unique_ratio = len(
+        set(t.strip().lower() for t in user_msgs if t.strip())
+    ) / max(1, len(user_msgs))
+    assistant_unique_ratio = len(
+        set(t.strip().lower() for t in assistant_msgs if t.strip())
+    ) / max(1, len(assistant_msgs))
 
     # Lightweight coherence signal: assistant response length should not collapse.
     coherence = min(1.0, avg_assistant_len / max(80.0, avg_user_len))
@@ -4686,7 +5538,9 @@ def _extract_memory_candidate(message: str) -> Optional[Dict[str, Any]]:
             "memory_type": "preference",
             "source": "chat",
         }
-    if "project" in lower and any(k in lower for k in ["working on", "building", "my project"]):
+    if "project" in lower and any(
+        k in lower for k in ["working on", "building", "my project"]
+    ):
         return {
             "content": raw,
             "tags": ["project"],
@@ -4702,7 +5556,11 @@ def _memory_context_for_prompt(message: str, limit: int = 4) -> str:
     bundle = _task_memory.memory_context_bundle(query=message, limit=max(4, limit))
     matches = bundle.get("items") or []
     active_workspace_id = _task_memory.get_active_workspace_id()
-    workspace = _task_memory.get_project_workspace(active_workspace_id) if active_workspace_id else None
+    workspace = (
+        _task_memory.get_project_workspace(active_workspace_id)
+        if active_workspace_id
+        else None
+    )
     if not matches and not workspace:
         return ""
     lines = []
@@ -4711,13 +5569,17 @@ def _memory_context_for_prompt(message: str, limit: int = 4) -> str:
         tag_txt = f" [{', '.join(tags[:3])}]" if tags else ""
         type_txt = str(item.get("memory_type") or "general")
         score_txt = item.get("effective_importance")
-        score_label = f" (score {score_txt})" if isinstance(score_txt, (int, float)) else ""
+        score_label = (
+            f" (score {score_txt})" if isinstance(score_txt, (int, float)) else ""
+        )
         lines.append(f"- ({type_txt}) {item.get('content')}{tag_txt}{score_label}")
     profile = bundle.get("profile") or []
     projects = bundle.get("projects") or []
     sections: List[str] = []
     if profile:
-        sections.append("User profile memory:\n" + "\n".join(lines[: min(3, len(lines))]))
+        sections.append(
+            "User profile memory:\n" + "\n".join(lines[: min(3, len(lines))])
+        )
     if projects:
         proj_lines = []
         for item in projects[:2]:
@@ -4735,16 +5597,21 @@ def _memory_context_for_prompt(message: str, limit: int = 4) -> str:
     return "\n\n".join([s for s in sections if s.strip()])
 
 
-def _format_memory_group(title: str, items: List[Dict[str, Any]], limit: int = 6) -> str:
+def _format_memory_group(
+    title: str, items: List[Dict[str, Any]], limit: int = 6
+) -> str:
     if not items:
         return f"{title}: none saved yet."
     lines = [title + ":"]
     for item in items[:limit]:
         type_txt = str(item.get("memory_type") or "general")
         score_txt = item.get("effective_importance")
-        score_label = f" (score {score_txt})" if isinstance(score_txt, (int, float)) else ""
+        score_label = (
+            f" (score {score_txt})" if isinstance(score_txt, (int, float)) else ""
+        )
         lines.append(f"- ({type_txt}) {item.get('content')}{score_label}")
     return "\n".join(lines)
+
 
 def _ocr_from_image(img: Image.Image) -> Dict[str, Any]:
     if pytesseract is None:
@@ -4761,7 +5628,9 @@ def _ocr_from_image(img: Image.Image) -> Dict[str, Any]:
         texts: List[str] = []
         confs: List[float] = []
         boxes: List[Dict[str, Any]] = []
-        for idx, (text, conf) in enumerate(zip(data.get("text", []), data.get("conf", []))):
+        for idx, (text, conf) in enumerate(
+            zip(data.get("text", []), data.get("conf", []))
+        ):
             t = str(text or "").strip()
             try:
                 c = float(conf)
@@ -4793,9 +5662,20 @@ def _ocr_from_image(img: Image.Image) -> Dict[str, Any]:
                 )
         combined = " ".join(texts).strip()
         confidence = round(sum(confs) / len(confs), 1) if confs else None
-        return {"text": combined, "confidence": confidence, "engine": "tesseract", "boxes": boxes}
+        return {
+            "text": combined,
+            "confidence": confidence,
+            "engine": "tesseract",
+            "boxes": boxes,
+        }
     except Exception as exc:
-        return {"text": "", "confidence": None, "engine": "tesseract", "boxes": [], "error": str(exc)}
+        return {
+            "text": "",
+            "confidence": None,
+            "engine": "tesseract",
+            "boxes": [],
+            "error": str(exc),
+        }
 
 
 def _pick_ollama_vision_model() -> Optional[str]:
@@ -4814,7 +5694,9 @@ def _pick_ollama_vision_model() -> Optional[str]:
     return None
 
 
-def _multimodal_vision_reasoning(data: bytes, *, ocr_text: str = "", prompt: Optional[str] = None) -> Dict[str, Any]:
+def _multimodal_vision_reasoning(
+    data: bytes, *, ocr_text: str = "", prompt: Optional[str] = None
+) -> Dict[str, Any]:
     prompt_text = (prompt or "").strip() or (
         "Analyze this screenshot or image for Jarvis. "
         "Describe what is visible, the likely context, and any actionable signals in 3 short sentences."
@@ -4836,7 +5718,11 @@ def _multimodal_vision_reasoning(data: bytes, *, ocr_text: str = "", prompt: Opt
 
     if provider == "openai" and is_openai_configured():
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
-        model = str(runtime.get("model") or os.getenv("OPENAI_VISION_MODEL", "").strip() or os.getenv("OPENAI_MODEL", "gpt-4.1"))
+        model = str(
+            runtime.get("model")
+            or os.getenv("OPENAI_VISION_MODEL", "").strip()
+            or os.getenv("OPENAI_MODEL", "gpt-4.1")
+        )
         try:
             text = openai_vision_analyze(
                 api_key=api_key,
@@ -4848,7 +5734,12 @@ def _multimodal_vision_reasoning(data: bytes, *, ocr_text: str = "", prompt: Opt
             if text.strip():
                 return {"summary": text.strip(), "provider": "openai", "model": model}
         except Exception as exc:
-            return {"summary": "", "provider": "openai", "model": model, "error": str(exc)}
+            return {
+                "summary": "",
+                "provider": "openai",
+                "model": model,
+                "error": str(exc),
+            }
 
     if is_ollama_configured():
         model = str(runtime.get("model") or _pick_ollama_vision_model() or "")
@@ -4863,14 +5754,29 @@ def _multimodal_vision_reasoning(data: bytes, *, ocr_text: str = "", prompt: Opt
                     timeout_s=int(os.getenv("OLLAMA_VISION_TIMEOUT_S", "120")),
                 )
                 if text.strip():
-                    return {"summary": text.strip(), "provider": "ollama", "model": model}
+                    return {
+                        "summary": text.strip(),
+                        "provider": "ollama",
+                        "model": model,
+                    }
             except Exception as exc:
-                return {"summary": "", "provider": "ollama", "model": model, "error": str(exc)}
+                return {
+                    "summary": "",
+                    "provider": "ollama",
+                    "model": model,
+                    "error": str(exc),
+                }
 
-    return {"summary": "", "provider": provider or "none", "model": runtime.get("model")}
+    return {
+        "summary": "",
+        "provider": provider or "none",
+        "model": runtime.get("model"),
+    }
 
 
-def _vision_summary_from_image(data: bytes, prompt: Optional[str] = None) -> Dict[str, Any]:
+def _vision_summary_from_image(
+    data: bytes, prompt: Optional[str] = None
+) -> Dict[str, Any]:
     img = Image.open(BytesIO(data))
     img = img.convert("RGB")
     width, height = img.size
@@ -4885,7 +5791,7 @@ def _vision_summary_from_image(data: bytes, prompt: Optional[str] = None) -> Dic
     for count, color_index in sorted(color_counts, reverse=True)[:3]:
         base = int(color_index) * 3
         if base + 2 < len(palette):
-            rgb = palette[base: base + 3]
+            rgb = palette[base : base + 3]
             top_colors.append("#%02x%02x%02x" % (rgb[0], rgb[1], rgb[2]))
 
     orientation = "landscape" if width >= height else "portrait"
@@ -4895,7 +5801,9 @@ def _vision_summary_from_image(data: bytes, prompt: Optional[str] = None) -> Dic
         f"Overall scene appears {mood} with dominant colors {', '.join(top_colors) or 'unavailable'}."
     )
     ocr = _ocr_from_image(img)
-    multimodal = _multimodal_vision_reasoning(data, ocr_text=str(ocr.get("text") or ""), prompt=prompt)
+    multimodal = _multimodal_vision_reasoning(
+        data, ocr_text=str(ocr.get("text") or ""), prompt=prompt
+    )
     summary_parts = [heuristic_summary]
     if str(ocr.get("text") or "").strip():
         preview = str(ocr["text"]).strip().replace("\n", " ")
@@ -4919,12 +5827,20 @@ def _vision_summary_from_image(data: bytes, prompt: Optional[str] = None) -> Dic
         "multimodal_provider": multimodal.get("provider"),
         "multimodal_model": multimodal.get("model"),
         "multimodal_error": multimodal.get("error"),
-        "vision_mode": "multimodal+ocr" if str(multimodal.get("summary") or "").strip() else "heuristic+ocr",
+        "vision_mode": "multimodal+ocr"
+        if str(multimodal.get("summary") or "").strip()
+        else "heuristic+ocr",
     }
     return {"summary": summary, "details": details}
 
 
-def _watcher_result_base(job: Dict[str, Any], watcher_type: str, workspace_id: Optional[int], limit: int, min_score: float) -> Dict[str, Any]:
+def _watcher_result_base(
+    job: Dict[str, Any],
+    watcher_type: str,
+    workspace_id: Optional[int],
+    limit: int,
+    min_score: float,
+) -> Dict[str, Any]:
     return {
         "ok": True,
         "mode": "watcher",
@@ -4948,22 +5864,36 @@ def _watcher_trigger_level(triggers: List[Dict[str, Any]], *, min_score: float) 
 
 def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
     metadata = job.get("metadata") or {}
-    watcher_type = str(metadata.get("watcher_type") or "project").strip().lower() or "project"
-    workspace_id = metadata.get("workspace_id") or _task_memory.get_active_workspace_id()
+    watcher_type = (
+        str(metadata.get("watcher_type") or "project").strip().lower() or "project"
+    )
+    workspace_id = (
+        metadata.get("workspace_id") or _task_memory.get_active_workspace_id()
+    )
     limit = max(1, min(int(metadata.get("limit") or 3), 6))
     min_score = float(metadata.get("min_score") or 6.0)
     base = _watcher_result_base(job, watcher_type, workspace_id, limit, min_score)
 
     if watcher_type == "project":
-        next_actions = _task_memory.next_best_actions(workspace_id=workspace_id, limit=max(limit + 2, 5))
+        next_actions = _task_memory.next_best_actions(
+            workspace_id=workspace_id, limit=max(limit + 2, 5)
+        )
         actions = list(next_actions.get("actions") or [])
-        triggers = [item for item in actions if float(item.get("score") or 0.0) >= min_score]
+        triggers = [
+            item for item in actions if float(item.get("score") or 0.0) >= min_score
+        ]
         generated_created: List[Dict[str, Any]] = []
         if not triggers:
-            generated = _task_memory.generate_proactive_reminders(workspace_id=workspace_id, limit=3)
-            next_actions = _task_memory.next_best_actions(workspace_id=workspace_id, limit=max(limit + 2, 5))
+            generated = _task_memory.generate_proactive_reminders(
+                workspace_id=workspace_id, limit=3
+            )
+            next_actions = _task_memory.next_best_actions(
+                workspace_id=workspace_id, limit=max(limit + 2, 5)
+            )
             actions = list(next_actions.get("actions") or [])
-            triggers = [item for item in actions if float(item.get("score") or 0.0) >= min_score]
+            triggers = [
+                item for item in actions if float(item.get("score") or 0.0) >= min_score
+            ]
             generated_created = generated.get("created") or []
         if not triggers:
             return base | {
@@ -4993,7 +5923,9 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
         now = datetime.now(timezone.utc)
         upcoming = []
         for event in _calendar_events_get():
-            starts = _parse_iso_dt(event.get("starts_at") if isinstance(event, dict) else None)
+            starts = _parse_iso_dt(
+                event.get("starts_at") if isinstance(event, dict) else None
+            )
             if starts is None:
                 continue
             if starts.tzinfo is None:
@@ -5004,7 +5936,9 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
                 enriched["hours_until"] = round(hours, 2)
                 upcoming.append(enriched)
         upcoming.sort(key=lambda item: float(item.get("hours_until") or 999))
-        triggers = [item for item in upcoming if float(item.get("hours_until") or 999) <= 2.0]
+        triggers = [
+            item for item in upcoming if float(item.get("hours_until") or 999) <= 2.0
+        ]
         if not triggers:
             return base | {
                 "triggered": False,
@@ -5028,8 +5962,14 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     if watcher_type == "email":
-        reminders = _task_memory.list_proactive_reminders(limit=12, status="open", workspace_id=workspace_id, due_within_hours=48)
-        triggers = [item for item in reminders if str(item.get("priority") or "").lower() in {"critical", "high"}]
+        reminders = _task_memory.list_proactive_reminders(
+            limit=12, status="open", workspace_id=workspace_id, due_within_hours=48
+        )
+        triggers = [
+            item
+            for item in reminders
+            if str(item.get("priority") or "").lower() in {"critical", "high"}
+        ]
         if not triggers:
             return base | {
                 "triggered": False,
@@ -5050,10 +5990,14 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
 
     if watcher_type == "desktop":
         awareness = _desktop_awareness_payload(workspace_id=workspace_id)
-        next_actions = _task_memory.next_best_actions(workspace_id=workspace_id, limit=max(limit, 4))
+        next_actions = _task_memory.next_best_actions(
+            workspace_id=workspace_id, limit=max(limit, 4)
+        )
         actions = list(next_actions.get("actions") or [])
         focus_mode = str(awareness.get("focus_mode") or "standby")
-        triggers = [item for item in actions if float(item.get("score") or 0.0) >= min_score]
+        triggers = [
+            item for item in actions if float(item.get("score") or 0.0) >= min_score
+        ]
         if focus_mode not in {"coding", "communication", "meeting"} and not triggers:
             return base | {
                 "triggered": False,
@@ -5068,15 +6012,28 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
             "awareness": awareness,
             "triggers": triggers[:limit],
             "next_actions": actions[:limit],
-            "escalation": _watcher_trigger_level(triggers or [{"score": min_score + 1}], min_score=min_score),
+            "escalation": _watcher_trigger_level(
+                triggers or [{"score": min_score + 1}], min_score=min_score
+            ),
         }
 
     if watcher_type == "github":
         intel = _integration_intelligence()
-        next_actions = _task_memory.next_best_actions(workspace_id=workspace_id, limit=max(limit, 4))
+        next_actions = _task_memory.next_best_actions(
+            workspace_id=workspace_id, limit=max(limit, 4)
+        )
         actions = list(next_actions.get("actions") or [])
-        github_recos = [item for item in list(intel.get("recommendations") or []) if str(item.get("channel") or "") == "github"]
-        triggers = [item for item in actions if float(item.get("score") or 0.0) >= min_score and str(item.get("source") or "") in {"trust", "project", "policy"}]
+        github_recos = [
+            item
+            for item in list(intel.get("recommendations") or [])
+            if str(item.get("channel") or "") == "github"
+        ]
+        triggers = [
+            item
+            for item in actions
+            if float(item.get("score") or 0.0) >= min_score
+            and str(item.get("source") or "") in {"trust", "project", "policy"}
+        ]
         if not github_recos and not triggers:
             return base | {
                 "triggered": False,
@@ -5091,7 +6048,9 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
             "recommendations": github_recos,
             "triggers": triggers[:limit],
             "next_actions": actions[:limit],
-            "escalation": _watcher_trigger_level(triggers or [{"score": min_score + 0.5}], min_score=min_score),
+            "escalation": _watcher_trigger_level(
+                triggers or [{"score": min_score + 0.5}], min_score=min_score
+            ),
         }
 
     return base | {
@@ -5106,12 +6065,16 @@ def _execute_autonomous_job(job: Dict[str, Any]) -> Dict[str, Any]:
     goal = str(job.get("goal") or "").strip()
     session_id = job.get("session_id")
     if mode == "goal":
-        return _execute_goal_run(goal=goal, session_id=session_id, auto_approve=bool(job.get("auto_approve")))
+        return _execute_goal_run(
+            goal=goal, session_id=session_id, auto_approve=bool(job.get("auto_approve"))
+        )
     if mode == "briefing":
         metadata = job.get("metadata") or {}
         period = str(metadata.get("period") or "morning")
         recent_project_hours = metadata.get("recent_project_hours")
-        briefing = _task_memory.memory_briefing(period=period, recent_project_hours=recent_project_hours)
+        briefing = _task_memory.memory_briefing(
+            period=period, recent_project_hours=recent_project_hours
+        )
         reminders = _task_memory.generate_proactive_reminders(
             workspace_id=_task_memory.get_active_workspace_id(),
             limit=3,
@@ -5131,13 +6094,20 @@ def _execute_autonomous_job(job: Dict[str, Any]) -> Dict[str, Any]:
         }
     if mode == "watcher":
         return _run_project_watcher(job)
-    return run_multi_agent(MultiAgentRunRequest(task=goal, session_id=session_id, fast_synthesis=True))
+    return run_multi_agent(
+        MultiAgentRunRequest(task=goal, session_id=session_id, fast_synthesis=True)
+    )
 
 
-def _operator_from_roles(task: str, planner: Dict[str, Any], coder: Dict[str, Any], researcher: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def _operator_from_roles(
+    task: str,
+    planner: Dict[str, Any],
+    coder: Dict[str, Any],
+    researcher: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     actions: List[str] = []
     for role_data in [planner, coder, researcher or {}]:
-        for a in (role_data.get("actions") or []):
+        for a in role_data.get("actions") or []:
             if isinstance(a, str) and a.strip() and a.strip() not in actions:
                 actions.append(a.strip())
     plan = [
@@ -5151,12 +6121,15 @@ def _operator_from_roles(task: str, planner: Dict[str, Any], coder: Dict[str, An
         {
             "summary": "Convert role outputs into an execution-ready operational plan.",
             "plan": plan,
-            "actions": actions[:3] or ["Create an execution checklist and start with the highest-risk fix"],
+            "actions": actions[:3]
+            or ["Create an execution checklist and start with the highest-risk fix"],
         },
     ) | {"model": "synthesized"}
 
 
-def _needs_deep_synthesis(task: str, planner: Dict[str, Any], coder: Dict[str, Any]) -> bool:
+def _needs_deep_synthesis(
+    task: str, planner: Dict[str, Any], coder: Dict[str, Any]
+) -> bool:
     t = (task or "").lower()
     deep_markers = [
         "research",
@@ -5215,7 +6188,7 @@ def set_profile(payload: AgentProfileUpdateRequest):
 
 @router.get("/llm/config")
 def get_llm_config():
-    provider = (os.getenv("LLM_PROVIDER", "").strip().lower() or "auto")
+    provider = os.getenv("LLM_PROVIDER", "").strip().lower() or "auto"
     ollama_runtime = _effective_ollama_runtime()
     return {
         "provider": provider,
@@ -5232,7 +6205,9 @@ def set_llm_config(payload: AgentLlmConfigRequest):
     mode = _set_llm_mode(payload.mode)
     model = _set_llm_model_override(payload.model)
     runtime = _effective_ollama_runtime()
-    _audit_quantum_op("llm_config_set", "ok", {"mode": mode, "model": model or runtime.get("model")})
+    _audit_quantum_op(
+        "llm_config_set", "ok", {"mode": mode, "model": model or runtime.get("model")}
+    )
     return {
         "ok": True,
         "mode": mode,
@@ -5252,7 +6227,11 @@ def set_vision_config(payload: AgentVisionConfigRequest):
     provider = _set_vision_provider(payload.provider)
     model = _set_vision_model_override(payload.model)
     runtime = _effective_vision_runtime()
-    _audit_quantum_op("vision_config_set", "ok", {"provider": provider, "model": model or runtime.get("model")})
+    _audit_quantum_op(
+        "vision_config_set",
+        "ok",
+        {"provider": provider, "model": model or runtime.get("model")},
+    )
     return {
         "ok": True,
         "provider": runtime.get("provider"),
@@ -5305,7 +6284,9 @@ def activate_advanced_features():
             auto_approve=True,
             enabled=True,
         )
-        created.append({"id": sid, "goal": d["goal"], "interval_minutes": d["interval_minutes"]})
+        created.append(
+            {"id": sid, "goal": d["goal"], "interval_minutes": d["interval_minutes"]}
+        )
 
     _audit_quantum_op(
         "activate_advanced",
@@ -5373,16 +6354,25 @@ def self_test():
     if _is_truthy(os.getenv("JARVIS_ALLOW_WRITE", "")):
         _record(
             "write_file",
-            lambda: _TOOLS["write_file"].handler({"path": "data/self_test.txt", "content": "ok"}),
+            lambda: _TOOLS["write_file"].handler(
+                {"path": "data/self_test.txt", "content": "ok"}
+            ),
         )
     if _is_truthy(os.getenv("JARVIS_ALLOW_REPO_WRITE", "")):
         _record(
             "repo_write_file",
-            lambda: _TOOLS["repo_write_file"].handler({"path": "scratch/self_test_repo.txt", "content": "ok"}),
+            lambda: _TOOLS["repo_write_file"].handler(
+                {"path": "scratch/self_test_repo.txt", "content": "ok"}
+            ),
         )
 
     passed = sum(1 for t in tests if t.get("ok"))
-    return {"ok": passed == len(tests), "passed": passed, "total": len(tests), "tests": tests}
+    return {
+        "ok": passed == len(tests),
+        "passed": passed,
+        "total": len(tests),
+        "tests": tests,
+    }
 
 
 @router.get("/quantum/status")
@@ -5413,7 +6403,9 @@ def quantum_superposition(payload: QuantumSuperpositionRequest):
 
 @router.post("/quantum/entangle")
 def quantum_entangle(payload: QuantumEntangleRequest):
-    return _tool_quantum_entangle({"system_a": payload.system_a, "system_b": payload.system_b})
+    return _tool_quantum_entangle(
+        {"system_a": payload.system_a, "system_b": payload.system_b}
+    )
 
 
 @router.post("/quantum/measure")
@@ -5446,14 +6438,23 @@ def quantum_alerts():
     cfg = _get_quantum_alert_config()
     evaluation = _evaluate_quantum_alerts(cfg)
     _sync_incidents_from_alerts(evaluation["alerts"])
-    return {"config": cfg, "active": evaluation["active"], "alerts": evaluation["alerts"], "stats": evaluation["stats"]}
+    return {
+        "config": cfg,
+        "active": evaluation["active"],
+        "alerts": evaluation["alerts"],
+        "stats": evaluation["stats"],
+    }
 
 
 @router.post("/quantum/alerts/config")
 def quantum_alerts_config(payload: QuantumAlertConfigRequest):
     cfg = _set_quantum_alert_config(payload.model_dump())
     evaluation = _evaluate_quantum_alerts(cfg)
-    return {"config": cfg, "active": evaluation["active"], "alerts": evaluation["alerts"]}
+    return {
+        "config": cfg,
+        "active": evaluation["active"],
+        "alerts": evaluation["alerts"],
+    }
 
 
 def _to_csv(rows: List[Dict[str, Any]], *, columns: List[str]) -> str:
@@ -5477,7 +6478,9 @@ def _parse_iso_datetime(value: Optional[str], *, field_name: str) -> Optional[da
     try:
         dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid {field_name}; expected ISO-8601 datetime") from exc
+        raise HTTPException(
+            status_code=400, detail=f"Invalid {field_name}; expected ISO-8601 datetime"
+        ) from exc
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
@@ -5527,7 +6530,9 @@ def _bucket_start(dt: datetime, bucket_minutes: int) -> datetime:
     return dt.replace(minute=minute, second=0, microsecond=0)
 
 
-def _quantum_timeline(events: List[Dict[str, Any]], *, hours: int, bucket_minutes: int) -> Dict[str, Any]:
+def _quantum_timeline(
+    events: List[Dict[str, Any]], *, hours: int, bucket_minutes: int
+) -> Dict[str, Any]:
     bm = max(1, min(int(bucket_minutes), 240))
     buckets: Dict[str, Dict[str, Any]] = {}
     for e in events:
@@ -5537,7 +6542,13 @@ def _quantum_timeline(events: List[Dict[str, Any]], *, hours: int, bucket_minute
         key = _bucket_start(dt, bm).isoformat()
         row = buckets.setdefault(
             key,
-            {"ts": key, "events": 0, "measurements": 0, "entangles": 0, "superpositions": 0},
+            {
+                "ts": key,
+                "events": 0,
+                "measurements": 0,
+                "entangles": 0,
+                "superpositions": 0,
+            },
         )
         row["events"] += 1
         et = str(e.get("event_type") or "")
@@ -5562,7 +6573,9 @@ def _compute_z_scores(values: List[float]) -> List[float]:
     return [(v - mean) / std for v in values]
 
 
-def _quantum_anomalies(events: List[Dict[str, Any]], *, hours: int, z_threshold: float = 2.0) -> Dict[str, Any]:
+def _quantum_anomalies(
+    events: List[Dict[str, Any]], *, hours: int, z_threshold: float = 2.0
+) -> Dict[str, Any]:
     timeline = _quantum_timeline(events, hours=hours, bucket_minutes=60)
     values = [float(p["events"]) for p in timeline["points"]]
     zscores = _compute_z_scores(values)
@@ -5586,12 +6599,16 @@ def _quantum_anomalies(events: List[Dict[str, Any]], *, hours: int, z_threshold:
     }
 
 
-def _quantum_basis_analysis(events: List[Dict[str, Any]], *, hours: int) -> Dict[str, Any]:
+def _quantum_basis_analysis(
+    events: List[Dict[str, Any]], *, hours: int
+) -> Dict[str, Any]:
     measurements = [e for e in events if e.get("event_type") == "measurement"]
     by_basis: Dict[str, Dict[str, Any]] = {}
     for m in measurements:
         basis = str(m.get("measurement_basis") or "unknown")
-        row = by_basis.setdefault(basis, {"basis": basis, "count": 0, "ones": 0, "zeros": 0, "other": 0})
+        row = by_basis.setdefault(
+            basis, {"basis": basis, "count": 0, "ones": 0, "zeros": 0, "other": 0}
+        )
         row["count"] += 1
         outcome = m.get("outcome")
         if outcome == 1:
@@ -5609,7 +6626,11 @@ def _quantum_basis_analysis(events: List[Dict[str, Any]], *, hours: int) -> Dict
     if measurements:
         ones = sum(1 for m in measurements if m.get("outcome") == 1)
         global_ratio = (ones / len(measurements)) * 100.0
-    return {"window_hours": hours, "global_outcome_one_ratio_pct": round(global_ratio, 2), "bases": rows}
+    return {
+        "window_hours": hours,
+        "global_outcome_one_ratio_pct": round(global_ratio, 2),
+        "bases": rows,
+    }
 
 
 def _quantum_health_score(
@@ -5648,7 +6669,15 @@ def _quantum_health_score(
             score -= 8.0
             reasons.append("Average entanglement strength below 0.90.")
     score = max(0.0, min(100.0, score))
-    tier = "excellent" if score >= 85 else "good" if score >= 70 else "degraded" if score >= 50 else "critical"
+    tier = (
+        "excellent"
+        if score >= 85
+        else "good"
+        if score >= 70
+        else "degraded"
+        if score >= 50
+        else "critical"
+    )
     return {"score": round(score, 1), "tier": tier, "reasons": reasons}
 
 
@@ -5663,9 +6692,17 @@ def _minimal_pdf_bytes(title: str, lines: List[str]) -> bytes:
     objs: List[bytes] = []
     objs.append(b"1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n")
     objs.append(b"2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n")
-    objs.append(b"3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj\n")
-    objs.append(b"4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n")
-    objs.append(f"5 0 obj << /Length {len(stream_bytes)} >> stream\n".encode("utf-8") + stream_bytes + b"\nendstream endobj\n")
+    objs.append(
+        b"3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj\n"
+    )
+    objs.append(
+        b"4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n"
+    )
+    objs.append(
+        f"5 0 obj << /Length {len(stream_bytes)} >> stream\n".encode("utf-8")
+        + stream_bytes
+        + b"\nendstream endobj\n"
+    )
 
     out = b"%PDF-1.4\n"
     offsets = [0]
@@ -5677,7 +6714,9 @@ def _minimal_pdf_bytes(title: str, lines: List[str]) -> bytes:
     out += b"0000000000 65535 f \n"
     for off in offsets[1:]:
         out += f"{off:010d} 00000 n \n".encode("utf-8")
-    out += f"trailer << /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF\n".encode("utf-8")
+    out += f"trailer << /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF\n".encode(
+        "utf-8"
+    )
     return out
 
 
@@ -5783,9 +6822,30 @@ def _set_quantum_rbac_config(data: Dict[str, Any]) -> Dict[str, Any]:
 def _quantum_allowed_actions_for_role(role: str) -> List[str]:
     role_norm = str(role or "operator").lower()
     if role_norm == "admin":
-        return ["view", "dispatch_notifications", "simulate", "runbook", "annotate", "incident_manage", "remediate", "policy_apply", "playbook_run", "rbac_manage"]
+        return [
+            "view",
+            "dispatch_notifications",
+            "simulate",
+            "runbook",
+            "annotate",
+            "incident_manage",
+            "remediate",
+            "policy_apply",
+            "playbook_run",
+            "rbac_manage",
+        ]
     if role_norm == "operator":
-        return ["view", "dispatch_notifications", "simulate", "runbook", "annotate", "incident_manage", "remediate", "policy_apply", "playbook_run"]
+        return [
+            "view",
+            "dispatch_notifications",
+            "simulate",
+            "runbook",
+            "annotate",
+            "incident_manage",
+            "remediate",
+            "policy_apply",
+            "playbook_run",
+        ]
     return ["view"]
 
 
@@ -5796,11 +6856,19 @@ def _require_quantum_action(action: str) -> str:
     if action == "rbac_manage" and _current_profile() == "full":
         return role
     if action not in allowed:
-        raise HTTPException(status_code=403, detail=f"rbac denied for action '{action}' with role '{role}'")
+        raise HTTPException(
+            status_code=403,
+            detail=f"rbac denied for action '{action}' with role '{role}'",
+        )
     return role
 
 
-def _dispatch_webhook_notification(config: Dict[str, Any], payload: Dict[str, Any], *, url_override: Optional[str] = None) -> Dict[str, Any]:
+def _dispatch_webhook_notification(
+    config: Dict[str, Any],
+    payload: Dict[str, Any],
+    *,
+    url_override: Optional[str] = None,
+) -> Dict[str, Any]:
     if not bool(config.get("enabled")):
         return {"sent": False, "reason": "notifications disabled"}
     url = str(url_override or config.get("webhook_url") or "").strip()
@@ -5827,7 +6895,9 @@ def _dispatch_webhook_notification(config: Dict[str, Any], payload: Dict[str, An
 
 def _audit_quantum_op(op_type: str, status: str, details: Dict[str, Any]) -> None:
     try:
-        _task_memory.add_quantum_ops_audit(op_type=op_type, status=status, details=details)
+        _task_memory.add_quantum_ops_audit(
+            op_type=op_type, status=status, details=details
+        )
     except Exception:
         pass
 
@@ -5841,17 +6911,29 @@ def _discord_embed_color_for_severity(severity: str) -> int:
     return 3066993  # green-ish
 
 
-def _notification_payload_for_channel(config: Dict[str, Any], payload: Dict[str, Any], *, severity: Optional[str] = None) -> Dict[str, Any]:
+def _notification_payload_for_channel(
+    config: Dict[str, Any], payload: Dict[str, Any], *, severity: Optional[str] = None
+) -> Dict[str, Any]:
     channel = str(config.get("channel") or "generic").lower()
     if channel == "slack":
-        text = payload.get("message") or payload.get("kind") or "Jarvis Quantum Notification"
+        text = (
+            payload.get("message")
+            or payload.get("kind")
+            or "Jarvis Quantum Notification"
+        )
         if payload.get("alerts"):
             text = f"{text}: {len(payload.get('alerts') or [])} alert(s)"
         return {"text": str(text), "jarvis_payload": payload}
     if channel == "discord":
         sev = str(severity or payload.get("severity") or "warning").lower()
-        title = payload.get("message") or payload.get("kind") or "Jarvis Quantum Notification"
-        alerts = payload.get("alerts") if isinstance(payload.get("alerts"), list) else []
+        title = (
+            payload.get("message")
+            or payload.get("kind")
+            or "Jarvis Quantum Notification"
+        )
+        alerts = (
+            payload.get("alerts") if isinstance(payload.get("alerts"), list) else []
+        )
         fields: List[Dict[str, Any]] = []
         for a in alerts[:8]:
             fields.append(
@@ -5887,7 +6969,9 @@ def _webhook_for_severity(config: Dict[str, Any], severity: Optional[str]) -> st
     return default
 
 
-def _dispatch_configured_notification(config: Dict[str, Any], payload: Dict[str, Any], *, severity: Optional[str] = None) -> Dict[str, Any]:
+def _dispatch_configured_notification(
+    config: Dict[str, Any], payload: Dict[str, Any], *, severity: Optional[str] = None
+) -> Dict[str, Any]:
     target_url = _webhook_for_severity(config, severity)
     wrapped = _notification_payload_for_channel(config, payload, severity=severity)
     return _dispatch_webhook_notification(config, wrapped, url_override=target_url)
@@ -5908,7 +6992,9 @@ def _memory_saved_filters_get() -> List[Dict[str, Any]]:
                             "name": str(item.get("name") or "").strip()[:60],
                             "query": str(item.get("query") or "").strip()[:160],
                             "tag": str(item.get("tag") or "").strip()[:60],
-                            "memory_type": str(item.get("memory_type") or "").strip()[:40],
+                            "memory_type": str(item.get("memory_type") or "").strip()[
+                                :40
+                            ],
                         }
                     )
             return [item for item in items if item["name"]]
@@ -5971,14 +7057,19 @@ def _set_briefing_delivery_config(data: Dict[str, Any]) -> Dict[str, Any]:
     for field_name in ["discord_webhook_url", "mobile_push_url"]:
         value = str(cfg.get(field_name) or "").strip()
         if value and not (value.startswith("http://") or value.startswith("https://")):
-            raise HTTPException(status_code=400, detail=f"{field_name} must start with http:// or https://")
+            raise HTTPException(
+                status_code=400,
+                detail=f"{field_name} must start with http:// or https://",
+            )
         cfg[field_name] = value
     cfg["email_to"] = str(cfg.get("email_to") or "").strip()
     _task_memory.set_setting("memory_briefing_delivery_config", json.dumps(cfg))
     return cfg
 
 
-def _dispatch_briefing_discord(webhook_url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+def _dispatch_briefing_discord(
+    webhook_url: str, payload: Dict[str, Any]
+) -> Dict[str, Any]:
     config = {"enabled": True, "channel": "discord", "webhook_url": webhook_url}
     wrapped = {
         "message": payload.get("text") or "Jarvis briefing update",
@@ -5991,10 +7082,14 @@ def _dispatch_briefing_discord(webhook_url: str, payload: Dict[str, Any]) -> Dic
         ],
         "severity": "info",
     }
-    return _dispatch_webhook_notification(config, _notification_payload_for_channel(config, wrapped, severity="info"))
+    return _dispatch_webhook_notification(
+        config, _notification_payload_for_channel(config, wrapped, severity="info")
+    )
 
 
-def _dispatch_briefing_email(email_to: str, subject: str, body_text: str) -> Dict[str, Any]:
+def _dispatch_briefing_email(
+    email_to: str, subject: str, body_text: str
+) -> Dict[str, Any]:
     host = str(os.getenv("SMTP_HOST") or "").strip()
     port = int(str(os.getenv("SMTP_PORT") or "587").strip() or "587")
     username = str(os.getenv("SMTP_USER") or "").strip()
@@ -6020,19 +7115,27 @@ def _dispatch_briefing_email(email_to: str, subject: str, body_text: str) -> Dic
         return {"sent": False, "error": str(exc)}
 
 
-def _dispatch_briefing_mobile(push_url: str, payload: Dict[str, Any], channel: str = "ntfy") -> Dict[str, Any]:
+def _dispatch_briefing_mobile(
+    push_url: str, payload: Dict[str, Any], channel: str = "ntfy"
+) -> Dict[str, Any]:
     text = str(payload.get("text") or "Jarvis briefing update")
     headers = {"User-Agent": "JarvisAI-Briefing/1.0"}
     data = text.encode("utf-8")
     if str(channel or "ntfy").lower() == "ntfy":
-        headers["Title"] = f"Jarvis {str(payload.get('period') or 'briefing').title()} Briefing"
+        headers["Title"] = (
+            f"Jarvis {str(payload.get('period') or 'briefing').title()} Briefing"
+        )
         headers["Priority"] = "default"
         headers["Tags"] = "jarvis,memo"
-        req = urlrequest.Request(url=push_url, data=data, method="POST", headers=headers)
+        req = urlrequest.Request(
+            url=push_url, data=data, method="POST", headers=headers
+        )
     else:
         body = json.dumps(payload).encode("utf-8")
         headers["Content-Type"] = "application/json"
-        req = urlrequest.Request(url=push_url, data=body, method="POST", headers=headers)
+        req = urlrequest.Request(
+            url=push_url, data=body, method="POST", headers=headers
+        )
     try:
         with urlrequest.urlopen(req, timeout=5) as resp:
             status = int(getattr(resp, "status", 200))
@@ -6054,11 +7157,29 @@ def _dispatch_briefing_deliveries(briefing: Dict[str, Any]) -> Dict[str, Any]:
     }
     subject = f"Jarvis {str(briefing.get('period') or 'briefing').title()} Briefing"
     results: List[Dict[str, Any]] = []
-    if bool(cfg.get("discord_enabled")) and str(cfg.get("discord_webhook_url") or "").strip():
-        results.append({"channel": "discord", **_dispatch_briefing_discord(str(cfg.get("discord_webhook_url")), payload)})
+    if (
+        bool(cfg.get("discord_enabled"))
+        and str(cfg.get("discord_webhook_url") or "").strip()
+    ):
+        results.append(
+            {
+                "channel": "discord",
+                **_dispatch_briefing_discord(
+                    str(cfg.get("discord_webhook_url")), payload
+                ),
+            }
+        )
     if bool(cfg.get("email_enabled")) and str(cfg.get("email_to") or "").strip():
-        results.append({"channel": "email", **_dispatch_briefing_email(str(cfg.get("email_to")), subject, text)})
-    if bool(cfg.get("mobile_enabled")) and str(cfg.get("mobile_push_url") or "").strip():
+        results.append(
+            {
+                "channel": "email",
+                **_dispatch_briefing_email(str(cfg.get("email_to")), subject, text),
+            }
+        )
+    if (
+        bool(cfg.get("mobile_enabled"))
+        and str(cfg.get("mobile_push_url") or "").strip()
+    ):
         mobile_result = _dispatch_briefing_mobile(
             str(cfg.get("mobile_push_url")),
             payload,
@@ -6094,7 +7215,10 @@ def _set_quantum_incidents(items: List[Dict[str, Any]]) -> None:
 
 def _incident_default_checklist(code: str) -> List[Dict[str, Any]]:
     rb = _runbook_for_alert_code(code).get("steps") or []
-    return [{"id": f"c{i+1}", "text": str(step), "done": False} for i, step in enumerate(rb[:8])]
+    return [
+        {"id": f"c{i + 1}", "text": str(step), "done": False}
+        for i, step in enumerate(rb[:8])
+    ]
 
 
 def _update_incident(
@@ -6153,7 +7277,11 @@ def _sync_incidents_from_alerts(alerts: List[Dict[str, Any]]) -> List[Dict[str, 
         if key not in active_keys and item.get("status") == "open":
             item["status"] = "closed"
             item["closed_at"] = now
-    items = sorted(by_key.values(), key=lambda x: str(x.get("last_event_at") or x.get("opened_at") or ""), reverse=True)
+    items = sorted(
+        by_key.values(),
+        key=lambda x: str(x.get("last_event_at") or x.get("opened_at") or ""),
+        reverse=True,
+    )
     _set_quantum_incidents(items)
     return items
 
@@ -6194,7 +7322,9 @@ def _quantum_alert_correlations(*, hours: int, window_minutes: int) -> Dict[str,
         bucket = "unknown"
         if opened:
             minute_bucket = (opened.minute // win) * win
-            bucket = opened.replace(minute=minute_bucket, second=0, microsecond=0).isoformat()
+            bucket = opened.replace(
+                minute=minute_bucket, second=0, microsecond=0
+            ).isoformat()
         service = _incident_service_name(inc)
         signature = f"{service}|{inc.get('code')}|{bucket}"
         g = groups.setdefault(
@@ -6221,9 +7351,18 @@ def _quantum_alert_correlations(*, hours: int, window_minutes: int) -> Dict[str,
         event_by_service[svc] = int(event_by_service.get(svc, 0)) + 1
     for g in groups.values():
         g["event_count"] = int(event_by_service.get(str(g.get("service") or ""), 0))
-        g["priority"] = "high" if _severity_rank(str(g.get("severity_max") or "info")) >= _severity_rank("critical") else "normal"
+        g["priority"] = (
+            "high"
+            if _severity_rank(str(g.get("severity_max") or "info"))
+            >= _severity_rank("critical")
+            else "normal"
+        )
 
-    correlated = sorted(groups.values(), key=lambda x: (int(x.get("count") or 0), int(x.get("event_count") or 0)), reverse=True)
+    correlated = sorted(
+        groups.values(),
+        key=lambda x: (int(x.get("count") or 0), int(x.get("event_count") or 0)),
+        reverse=True,
+    )
     return {"window_hours": hours, "window_minutes": win, "groups": correlated[:100]}
 
 
@@ -6237,11 +7376,19 @@ def _compute_quantum_baselines(hours: int) -> Dict[str, Any]:
     baseline = {
         "window_hours": h,
         "generated_at": _now_iso(),
-        "avg_measurements_per_hour": round(float(stats.get("measurements") or 0) / float(h), 3),
-        "avg_entangles_per_hour": round(float(stats.get("entangles") or 0) / float(h), 3),
+        "avg_measurements_per_hour": round(
+            float(stats.get("measurements") or 0) / float(h), 3
+        ),
+        "avg_entangles_per_hour": round(
+            float(stats.get("entangles") or 0) / float(h), 3
+        ),
         "outcome_one_ratio_pct": round(one_ratio_pct, 3),
-        "avg_entanglement_strength": round(float(stats.get("avg_entanglement_strength") or 0.0), 4),
-        "avg_correlation_coefficient": round(float(stats.get("avg_correlation_coefficient") or 0.0), 4),
+        "avg_entanglement_strength": round(
+            float(stats.get("avg_entanglement_strength") or 0.0), 4
+        ),
+        "avg_correlation_coefficient": round(
+            float(stats.get("avg_correlation_coefficient") or 0.0), 4
+        ),
     }
     return baseline
 
@@ -6282,11 +7429,18 @@ def _quantum_baseline_drift(*, hours: int) -> Dict[str, Any]:
         c = float(current.get(k) or 0.0)
         delta = c - b
         pct = 0.0 if abs(b) < 1e-9 else (delta / b) * 100.0
-        drift[k] = {"baseline": round(b, 4), "current": round(c, 4), "delta": round(delta, 4), "delta_pct": round(pct, 2)}
+        drift[k] = {
+            "baseline": round(b, 4),
+            "current": round(c, 4),
+            "delta": round(delta, 4),
+            "delta_pct": round(pct, 2),
+        }
     return {"baseline": baseline, "current": current, "drift": drift}
 
 
-def _quantum_root_cause_graph(*, incident_id: Optional[str], hours: int) -> Dict[str, Any]:
+def _quantum_root_cause_graph(
+    *, incident_id: Optional[str], hours: int
+) -> Dict[str, Any]:
     incidents = _get_quantum_incidents()
     selected = None
     if incident_id:
@@ -6310,21 +7464,37 @@ def _quantum_root_cause_graph(*, incident_id: Optional[str], hours: int) -> Dict
         root_cause = "correlation_collapse"
         confidence = 0.61
 
-    nodes: List[Dict[str, Any]] = [{"id": "quantum-core", "type": "system", "label": "Quantum Core"}]
+    nodes: List[Dict[str, Any]] = [
+        {"id": "quantum-core", "type": "system", "label": "Quantum Core"}
+    ]
     edges: List[Dict[str, Any]] = []
     if selected:
         iid = f"incident-{selected.get('id')}"
-        nodes.append({"id": iid, "type": "incident", "label": str(selected.get("code") or "incident")})
+        nodes.append(
+            {
+                "id": iid,
+                "type": "incident",
+                "label": str(selected.get("code") or "incident"),
+            }
+        )
         edges.append({"from": "quantum-core", "to": iid, "kind": "raised"})
     for e in events[:20]:
         eid = f"event-{e.get('id')}"
-        nodes.append({"id": eid, "type": "event", "label": str(e.get("event_type") or "event")})
+        nodes.append(
+            {"id": eid, "type": "event", "label": str(e.get("event_type") or "event")}
+        )
         edges.append({"from": "quantum-core", "to": eid, "kind": "observed"})
     cause_id = f"cause-{root_cause}"
     nodes.append({"id": cause_id, "type": "cause", "label": root_cause})
     edges.append({"from": cause_id, "to": "quantum-core", "kind": "impacts"})
     if selected:
-        edges.append({"from": cause_id, "to": f"incident-{selected.get('id')}", "kind": "explains"})
+        edges.append(
+            {
+                "from": cause_id,
+                "to": f"incident-{selected.get('id')}",
+                "kind": "explains",
+            }
+        )
 
     return {
         "incident": selected,
@@ -6339,7 +7509,11 @@ def _quantum_risk_score(*, horizon_hours: int) -> Dict[str, Any]:
     h = max(1, min(int(horizon_hours), 24 * 7))
     stats = _task_memory.quantum_stats(hours=24)
     alerts_eval = _evaluate_quantum_alerts(_get_quantum_alert_config())
-    anomalies = _quantum_anomalies(_task_memory.list_quantum_events(limit=5000, since_hours=24), hours=24, z_threshold=2.0)
+    anomalies = _quantum_anomalies(
+        _task_memory.list_quantum_events(limit=5000, since_hours=24),
+        hours=24,
+        z_threshold=2.0,
+    )
     alert_weight = min(50.0, float(len(alerts_eval.get("alerts") or [])) * 15.0)
     anomaly_weight = min(30.0, float(len(anomalies.get("anomalies") or [])) * 6.0)
     ent = float(stats.get("avg_entanglement_strength") or 1.0)
@@ -6415,9 +7589,21 @@ def _quantum_slo_panel(*, hours: int) -> Dict[str, Any]:
         "mttr_minutes": mttr_minutes,
         "mttd_minutes": mttd_minutes,
         "services": [
-            {"name": "quantum-core", "slo_target_pct": 99.9, "achieved_pct": round(availability, 3)},
-            {"name": "quantum-measurement", "slo_target_pct": 99.5, "achieved_pct": round(max(0.0, availability - 0.4), 3)},
-            {"name": "quantum-entanglement", "slo_target_pct": 99.0, "achieved_pct": round(max(0.0, availability - 0.8), 3)},
+            {
+                "name": "quantum-core",
+                "slo_target_pct": 99.9,
+                "achieved_pct": round(availability, 3),
+            },
+            {
+                "name": "quantum-measurement",
+                "slo_target_pct": 99.5,
+                "achieved_pct": round(max(0.0, availability - 0.4), 3),
+            },
+            {
+                "name": "quantum-entanglement",
+                "slo_target_pct": 99.0,
+                "achieved_pct": round(max(0.0, availability - 0.8), 3),
+            },
         ],
     }
 
@@ -6438,7 +7624,9 @@ def _quantum_decyphering_lab(*, hours: int) -> Dict[str, Any]:
         signature = "biased"
     elif len(events) < 10:
         signature = "low-signal"
-    behavior = "stable" if (len(events) >= 10 and signature == "balanced") else "volatile"
+    behavior = (
+        "stable" if (len(events) >= 10 and signature == "balanced") else "volatile"
+    )
     confidence = min(99.0, 30.0 + len(events) * 1.6)
     return {
         "window_hours": hours,
@@ -6455,20 +7643,35 @@ def _quantum_decyphering_lab(*, hours: int) -> Dict[str, Any]:
     }
 
 
-def _quantum_generate_postmortem(*, incident_id: Optional[str], hours: int) -> Dict[str, Any]:
+def _quantum_generate_postmortem(
+    *, incident_id: Optional[str], hours: int
+) -> Dict[str, Any]:
     workspace = quantum_incident_workspace(incident_id=incident_id)
     incident = workspace.get("incident")
     events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
     decypher = _quantum_decyphering_lab(hours=hours)
-    rc = _quantum_root_cause_graph(incident_id=str(incident.get("id")) if incident else None, hours=hours)
+    rc = _quantum_root_cause_graph(
+        incident_id=str(incident.get("id")) if incident else None, hours=hours
+    )
     timeline = []
     for e in events[:15]:
-        timeline.append({"ts": e.get("created_at"), "event_type": e.get("event_type"), "basis": e.get("measurement_basis")})
+        timeline.append(
+            {
+                "ts": e.get("created_at"),
+                "event_type": e.get("event_type"),
+                "basis": e.get("measurement_basis"),
+            }
+        )
     return {
         "incident": incident,
         "summary": "Quantum incident postmortem generated from live telemetry and incident workspace.",
         "impact": {
-            "alerts_triggered": len((_evaluate_quantum_alerts(_get_quantum_alert_config()).get("alerts") or [])),
+            "alerts_triggered": len(
+                (
+                    _evaluate_quantum_alerts(_get_quantum_alert_config()).get("alerts")
+                    or []
+                )
+            ),
             "estimated_user_impact": "moderate",
         },
         "suspected_root_cause": rc.get("suspected_root_cause"),
@@ -6486,16 +7689,67 @@ def _quantum_generate_postmortem(*, incident_id: Optional[str], hours: int) -> D
 def _policy_packs() -> Dict[str, Dict[str, Any]]:
     return {
         "safe": {
-            "alerts": {"window_hours": 24, "min_measurements": 10, "min_entangles": 5, "outcome_one_min_pct": 30.0, "outcome_one_max_pct": 70.0, "entanglement_strength_min": 0.9, "enabled": True},
-            "remediation": {"enabled": True, "bias_threshold_pct": 25.0, "entanglement_min": 0.85, "measure_iterations": 2, "entangle_iterations": 1, "preferred_basis": "computational", "auto_rollback": True, "rollback_measure_iterations": 1},
+            "alerts": {
+                "window_hours": 24,
+                "min_measurements": 10,
+                "min_entangles": 5,
+                "outcome_one_min_pct": 30.0,
+                "outcome_one_max_pct": 70.0,
+                "entanglement_strength_min": 0.9,
+                "enabled": True,
+            },
+            "remediation": {
+                "enabled": True,
+                "bias_threshold_pct": 25.0,
+                "entanglement_min": 0.85,
+                "measure_iterations": 2,
+                "entangle_iterations": 1,
+                "preferred_basis": "computational",
+                "auto_rollback": True,
+                "rollback_measure_iterations": 1,
+            },
         },
         "aggressive": {
-            "alerts": {"window_hours": 12, "min_measurements": 4, "min_entangles": 2, "outcome_one_min_pct": 20.0, "outcome_one_max_pct": 80.0, "entanglement_strength_min": 0.8, "enabled": True},
-            "remediation": {"enabled": True, "bias_threshold_pct": 12.0, "entanglement_min": 0.9, "measure_iterations": 5, "entangle_iterations": 3, "preferred_basis": "computational", "auto_rollback": True, "rollback_measure_iterations": 3},
+            "alerts": {
+                "window_hours": 12,
+                "min_measurements": 4,
+                "min_entangles": 2,
+                "outcome_one_min_pct": 20.0,
+                "outcome_one_max_pct": 80.0,
+                "entanglement_strength_min": 0.8,
+                "enabled": True,
+            },
+            "remediation": {
+                "enabled": True,
+                "bias_threshold_pct": 12.0,
+                "entanglement_min": 0.9,
+                "measure_iterations": 5,
+                "entangle_iterations": 3,
+                "preferred_basis": "computational",
+                "auto_rollback": True,
+                "rollback_measure_iterations": 3,
+            },
         },
         "research": {
-            "alerts": {"window_hours": 48, "min_measurements": 3, "min_entangles": 1, "outcome_one_min_pct": 5.0, "outcome_one_max_pct": 95.0, "entanglement_strength_min": 0.6, "enabled": True},
-            "remediation": {"enabled": False, "bias_threshold_pct": 35.0, "entanglement_min": 0.7, "measure_iterations": 1, "entangle_iterations": 0, "preferred_basis": "hadamard", "auto_rollback": False, "rollback_measure_iterations": 0},
+            "alerts": {
+                "window_hours": 48,
+                "min_measurements": 3,
+                "min_entangles": 1,
+                "outcome_one_min_pct": 5.0,
+                "outcome_one_max_pct": 95.0,
+                "entanglement_strength_min": 0.6,
+                "enabled": True,
+            },
+            "remediation": {
+                "enabled": False,
+                "bias_threshold_pct": 35.0,
+                "entanglement_min": 0.7,
+                "measure_iterations": 1,
+                "entangle_iterations": 0,
+                "preferred_basis": "hadamard",
+                "auto_rollback": False,
+                "rollback_measure_iterations": 0,
+            },
         },
     }
 
@@ -6514,26 +7768,45 @@ def _runbook_for_alert_code(code: str) -> Dict[str, Any]:
             "Escalate if health score remains below 60 for 2 cycles.",
         ],
     }
-    steps = runbooks.get(c, ["Review active alerts and run basis-analysis.", "Execute quick experiment and compare NOC deltas.", "Use remediation tune before force actions."])
+    steps = runbooks.get(
+        c,
+        [
+            "Review active alerts and run basis-analysis.",
+            "Execute quick experiment and compare NOC deltas.",
+            "Use remediation tune before force actions.",
+        ],
+    )
     return {"code": code, "title": f"Runbook for {code or 'general'}", "steps": steps}
 
 
-def _run_quantum_experiment(*, preset: str, measure_count: Optional[int], entangle_count: Optional[int]) -> Dict[str, Any]:
+def _run_quantum_experiment(
+    *, preset: str, measure_count: Optional[int], entangle_count: Optional[int]
+) -> Dict[str, Any]:
     defaults = {
         "quick": {"measure_count": 5, "entangle_count": 2},
         "balanced": {"measure_count": 10, "entangle_count": 5},
         "deep": {"measure_count": 20, "entangle_count": 10},
     }
     selected = defaults[preset]
-    measures = int(measure_count) if measure_count is not None else int(selected["measure_count"])
-    entangles = int(entangle_count) if entangle_count is not None else int(selected["entangle_count"])
+    measures = (
+        int(measure_count)
+        if measure_count is not None
+        else int(selected["measure_count"])
+    )
+    entangles = (
+        int(entangle_count)
+        if entangle_count is not None
+        else int(selected["entangle_count"])
+    )
     executions: List[Dict[str, Any]] = []
     for i in range(max(0, entangles)):
         executions.append(
             {
                 "kind": "entangle",
                 "index": i + 1,
-                "result": _tool_quantum_entangle({"system_a": f"core_{i % 3}", "system_b": f"memory_{i % 3}"}),
+                "result": _tool_quantum_entangle(
+                    {"system_a": f"core_{i % 3}", "system_b": f"memory_{i % 3}"}
+                ),
             }
         )
     for i in range(max(1, measures)):
@@ -6556,7 +7829,11 @@ def _run_quantum_experiment(*, preset: str, measure_count: Optional[int], entang
         "snapshot_id": snap_id,
         "decipher": decipher,
     }
-    _audit_quantum_op("experiment_run", "ok", {"preset": preset, "executions": len(executions), "snapshot_id": snap_id})
+    _audit_quantum_op(
+        "experiment_run",
+        "ok",
+        {"preset": preset, "executions": len(executions), "snapshot_id": snap_id},
+    )
     return result
 
 
@@ -6567,12 +7844,20 @@ def _run_quantum_remediation(*, hours: int, force: bool) -> Dict[str, Any]:
     pre_stats = _stats_from_events(events, hours=hours)
     pre_alerts = _evaluate_quantum_alerts(_get_quantum_alert_config())
     pre_anoms = _quantum_anomalies(events, hours=hours, z_threshold=2.0)
-    pre_health = _quantum_health_score(stats=pre_stats, alerts=pre_alerts["alerts"], anomalies=pre_anoms["anomalies"])
+    pre_health = _quantum_health_score(
+        stats=pre_stats, alerts=pre_alerts["alerts"], anomalies=pre_anoms["anomalies"]
+    )
     avg_ent = decipher["signals"].get("avg_entanglement_strength")
     bias_pct = float(decipher["signals"].get("outcome_bias_pct") or 0.0)
     should_run = bool(force) or (
         bool(cfg.get("enabled"))
-        and (bias_pct >= float(cfg.get("bias_threshold_pct") or 20.0) or (isinstance(avg_ent, (int, float)) and avg_ent < float(cfg.get("entanglement_min") or 0.8)))
+        and (
+            bias_pct >= float(cfg.get("bias_threshold_pct") or 20.0)
+            or (
+                isinstance(avg_ent, (int, float))
+                and avg_ent < float(cfg.get("entanglement_min") or 0.8)
+            )
+        )
     )
     actions: List[Dict[str, Any]] = []
     if should_run:
@@ -6581,7 +7866,9 @@ def _run_quantum_remediation(*, hours: int, force: bool) -> Dict[str, Any]:
                 {
                     "kind": "entangle",
                     "index": i + 1,
-                    "result": _tool_quantum_entangle({"system_a": f"stabilizer_{i}", "system_b": f"memory_{i}"}),
+                    "result": _tool_quantum_entangle(
+                        {"system_a": f"stabilizer_{i}", "system_b": f"memory_{i}"}
+                    ),
                 }
             )
         for i in range(int(cfg.get("measure_iterations") or 0)):
@@ -6589,18 +7876,32 @@ def _run_quantum_remediation(*, hours: int, force: bool) -> Dict[str, Any]:
                 {
                     "kind": "measure",
                     "index": i + 1,
-                    "result": _tool_quantum_measure({"measurement_basis": str(cfg.get("preferred_basis") or "computational")}),
+                    "result": _tool_quantum_measure(
+                        {
+                            "measurement_basis": str(
+                                cfg.get("preferred_basis") or "computational"
+                            )
+                        }
+                    ),
                 }
             )
     post_events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
     post_stats = _stats_from_events(post_events, hours=hours)
     post_alerts = _evaluate_quantum_alerts(_get_quantum_alert_config())
     post_anoms = _quantum_anomalies(post_events, hours=hours, z_threshold=2.0)
-    post_health = _quantum_health_score(stats=post_stats, alerts=post_alerts["alerts"], anomalies=post_anoms["anomalies"])
+    post_health = _quantum_health_score(
+        stats=post_stats,
+        alerts=post_alerts["alerts"],
+        anomalies=post_anoms["anomalies"],
+    )
 
     rollback_performed = False
     rollback_steps = 0
-    if should_run and bool(cfg.get("auto_rollback")) and float(post_health["score"]) < float(pre_health["score"]):
+    if (
+        should_run
+        and bool(cfg.get("auto_rollback"))
+        and float(post_health["score"]) < float(pre_health["score"])
+    ):
         rb_iters = int(cfg.get("rollback_measure_iterations") or 0)
         for _i in range(max(0, rb_iters)):
             _tool_quantum_measure({"measurement_basis": "computational"})
@@ -6610,7 +7911,11 @@ def _run_quantum_remediation(*, hours: int, force: bool) -> Dict[str, Any]:
         post_stats = _stats_from_events(post_events, hours=hours)
         post_alerts = _evaluate_quantum_alerts(_get_quantum_alert_config())
         post_anoms = _quantum_anomalies(post_events, hours=hours, z_threshold=2.0)
-        post_health = _quantum_health_score(stats=post_stats, alerts=post_alerts["alerts"], anomalies=post_anoms["anomalies"])
+        post_health = _quantum_health_score(
+            stats=post_stats,
+            alerts=post_alerts["alerts"],
+            anomalies=post_anoms["anomalies"],
+        )
 
     result = {
         "ran": should_run,
@@ -6622,8 +7927,13 @@ def _run_quantum_remediation(*, hours: int, force: bool) -> Dict[str, Any]:
         "rollback_performed": rollback_performed,
         "rollback_steps": rollback_steps,
     }
-    _audit_quantum_op("remediation_run", "ok", {"ran": bool(should_run), "actions": len(actions), "force": bool(force)})
+    _audit_quantum_op(
+        "remediation_run",
+        "ok",
+        {"ran": bool(should_run), "actions": len(actions), "force": bool(force)},
+    )
     return result
+
 
 def _stats_from_events(events: List[Dict[str, Any]], *, hours: int) -> Dict[str, Any]:
     measurements = [e for e in events if e.get("event_type") == "measurement"]
@@ -6652,14 +7962,22 @@ def _stats_from_events(events: List[Dict[str, Any]], *, hours: int) -> Dict[str,
         "entangles": len(entangles),
         "superpositions": len(supers),
         "measurement_outcomes": outcome_counts,
-        "avg_measurement_probability": _avg([m.get("measurement_probability") for m in measurements]),
-        "avg_entanglement_strength": _avg([e.get("entanglement_strength") for e in entangles]),
-        "avg_correlation_coefficient": _avg([e.get("correlation_coefficient") for e in entangles]),
+        "avg_measurement_probability": _avg(
+            [m.get("measurement_probability") for m in measurements]
+        ),
+        "avg_entanglement_strength": _avg(
+            [e.get("entanglement_strength") for e in entangles]
+        ),
+        "avg_correlation_coefficient": _avg(
+            [e.get("correlation_coefficient") for e in entangles]
+        ),
         "avg_superposition_states": _avg([len(s.get("states") or []) for s in supers]),
     }
 
 
-def _quantum_decipher_analysis(events: List[Dict[str, Any]], *, hours: int) -> Dict[str, Any]:
+def _quantum_decipher_analysis(
+    events: List[Dict[str, Any]], *, hours: int
+) -> Dict[str, Any]:
     stats = _stats_from_events(events, hours=hours)
     measurements = [e for e in events if e.get("event_type") == "measurement"]
     entangles = [e for e in events if e.get("event_type") == "entangle"]
@@ -6676,31 +7994,55 @@ def _quantum_decipher_analysis(events: List[Dict[str, Any]], *, hours: int) -> D
         patterns.append("No quantum events available for deciphering.")
     else:
         if bias_pct >= 20:
-            patterns.append(f"Strong measurement bias detected ({one_ratio * 100:.1f}% outcome=1).")
+            patterns.append(
+                f"Strong measurement bias detected ({one_ratio * 100:.1f}% outcome=1)."
+            )
         elif bias_pct >= 8:
-            patterns.append(f"Moderate measurement tilt observed ({one_ratio * 100:.1f}% outcome=1).")
+            patterns.append(
+                f"Moderate measurement tilt observed ({one_ratio * 100:.1f}% outcome=1)."
+            )
         else:
-            patterns.append(f"Measurement outcomes are near-balanced ({one_ratio * 100:.1f}% outcome=1).")
+            patterns.append(
+                f"Measurement outcomes are near-balanced ({one_ratio * 100:.1f}% outcome=1)."
+            )
 
         avg_strength = stats.get("avg_entanglement_strength")
         if isinstance(avg_strength, (int, float)) and avg_strength >= 0.9:
             patterns.append("Entanglement channel is stable (avg strength >= 0.90).")
         elif isinstance(avg_strength, (int, float)):
-            patterns.append("Entanglement channel is weak-to-moderate; correlation hardening recommended.")
+            patterns.append(
+                "Entanglement channel is weak-to-moderate; correlation hardening recommended."
+            )
 
-        unique_bases = sorted({str(m.get("measurement_basis")) for m in measurements if m.get("measurement_basis")})
+        unique_bases = sorted(
+            {
+                str(m.get("measurement_basis"))
+                for m in measurements
+                if m.get("measurement_basis")
+            }
+        )
         if unique_bases:
-            patterns.append("Observed measurement bases: " + ", ".join(unique_bases[:4]))
+            patterns.append(
+                "Observed measurement bases: " + ", ".join(unique_bases[:4])
+            )
 
     recommendations: List[str] = []
     if stats["measurements"] < 5:
-        recommendations.append("Increase measurement volume (>=5) before making policy changes.")
+        recommendations.append(
+            "Increase measurement volume (>=5) before making policy changes."
+        )
     if stats["entangles"] < 3:
-        recommendations.append("Run additional entanglement cycles to improve trend reliability.")
+        recommendations.append(
+            "Run additional entanglement cycles to improve trend reliability."
+        )
     if bias_pct >= 20:
-        recommendations.append("Rotate measurement basis and compare bias drift over the next 24h.")
+        recommendations.append(
+            "Rotate measurement basis and compare bias drift over the next 24h."
+        )
     if not recommendations:
-        recommendations.append("Current quantum behavior appears stable; keep alerts enabled and monitor deltas.")
+        recommendations.append(
+            "Current quantum behavior appears stable; keep alerts enabled and monitor deltas."
+        )
 
     return {
         "window_hours": hours,
@@ -6764,7 +8106,9 @@ def quantum_export(
     if start_dt and end_dt and start_dt > end_dt:
         raise HTTPException(status_code=400, detail="start_at must be <= end_at")
 
-    events = _task_memory.list_quantum_events(limit=limit, event_type=event_type, since_hours=hours)
+    events = _task_memory.list_quantum_events(
+        limit=limit, event_type=event_type, since_hours=hours
+    )
     events = _filter_events_by_time_window(events, start_at=start_dt, end_at=end_dt)
     stats = _stats_from_events(events, hours=hours)
     payload = {
@@ -6776,7 +8120,9 @@ def quantum_export(
         "events": events,
     }
     if format == "json":
-        return _json_download(payload, filename=_download_filename("quantum_history", "json"))
+        return _json_download(
+            payload, filename=_download_filename("quantum_history", "json")
+        )
 
     csv_rows: List[Dict[str, Any]] = []
     for e in events:
@@ -6824,7 +8170,9 @@ def quantum_alerts_export(
         "stats": evaluation["stats"],
     }
     if format == "json":
-        return _json_download(payload, filename=_download_filename("quantum_alerts", "json"))
+        return _json_download(
+            payload, filename=_download_filename("quantum_alerts", "json")
+        )
 
     rows = []
     for a in payload["alerts"]:
@@ -6853,7 +8201,15 @@ def quantum_alerts_export(
         )
     text = _to_csv(
         rows,
-        columns=["generated_at", "active", "code", "severity", "message", "value", "window_hours"],
+        columns=[
+            "generated_at",
+            "active",
+            "code",
+            "severity",
+            "message",
+            "value",
+            "window_hours",
+        ],
     )
     return _csv_download(text, filename=_download_filename("quantum_alerts", "csv"))
 
@@ -6872,7 +8228,9 @@ def quantum_export_all(
     if start_dt and end_dt and start_dt > end_dt:
         raise HTTPException(status_code=400, detail="start_at must be <= end_at")
 
-    events = _task_memory.list_quantum_events(limit=limit, event_type=event_type, since_hours=hours)
+    events = _task_memory.list_quantum_events(
+        limit=limit, event_type=event_type, since_hours=hours
+    )
     events = _filter_events_by_time_window(events, start_at=start_dt, end_at=end_dt)
     stats = _stats_from_events(events, hours=hours)
 
@@ -6903,7 +8261,9 @@ def quantum_export_all(
             "quantum_alerts.json": json.dumps(alerts_payload, indent=2),
             "quantum_decipher.json": json.dumps(decipher_payload, indent=2),
         }
-        return _zip_download(files, filename=_download_filename("quantum_bundle_json", "zip"))
+        return _zip_download(
+            files, filename=_download_filename("quantum_bundle_json", "zip")
+        )
 
     event_rows: List[Dict[str, Any]] = []
     for e in events:
@@ -6950,10 +8310,16 @@ def quantum_export_all(
             "window_hours": decipher_payload["window_hours"],
             "events_analyzed": decipher_payload["events_analyzed"],
             "confidence_pct": decipher_payload["confidence_pct"],
-            "outcome_one_ratio_pct": decipher_payload["signals"]["outcome_one_ratio_pct"],
+            "outcome_one_ratio_pct": decipher_payload["signals"][
+                "outcome_one_ratio_pct"
+            ],
             "outcome_bias_pct": decipher_payload["signals"]["outcome_bias_pct"],
-            "avg_entanglement_strength": decipher_payload["signals"]["avg_entanglement_strength"],
-            "avg_measurement_probability": decipher_payload["signals"]["avg_measurement_probability"],
+            "avg_entanglement_strength": decipher_payload["signals"][
+                "avg_entanglement_strength"
+            ],
+            "avg_measurement_probability": decipher_payload["signals"][
+                "avg_measurement_probability"
+            ],
             "patterns": " | ".join(decipher_payload["patterns"]),
             "recommendations": " | ".join(decipher_payload["recommendations"]),
         }
@@ -6975,7 +8341,15 @@ def quantum_export_all(
         ),
         "quantum_alerts.csv": _to_csv(
             alerts_rows,
-            columns=["generated_at", "active", "code", "severity", "message", "value", "window_hours"],
+            columns=[
+                "generated_at",
+                "active",
+                "code",
+                "severity",
+                "message",
+                "value",
+                "window_hours",
+            ],
         ),
         "quantum_decipher.csv": _to_csv(
             decipher_rows,
@@ -6992,7 +8366,9 @@ def quantum_export_all(
             ],
         ),
     }
-    return _zip_download(files, filename=_download_filename("quantum_bundle_csv", "zip"))
+    return _zip_download(
+        files, filename=_download_filename("quantum_bundle_csv", "zip")
+    )
 
 
 @router.get("/quantum/decipher")
@@ -7007,7 +8383,9 @@ def quantum_decipher(
     end_dt = _parse_iso_datetime(end_at, field_name="end_at")
     if start_dt and end_dt and start_dt > end_dt:
         raise HTTPException(status_code=400, detail="start_at must be <= end_at")
-    events = _task_memory.list_quantum_events(limit=limit, event_type=event_type, since_hours=hours)
+    events = _task_memory.list_quantum_events(
+        limit=limit, event_type=event_type, since_hours=hours
+    )
     events = _filter_events_by_time_window(events, start_at=start_dt, end_at=end_dt)
     return _quantum_decipher_analysis(events, hours=hours)
 
@@ -7020,7 +8398,13 @@ def quantum_decypher_alias(
     start_at: Optional[str] = Query(default=None),
     end_at: Optional[str] = Query(default=None),
 ):
-    return quantum_decipher(hours=hours, event_type=event_type, limit=limit, start_at=start_at, end_at=end_at)
+    return quantum_decipher(
+        hours=hours,
+        event_type=event_type,
+        limit=limit,
+        start_at=start_at,
+        end_at=end_at,
+    )
 
 
 @router.get("/quantum/timeline")
@@ -7049,7 +8433,11 @@ def quantum_basis_analysis(hours: int = Query(default=24, ge=1, le=24 * 365)):
 
 @router.post("/quantum/experiment/run")
 def quantum_experiment_run(payload: QuantumExperimentRequest):
-    return _run_quantum_experiment(preset=payload.preset, measure_count=payload.measure_count, entangle_count=payload.entangle_count)
+    return _run_quantum_experiment(
+        preset=payload.preset,
+        measure_count=payload.measure_count,
+        entangle_count=payload.entangle_count,
+    )
 
 
 @router.post("/quantum/decipher/snapshot")
@@ -7057,7 +8445,11 @@ def quantum_decipher_snapshot(hours: int = Query(default=24, ge=1, le=24 * 365))
     events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
     decipher = _quantum_decipher_analysis(events, hours=hours)
     snap_id = _task_memory.create_quantum_decipher_snapshot(decipher)
-    _audit_quantum_op("snapshot_create", "ok", {"snapshot_id": snap_id, "window_hours": hours, "events": len(events)})
+    _audit_quantum_op(
+        "snapshot_create",
+        "ok",
+        {"snapshot_id": snap_id, "window_hours": hours, "events": len(events)},
+    )
     return {"id": snap_id, "snapshot": decipher}
 
 
@@ -7082,7 +8474,9 @@ def quantum_remediation_config_set(payload: QuantumRemediationConfigRequest):
 
 
 @router.post("/quantum/remediation/tune")
-def quantum_remediation_tune(hours: int = Query(default=168, ge=24, le=24 * 365), apply: bool = False):
+def quantum_remediation_tune(
+    hours: int = Query(default=168, ge=24, le=24 * 365), apply: bool = False
+):
     events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
     stats = _stats_from_events(events, hours=hours)
     m = stats.get("measurement_outcomes") or {}
@@ -7093,19 +8487,43 @@ def quantum_remediation_tune(hours: int = Query(default=168, ge=24, le=24 * 365)
     suggested = _quantum_remediation_default()
     suggested["bias_threshold_pct"] = round(max(8.0, min(35.0, bias_pct + 5.0)), 2)
     if isinstance(avg_ent, (int, float)):
-        suggested["entanglement_min"] = round(max(0.6, min(0.95, float(avg_ent) - 0.05)), 3)
+        suggested["entanglement_min"] = round(
+            max(0.6, min(0.95, float(avg_ent) - 0.05)), 3
+        )
     suggested["measure_iterations"] = 4 if bias_pct > 15 else 2
-    suggested["entangle_iterations"] = 3 if (isinstance(avg_ent, (int, float)) and avg_ent < 0.85) else 1
+    suggested["entangle_iterations"] = (
+        3 if (isinstance(avg_ent, (int, float)) and avg_ent < 0.85) else 1
+    )
     if apply:
         applied_cfg = _set_quantum_remediation_config(suggested)
-        _audit_quantum_op("remediation_tune", "ok", {"window_hours": hours, "applied": True, "suggested": applied_cfg})
-        return {"window_hours": hours, "applied": True, "config": applied_cfg, "stats": stats}
-    _audit_quantum_op("remediation_tune", "ok", {"window_hours": hours, "applied": False, "suggested": suggested})
-    return {"window_hours": hours, "applied": False, "suggested_config": suggested, "stats": stats}
+        _audit_quantum_op(
+            "remediation_tune",
+            "ok",
+            {"window_hours": hours, "applied": True, "suggested": applied_cfg},
+        )
+        return {
+            "window_hours": hours,
+            "applied": True,
+            "config": applied_cfg,
+            "stats": stats,
+        }
+    _audit_quantum_op(
+        "remediation_tune",
+        "ok",
+        {"window_hours": hours, "applied": False, "suggested": suggested},
+    )
+    return {
+        "window_hours": hours,
+        "applied": False,
+        "suggested_config": suggested,
+        "stats": stats,
+    }
 
 
 @router.post("/quantum/remediation/run")
-def quantum_remediation_run(hours: int = Query(default=24, ge=1, le=24 * 365), force: bool = False):
+def quantum_remediation_run(
+    hours: int = Query(default=24, ge=1, le=24 * 365), force: bool = False
+):
     role = _require_quantum_action("remediate")
     _audit_quantum_op("rbac_allow", "ok", {"action": "remediate", "role": role})
     return _run_quantum_remediation(hours=hours, force=force)
@@ -7117,7 +8535,9 @@ def quantum_health_score(hours: int = Query(default=24, ge=1, le=24 * 365)):
     stats = _stats_from_events(events, hours=hours)
     alerts_eval = _evaluate_quantum_alerts(_get_quantum_alert_config())
     anomalies = _quantum_anomalies(events, hours=hours, z_threshold=2.0)
-    score = _quantum_health_score(stats=stats, alerts=alerts_eval["alerts"], anomalies=anomalies["anomalies"])
+    score = _quantum_health_score(
+        stats=stats, alerts=alerts_eval["alerts"], anomalies=anomalies["anomalies"]
+    )
     return {
         "window_hours": hours,
         "score": score["score"],
@@ -7135,7 +8555,9 @@ def quantum_noc(hours: int = Query(default=24, ge=1, le=24 * 365)):
     stats = _stats_from_events(events, hours=hours)
     alerts_eval = _evaluate_quantum_alerts(_get_quantum_alert_config())
     anomalies = _quantum_anomalies(events, hours=hours, z_threshold=2.0)
-    score = _quantum_health_score(stats=stats, alerts=alerts_eval["alerts"], anomalies=anomalies["anomalies"])
+    score = _quantum_health_score(
+        stats=stats, alerts=alerts_eval["alerts"], anomalies=anomalies["anomalies"]
+    )
     snaps = _task_memory.list_quantum_decipher_snapshots(limit=2)
     delta = None
     if len(snaps) >= 2:
@@ -7172,29 +8594,45 @@ def quantum_incident_workspace(incident_id: Optional[str] = None):
         target = items[0]
     incident_annotations: List[Dict[str, Any]] = []
     if target:
-        incident_annotations = _task_memory.list_quantum_annotations(limit=100, item_type="incident", item_id=str(target.get("id")))
-    return {"incident": target, "annotations": incident_annotations, "incidents": items[:50]}
+        incident_annotations = _task_memory.list_quantum_annotations(
+            limit=100, item_type="incident", item_id=str(target.get("id"))
+        )
+    return {
+        "incident": target,
+        "annotations": incident_annotations,
+        "incidents": items[:50],
+    }
 
 
 @router.post("/quantum/incidents/{incident_id}/status")
-def quantum_incident_status_update(incident_id: str, status: str = Query(..., pattern="^(open|acked|closed)$")):
+def quantum_incident_status_update(
+    incident_id: str, status: str = Query(..., pattern="^(open|acked|closed)$")
+):
     role = _require_quantum_action("incident_manage")
     changed = _update_incident(incident_id, status=status)
     if changed is None:
         raise HTTPException(status_code=404, detail="incident not found")
-    _audit_quantum_op("incident_status_update", "ok", {"incident_id": incident_id, "status": status, "role": role})
+    _audit_quantum_op(
+        "incident_status_update",
+        "ok",
+        {"incident_id": incident_id, "status": status, "role": role},
+    )
     return {"incident": changed}
 
 
 @router.post("/quantum/incidents/{incident_id}/checklist")
-def quantum_incident_checklist_toggle(incident_id: str, item_id: str = Query(...), done: bool = Query(...)):
+def quantum_incident_checklist_toggle(
+    incident_id: str, item_id: str = Query(...), done: bool = Query(...)
+):
     role = _require_quantum_action("incident_manage")
     items = _get_quantum_incidents()
     changed = None
     for inc in items:
         if str(inc.get("id")) != str(incident_id):
             continue
-        checklist = inc.get("checklist") if isinstance(inc.get("checklist"), list) else []
+        checklist = (
+            inc.get("checklist") if isinstance(inc.get("checklist"), list) else []
+        )
         for c in checklist:
             if str(c.get("id")) == str(item_id):
                 c["done"] = bool(done)
@@ -7205,7 +8643,16 @@ def quantum_incident_checklist_toggle(incident_id: str, item_id: str = Query(...
     if changed is None:
         raise HTTPException(status_code=404, detail="incident/checklist item not found")
     _set_quantum_incidents(items)
-    _audit_quantum_op("incident_checklist_toggle", "ok", {"incident_id": incident_id, "item_id": item_id, "done": bool(done), "role": role})
+    _audit_quantum_op(
+        "incident_checklist_toggle",
+        "ok",
+        {
+            "incident_id": incident_id,
+            "item_id": item_id,
+            "done": bool(done),
+            "role": role,
+        },
+    )
     return {"incident": changed}
 
 
@@ -7241,7 +8688,11 @@ def quantum_annotations_create(payload: QuantumAnnotationCreateRequest):
         note=payload.note,
         author=payload.author,
     )
-    _audit_quantum_op("annotation_create", "ok", {"id": aid, "item_type": payload.item_type, "item_id": payload.item_id})
+    _audit_quantum_op(
+        "annotation_create",
+        "ok",
+        {"id": aid, "item_type": payload.item_type, "item_id": payload.item_id},
+    )
     return {"id": aid, "ok": True}
 
 
@@ -7251,7 +8702,11 @@ def quantum_annotations_list(
     item_type: Optional[str] = None,
     item_id: Optional[str] = None,
 ):
-    return {"annotations": _task_memory.list_quantum_annotations(limit=limit, item_type=item_type, item_id=item_id)}
+    return {
+        "annotations": _task_memory.list_quantum_annotations(
+            limit=limit, item_type=item_type, item_id=item_id
+        )
+    }
 
 
 @router.get("/quantum/memory-graph")
@@ -7264,7 +8719,13 @@ def quantum_memory_graph(hours: int = Query(default=24, ge=1, le=24 * 365)):
     nodes.append({"id": "root", "type": "system", "label": "Quantum Core"})
     for e in events[:60]:
         nid = f"event-{e.get('id')}"
-        nodes.append({"id": nid, "type": "event", "label": f"{e.get('event_type')} #{e.get('id')}"})
+        nodes.append(
+            {
+                "id": nid,
+                "type": "event",
+                "label": f"{e.get('event_type')} #{e.get('id')}",
+            }
+        )
         edges.append({"from": "root", "to": nid, "kind": "records"})
     for a in alerts_eval["alerts"]:
         aid = f"alert-{a.get('code')}"
@@ -7272,13 +8733,21 @@ def quantum_memory_graph(hours: int = Query(default=24, ge=1, le=24 * 365)):
         edges.append({"from": "root", "to": aid, "kind": "triggers"})
     for op in audits[:40]:
         oid = f"audit-{op.get('id')}"
-        nodes.append({"id": oid, "type": "audit", "label": f"{op.get('op_type')} ({op.get('status')})"})
+        nodes.append(
+            {
+                "id": oid,
+                "type": "audit",
+                "label": f"{op.get('op_type')} ({op.get('status')})",
+            }
+        )
         edges.append({"from": "root", "to": oid, "kind": "logs"})
     return {"nodes": nodes, "edges": edges}
 
 
 @router.get("/quantum/replay/agent")
-def quantum_agent_replay(limit: int = Query(default=20, ge=1, le=200), session_id: Optional[str] = None):
+def quantum_agent_replay(
+    limit: int = Query(default=20, ge=1, le=200), session_id: Optional[str] = None
+):
     runs = _task_memory.list_goal_runs(limit=limit, session_id=session_id)
     timeline: List[Dict[str, Any]] = []
     for r in runs:
@@ -7291,7 +8760,7 @@ def quantum_agent_replay(limit: int = Query(default=20, ge=1, le=200), session_i
                 "created_at": r.get("created_at"),
             }
         )
-        for s in (r.get("steps") or []):
+        for s in r.get("steps") or []:
             timeline.append(
                 {
                     "type": "step",
@@ -7313,12 +8782,27 @@ def quantum_simulate(
     entanglement_strength_min: float = Query(default=0.9, ge=0.0, le=1.0),
 ):
     cfg = _get_quantum_alert_config()
-    sim_cfg = {**cfg, "outcome_one_min_pct": outcome_one_min_pct, "outcome_one_max_pct": outcome_one_max_pct, "entanglement_strength_min": entanglement_strength_min, "window_hours": hours}
+    sim_cfg = {
+        **cfg,
+        "outcome_one_min_pct": outcome_one_min_pct,
+        "outcome_one_max_pct": outcome_one_max_pct,
+        "entanglement_strength_min": entanglement_strength_min,
+        "window_hours": hours,
+    }
     evald = _evaluate_quantum_alerts(sim_cfg)
     events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
     stats = _stats_from_events(events, hours=hours)
-    health = _quantum_health_score(stats=stats, alerts=evald["alerts"], anomalies=_quantum_anomalies(events, hours=hours, z_threshold=2.0)["anomalies"])
-    return {"simulated_config": sim_cfg, "alerts": evald["alerts"], "active": evald["active"], "health": health}
+    health = _quantum_health_score(
+        stats=stats,
+        alerts=evald["alerts"],
+        anomalies=_quantum_anomalies(events, hours=hours, z_threshold=2.0)["anomalies"],
+    )
+    return {
+        "simulated_config": sim_cfg,
+        "alerts": evald["alerts"],
+        "active": evald["active"],
+        "health": health,
+    }
 
 
 @router.get("/quantum/policy-packs")
@@ -7350,16 +8834,26 @@ def quantum_replay(
     hours: int = Query(default=24, ge=1, le=24 * 365),
     end_at: Optional[str] = Query(default=None),
 ):
-    end_dt = _parse_iso_datetime(end_at, field_name="end_at") if end_at else datetime.now(timezone.utc)
+    end_dt = (
+        _parse_iso_datetime(end_at, field_name="end_at")
+        if end_at
+        else datetime.now(timezone.utc)
+    )
     start_dt = end_dt - timedelta(hours=hours)
     events = _task_memory.list_quantum_events(limit=5000, since_hours=24 * 365)
-    window_events = _filter_events_by_time_window(events, start_at=start_dt, end_at=end_dt)
+    window_events = _filter_events_by_time_window(
+        events, start_at=start_dt, end_at=end_dt
+    )
     stats = _stats_from_events(window_events, hours=hours)
     decipher = _quantum_decipher_analysis(window_events, hours=hours)
     anomalies = _quantum_anomalies(window_events, hours=hours, z_threshold=2.0)
     alerts = _evaluate_quantum_alerts(_get_quantum_alert_config())
     return {
-        "window": {"start_at": start_dt.isoformat(), "end_at": end_dt.isoformat(), "hours": hours},
+        "window": {
+            "start_at": start_dt.isoformat(),
+            "end_at": end_dt.isoformat(),
+            "hours": hours,
+        },
         "events": len(window_events),
         "stats": stats,
         "decipher": decipher,
@@ -7383,11 +8877,15 @@ def quantum_summary_pdf(hours: int = Query(default=24, ge=1, le=24 * 365)):
         "Recommendations: " + " | ".join(decipher.get("recommendations") or []),
     ]
     pdf_bytes = _minimal_pdf_bytes("Jarvis Quantum Summary", lines)
-    _audit_quantum_op("summary_pdf", "ok", {"window_hours": hours, "events": len(events)})
+    _audit_quantum_op(
+        "summary_pdf", "ok", {"window_hours": hours, "events": len(events)}
+    )
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{_download_filename("quantum_summary", "pdf")}"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{_download_filename("quantum_summary", "pdf")}"'
+        },
     )
 
 
@@ -7406,20 +8904,39 @@ def quantum_notifications_config_set(payload: QuantumNotificationConfigRequest):
     ]
     for u in urls:
         if u and (not u.startswith("http://") and not u.startswith("https://")):
-            raise HTTPException(status_code=400, detail="all webhook URLs must start with http:// or https://")
+            raise HTTPException(
+                status_code=400,
+                detail="all webhook URLs must start with http:// or https://",
+            )
     if data.get("enabled") and not any(urls):
-        raise HTTPException(status_code=400, detail="at least one webhook URL is required when notifications are enabled")
+        raise HTTPException(
+            status_code=400,
+            detail="at least one webhook URL is required when notifications are enabled",
+        )
     cfg = _set_quantum_notification_config(data)
-    _audit_quantum_op("notification_config_set", "ok", {"enabled": bool(cfg.get("enabled")), "channel": cfg.get("channel")})
+    _audit_quantum_op(
+        "notification_config_set",
+        "ok",
+        {"enabled": bool(cfg.get("enabled")), "channel": cfg.get("channel")},
+    )
     return cfg
 
 
 @router.post("/quantum/notifications/test")
 def quantum_notifications_test():
     cfg = _get_quantum_notification_config()
-    payload = {"kind": "quantum_test", "timestamp": _now_iso(), "message": "Jarvis quantum webhook test ping", "severity": "warning"}
+    payload = {
+        "kind": "quantum_test",
+        "timestamp": _now_iso(),
+        "message": "Jarvis quantum webhook test ping",
+        "severity": "warning",
+    }
     res = _dispatch_configured_notification(cfg, payload, severity="warning")
-    _audit_quantum_op("notification_test", "ok" if bool(res.get("sent")) else "failed", {"result": res})
+    _audit_quantum_op(
+        "notification_test",
+        "ok" if bool(res.get("sent")) else "failed",
+        {"result": res},
+    )
     return {"config": cfg, "result": res}
 
 
@@ -7430,11 +8947,32 @@ def quantum_notifications_dispatch(hours: int = Query(default=24, ge=1, le=24 * 
     alerts = _evaluate_quantum_alerts(_get_quantum_alert_config())
     _sync_incidents_from_alerts(alerts["alerts"])
     min_sev = str(cfg.get("min_severity") or "warning")
-    filtered = [a for a in alerts["alerts"] if _severity_rank(str(a.get("severity") or "warning")) >= _severity_rank(min_sev)]
+    filtered = [
+        a
+        for a in alerts["alerts"]
+        if _severity_rank(str(a.get("severity") or "warning"))
+        >= _severity_rank(min_sev)
+    ]
     if not filtered:
-        _audit_quantum_op("notification_dispatch", "ok", {"sent": False, "reason": "no_alerts", "alerts_total": len(alerts["alerts"])})
-        return {"sent": False, "reason": "no alerts at or above configured severity", "alerts_total": len(alerts["alerts"])}
-    routed: Dict[str, List[Dict[str, Any]]] = {"critical": [], "warning": [], "info": []}
+        _audit_quantum_op(
+            "notification_dispatch",
+            "ok",
+            {
+                "sent": False,
+                "reason": "no_alerts",
+                "alerts_total": len(alerts["alerts"]),
+            },
+        )
+        return {
+            "sent": False,
+            "reason": "no alerts at or above configured severity",
+            "alerts_total": len(alerts["alerts"]),
+        }
+    routed: Dict[str, List[Dict[str, Any]]] = {
+        "critical": [],
+        "warning": [],
+        "info": [],
+    }
     for a in filtered:
         sev = str(a.get("severity") or "warning").lower()
         if sev not in routed:
@@ -7446,7 +8984,13 @@ def quantum_notifications_dispatch(hours: int = Query(default=24, ge=1, le=24 * 
     for sev, items in routed.items():
         if not items:
             continue
-        payload = {"kind": "quantum_alerts", "timestamp": _now_iso(), "window_hours": hours, "alerts": items, "severity": sev}
+        payload = {
+            "kind": "quantum_alerts",
+            "timestamp": _now_iso(),
+            "window_hours": hours,
+            "alerts": items,
+            "severity": sev,
+        }
         res = _dispatch_configured_notification(cfg, payload, severity=sev)
         dispatch_results[sev] = res
         if bool(res.get("sent")):
@@ -7457,11 +9001,18 @@ def quantum_notifications_dispatch(hours: int = Query(default=24, ge=1, le=24 * 
         "ok" if sent_any else "failed",
         {"alerts_sent": total_sent_alerts, "results": dispatch_results, "role": role},
     )
-    return {"sent": sent_any, "alerts_sent": total_sent_alerts, "results": dispatch_results}
+    return {
+        "sent": sent_any,
+        "alerts_sent": total_sent_alerts,
+        "results": dispatch_results,
+    }
 
 
 @router.get("/quantum/correlations")
-def quantum_correlations(hours: int = Query(default=24, ge=1, le=24 * 365), window_minutes: int = Query(default=30, ge=1, le=240)):
+def quantum_correlations(
+    hours: int = Query(default=24, ge=1, le=24 * 365),
+    window_minutes: int = Query(default=30, ge=1, le=240),
+):
     return _quantum_alert_correlations(hours=hours, window_minutes=window_minutes)
 
 
@@ -7479,7 +9030,9 @@ def quantum_baselines(hours: int = Query(default=24, ge=1, le=24 * 365)):
 
 
 @router.get("/quantum/root-cause")
-def quantum_root_cause(incident_id: Optional[str] = None, hours: int = Query(default=24, ge=1, le=24 * 365)):
+def quantum_root_cause(
+    incident_id: Optional[str] = None, hours: int = Query(default=24, ge=1, le=24 * 365)
+):
     return _quantum_root_cause_graph(incident_id=incident_id, hours=hours)
 
 
@@ -7506,7 +9059,12 @@ def quantum_playbook_v2_run(payload: QuantumPlaybookRunRequest):
     role = _require_quantum_action("playbook_run")
     cfg = _get_quantum_playbook_v2_config()
     if bool(cfg.get("require_approval")) and not bool(payload.approve):
-        return {"ok": False, "blocked": True, "reason": "approval required", "config": cfg}
+        return {
+            "ok": False,
+            "blocked": True,
+            "reason": "approval required",
+            "config": cfg,
+        }
 
     runbook = _runbook_for_alert_code("general")
     workspace = quantum_incident_workspace(incident_id=payload.incident_id)
@@ -7531,19 +9089,33 @@ def quantum_playbook_v2_run(payload: QuantumPlaybookRunRequest):
         "health_post": health_post,
         "rollback_ready": bool(cfg.get("auto_rollback")),
     }
-    _audit_quantum_op("playbook_v2_run", "ok", {"role": role, "dry_run": bool(payload.dry_run), "incident_id": payload.incident_id})
+    _audit_quantum_op(
+        "playbook_v2_run",
+        "ok",
+        {
+            "role": role,
+            "dry_run": bool(payload.dry_run),
+            "incident_id": payload.incident_id,
+        },
+    )
     return out
 
 
 @router.get("/quantum/postmortem")
-def quantum_postmortem_generate(incident_id: Optional[str] = None, hours: int = Query(default=24, ge=1, le=24 * 365)):
+def quantum_postmortem_generate(
+    incident_id: Optional[str] = None, hours: int = Query(default=24, ge=1, le=24 * 365)
+):
     return _quantum_generate_postmortem(incident_id=incident_id, hours=hours)
 
 
 @router.get("/quantum/postmortem.pdf")
-def quantum_postmortem_pdf(incident_id: Optional[str] = None, hours: int = Query(default=24, ge=1, le=24 * 365)):
+def quantum_postmortem_pdf(
+    incident_id: Optional[str] = None, hours: int = Query(default=24, ge=1, le=24 * 365)
+):
     report = _quantum_generate_postmortem(incident_id=incident_id, hours=hours)
-    incident = report.get("incident") if isinstance(report.get("incident"), dict) else {}
+    incident = (
+        report.get("incident") if isinstance(report.get("incident"), dict) else {}
+    )
     lines = [
         f"Window: {hours}h",
         f"Incident ID: {incident.get('id') or 'n/a'}",
@@ -7554,11 +9126,17 @@ def quantum_postmortem_pdf(incident_id: Optional[str] = None, hours: int = Query
         "Actions: " + " | ".join(report.get("action_items") or []),
     ]
     pdf_bytes = _minimal_pdf_bytes("Jarvis Quantum Postmortem", lines)
-    _audit_quantum_op("postmortem_pdf", "ok", {"incident_id": incident.get("id"), "window_hours": hours})
+    _audit_quantum_op(
+        "postmortem_pdf",
+        "ok",
+        {"incident_id": incident.get("id"), "window_hours": hours},
+    )
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{_download_filename("quantum_postmortem", "pdf")}"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{_download_filename("quantum_postmortem", "pdf")}"'
+        },
     )
 
 
@@ -7602,7 +9180,12 @@ def quantum_sandbox_run(payload: QuantumSandboxRunRequest):
     fake_health = _quantum_health_score(
         stats=_task_memory.quantum_stats(hours=payload.hours),
         alerts=merged_alerts,
-        anomalies=_quantum_anomalies(_task_memory.list_quantum_events(limit=5000, since_hours=payload.hours), hours=payload.hours, z_threshold=2.0).get("anomalies") or [],
+        anomalies=_quantum_anomalies(
+            _task_memory.list_quantum_events(limit=5000, since_hours=payload.hours),
+            hours=payload.hours,
+            z_threshold=2.0,
+        ).get("anomalies")
+        or [],
     )
     result = {
         "name": payload.name,
@@ -7615,10 +9198,17 @@ def quantum_sandbox_run(payload: QuantumSandboxRunRequest):
         "simulated_health": fake_health,
         "recommendation": "Enable playbook dry-run first, then promote to operator action.",
     }
-    _audit_quantum_op("sandbox_run", "ok", {"name": payload.name, "role": role, "drift_pct": payload.drift_pct})
+    _audit_quantum_op(
+        "sandbox_run",
+        "ok",
+        {"name": payload.name, "role": role, "drift_pct": payload.drift_pct},
+    )
     return result
 
-def _execute_goal_run(*, goal: str, session_id: Optional[str], auto_approve: bool) -> Dict[str, Any]:
+
+def _execute_goal_run(
+    *, goal: str, session_id: Optional[str], auto_approve: bool
+) -> Dict[str, Any]:
     sid = session_id or str(uuid4())
     goal_text = goal.strip()
     profile = _current_profile()
@@ -7626,7 +9216,9 @@ def _execute_goal_run(*, goal: str, session_id: Optional[str], auto_approve: boo
 
     task_id = _task_memory.create_task(goal_text, session_id=sid)
     _task_memory.update_task_status(task_id, "in_progress", note="Goal runner started")
-    run_id = _task_memory.create_goal_run(task_id=task_id, session_id=sid, goal=goal_text, plan=plan)
+    run_id = _task_memory.create_goal_run(
+        task_id=task_id, session_id=sid, goal=goal_text, plan=plan
+    )
 
     actions = _goal_to_actions(goal_text)
     steps: List[Dict[str, Any]] = []
@@ -7662,7 +9254,11 @@ def _execute_goal_run(*, goal: str, session_id: Optional[str], auto_approve: boo
         for _attempt in (1, 2):
             try:
                 if tool == "__chat__":
-                    response = agent_chat(AgentChatRequest(message=str(args.get("message", "")), session_id=sid))
+                    response = agent_chat(
+                        AgentChatRequest(
+                            message=str(args.get("message", "")), session_id=sid
+                        )
+                    )
                     result = {
                         "reply": response.reply,
                         "tool_result": response.tool_result,
@@ -7670,7 +9266,9 @@ def _execute_goal_run(*, goal: str, session_id: Optional[str], auto_approve: boo
                     }
                 else:
                     if tool not in _TOOLS:
-                        raise HTTPException(status_code=400, detail=f"unknown tool in goal plan: {tool}")
+                        raise HTTPException(
+                            status_code=400, detail=f"unknown tool in goal plan: {tool}"
+                        )
                     result = _TOOLS[tool].handler(args)
                 ok = True
                 break
@@ -7691,8 +9289,19 @@ def _execute_goal_run(*, goal: str, session_id: Optional[str], auto_approve: boo
             break
         verification = None
         if tool not in {"__chat__"} and isinstance(result, dict):
-            verification = _record_verified_tool_run(tool_name=tool, result=result, args=args, session_id=sid)
-        steps.append({"index": i, "label": label, "tool": tool, "status": "ok", "result": result, "verification": verification})
+            verification = _record_verified_tool_run(
+                tool_name=tool, result=result, args=args, session_id=sid
+            )
+        steps.append(
+            {
+                "index": i,
+                "label": label,
+                "tool": tool,
+                "status": "ok",
+                "result": result,
+                "verification": verification,
+            }
+        )
 
     if blocked:
         status = "blocked"
@@ -7708,7 +9317,9 @@ def _execute_goal_run(*, goal: str, session_id: Optional[str], auto_approve: boo
         final_result["status"] = "done"
 
     final_result["steps_executed"] = len(steps)
-    _task_memory.update_goal_run(run_id, status=status, steps=steps, result=final_result)
+    _task_memory.update_goal_run(
+        run_id, status=status, steps=steps, result=final_result
+    )
 
     return {
         "ok": status == "done",
@@ -7726,12 +9337,20 @@ def _execute_goal_run(*, goal: str, session_id: Optional[str], auto_approve: boo
 
 @router.post("/goals/run")
 def run_goal(payload: GoalRunRequest):
-    return _execute_goal_run(goal=payload.goal, session_id=payload.session_id, auto_approve=payload.auto_approve)
+    return _execute_goal_run(
+        goal=payload.goal,
+        session_id=payload.session_id,
+        auto_approve=payload.auto_approve,
+    )
 
 
 @router.get("/goals/history", response_model=GoalHistoryResponse)
-def goal_history(limit: int = Query(default=20, ge=1, le=100), session_id: Optional[str] = None):
-    return GoalHistoryResponse(runs=_task_memory.list_goal_runs(limit=limit, session_id=session_id))
+def goal_history(
+    limit: int = Query(default=20, ge=1, le=100), session_id: Optional[str] = None
+):
+    return GoalHistoryResponse(
+        runs=_task_memory.list_goal_runs(limit=limit, session_id=session_id)
+    )
 
 
 @router.post("/goals/schedule")
@@ -7775,7 +9394,11 @@ def run_multi_agent(payload: MultiAgentRunRequest):
     if provider == "auto":
         provider = "ollama" if is_ollama_configured() else "basic"
     fast_synthesis = bool(payload.fast_synthesis)
-    first_pass_roles = ["planner", "coder"] if fast_synthesis else ["planner", "researcher", "coder", "operator"]
+    first_pass_roles = (
+        ["planner", "coder"]
+        if fast_synthesis
+        else ["planner", "researcher", "coder", "operator"]
+    )
     agent_results: Dict[str, Dict[str, Any]] = {}
     with ThreadPoolExecutor(max_workers=_multi_agent_workers(provider)) as pool:
         future_map = {
@@ -7789,12 +9412,18 @@ def run_multi_agent(payload: MultiAgentRunRequest):
                 if isinstance(result, dict):
                     agent_results[role] = result
                 else:
-                    agent_results[role] = _normalize_role_payload(role, task, {"summary": str(result)})
+                    agent_results[role] = _normalize_role_payload(
+                        role, task, {"summary": str(result)}
+                    )
             except Exception as exc:
                 agent_results[role] = _normalize_role_payload(
                     role,
                     task,
-                    {"summary": f"{role} failed: {exc}", "risks": [f"{role} exception"], "actions": ["Retry role worker"]},
+                    {
+                        "summary": f"{role} failed: {exc}",
+                        "risks": [f"{role} exception"],
+                        "actions": ["Retry role worker"],
+                    },
                 )
 
     planner = agent_results.get("planner", _normalize_role_payload("planner", task, {}))
@@ -7805,8 +9434,12 @@ def run_multi_agent(payload: MultiAgentRunRequest):
         expanded = True
         with ThreadPoolExecutor(max_workers=_multi_agent_workers(provider)) as pool:
             future_map = {
-                pool.submit(_agent_role_reason, "researcher", task, session_id, True): "researcher",
-                pool.submit(_agent_role_reason, "operator", task, session_id, True): "operator",
+                pool.submit(
+                    _agent_role_reason, "researcher", task, session_id, True
+                ): "researcher",
+                pool.submit(
+                    _agent_role_reason, "operator", task, session_id, True
+                ): "operator",
             }
             for fut in as_completed(future_map):
                 role = future_map[fut]
@@ -7815,18 +9448,28 @@ def run_multi_agent(payload: MultiAgentRunRequest):
                     if isinstance(result, dict):
                         agent_results[role] = result
                     else:
-                        agent_results[role] = _normalize_role_payload(role, task, {"summary": str(result)})
+                        agent_results[role] = _normalize_role_payload(
+                            role, task, {"summary": str(result)}
+                        )
                 except Exception as exc:
                     agent_results[role] = _normalize_role_payload(
                         role,
                         task,
-                        {"summary": f"{role} failed: {exc}", "risks": [f"{role} exception"], "actions": ["Retry role worker"]},
+                        {
+                            "summary": f"{role} failed: {exc}",
+                            "risks": [f"{role} exception"],
+                            "actions": ["Retry role worker"],
+                        },
                     )
 
-    researcher = agent_results.get("researcher", _normalize_role_payload("researcher", task, {}))
+    researcher = agent_results.get(
+        "researcher", _normalize_role_payload("researcher", task, {})
+    )
     operator = agent_results.get("operator")
     if not isinstance(operator, dict):
-        operator = _operator_from_roles(task=task, planner=planner, coder=coder, researcher=researcher)
+        operator = _operator_from_roles(
+            task=task, planner=planner, coder=coder, researcher=researcher
+        )
 
     synthesis_lines = [
         f"Planner: {planner.get('summary')}",
@@ -7837,7 +9480,7 @@ def run_multi_agent(payload: MultiAgentRunRequest):
     ]
     merged_actions: List[str] = []
     for r in (planner, researcher, coder, operator):
-        for a in (r.get("actions") or []):
+        for a in r.get("actions") or []:
             if isinstance(a, str) and a.strip() and a.strip() not in merged_actions:
                 merged_actions.append(a.strip())
     for a in merged_actions[:8]:
@@ -7850,7 +9493,12 @@ def run_multi_agent(payload: MultiAgentRunRequest):
         "fast_synthesis": fast_synthesis,
         "expanded": expanded,
         "first_pass_roles": first_pass_roles,
-        "agents": {"planner": planner, "researcher": researcher, "coder": coder, "operator": operator},
+        "agents": {
+            "planner": planner,
+            "researcher": researcher,
+            "coder": coder,
+            "operator": operator,
+        },
         "synthesis": synthesis,
         "actions": merged_actions[:8],
         "timestamp": _now_iso(),
@@ -7858,7 +9506,10 @@ def run_multi_agent(payload: MultiAgentRunRequest):
 
 
 @router.get("/memory/quality")
-def memory_quality(session_id: str = Query(..., min_length=1), max_messages: int = Query(default=120, ge=20, le=400)):
+def memory_quality(
+    session_id: str = Query(..., min_length=1),
+    max_messages: int = Query(default=120, ge=20, le=400),
+):
     return _memory_quality_report(session_id=session_id, max_messages=max_messages)
 
 
@@ -7879,7 +9530,9 @@ def remember_memory(payload: LongTermMemoryCreateRequest):
 
 
 @router.get("/memory/search")
-def search_memories(query: str = Query(..., min_length=1), limit: int = Query(default=8, ge=1, le=50)):
+def search_memories(
+    query: str = Query(..., min_length=1), limit: int = Query(default=8, ge=1, le=50)
+):
     return {"items": _task_memory.search_long_term_memories(query=query, limit=limit)}
 
 
@@ -7916,26 +9569,43 @@ def memory_overview(
     since_hours: Optional[int] = Query(default=None, ge=1, le=24 * 365),
     archived: bool = Query(default=False),
 ):
-    return _task_memory.memory_overview(limit_per_group=limit_per_group, since_hours=since_hours, archived=archived)
+    return _task_memory.memory_overview(
+        limit_per_group=limit_per_group, since_hours=since_hours, archived=archived
+    )
 
 
 @router.get("/memory/profile")
-def memory_profile(limit: int = Query(default=8, ge=1, le=50), since_hours: Optional[int] = Query(default=None, ge=1, le=24 * 365)):
-    overview = _task_memory.memory_overview(limit_per_group=max(3, limit), since_hours=since_hours)
+def memory_profile(
+    limit: int = Query(default=8, ge=1, le=50),
+    since_hours: Optional[int] = Query(default=None, ge=1, le=24 * 365),
+):
+    overview = _task_memory.memory_overview(
+        limit_per_group=max(3, limit), since_hours=since_hours
+    )
     items = (overview.get("profile") or [])[:limit]
     return {"items": items, "total": len(items)}
 
 
 @router.get("/memory/projects")
-def memory_projects(limit: int = Query(default=8, ge=1, le=50), since_hours: Optional[int] = Query(default=None, ge=1, le=24 * 365)):
-    overview = _task_memory.memory_overview(limit_per_group=max(3, limit), since_hours=since_hours)
+def memory_projects(
+    limit: int = Query(default=8, ge=1, le=50),
+    since_hours: Optional[int] = Query(default=None, ge=1, le=24 * 365),
+):
+    overview = _task_memory.memory_overview(
+        limit_per_group=max(3, limit), since_hours=since_hours
+    )
     items = (overview.get("projects") or [])[:limit]
     return {"items": items, "total": len(items)}
 
 
 @router.get("/memory/workspaces")
-def list_project_workspaces(limit: int = Query(default=20, ge=1, le=100), include_archived: bool = Query(default=False)):
-    items = _task_memory.list_project_workspaces(limit=limit, include_archived=include_archived)
+def list_project_workspaces(
+    limit: int = Query(default=20, ge=1, le=100),
+    include_archived: bool = Query(default=False),
+):
+    items = _task_memory.list_project_workspaces(
+        limit=limit, include_archived=include_archived
+    )
     active_workspace_id = _task_memory.get_active_workspace_id()
     return {"items": items, "active_workspace_id": active_workspace_id}
 
@@ -7959,7 +9629,11 @@ def create_project_workspace(payload: WorkspaceCreateRequest):
 @router.get("/memory/workspaces/active")
 def active_project_workspace():
     active_workspace_id = _task_memory.get_active_workspace_id()
-    workspace = _task_memory.get_project_workspace(active_workspace_id) if active_workspace_id else None
+    workspace = (
+        _task_memory.get_project_workspace(active_workspace_id)
+        if active_workspace_id
+        else None
+    )
     return {"active_workspace_id": active_workspace_id, "workspace": workspace}
 
 
@@ -7975,8 +9649,15 @@ def set_active_project_workspace(payload: WorkspaceActivationRequest):
 @router.get("/memory/workspaces/policy/current")
 def get_current_workspace_policy():
     active_workspace_id = _task_memory.get_active_workspace_id()
-    workspace = _task_memory.get_project_workspace(active_workspace_id) if active_workspace_id else None
-    return {"workspace": workspace, "policy": _task_memory.get_workspace_policy(active_workspace_id)}
+    workspace = (
+        _task_memory.get_project_workspace(active_workspace_id)
+        if active_workspace_id
+        else None
+    )
+    return {
+        "workspace": workspace,
+        "policy": _task_memory.get_workspace_policy(active_workspace_id),
+    }
 
 
 @router.get("/memory/workspaces/{workspace_id}/policy")
@@ -7984,7 +9665,10 @@ def get_workspace_policy_route(workspace_id: int):
     workspace = _task_memory.get_project_workspace(workspace_id)
     if workspace is None:
         raise HTTPException(status_code=404, detail="workspace not found")
-    return {"workspace": workspace, "policy": _task_memory.get_workspace_policy(workspace_id)}
+    return {
+        "workspace": workspace,
+        "policy": _task_memory.get_workspace_policy(workspace_id),
+    }
 
 
 @router.post("/memory/workspaces/{workspace_id}/policy")
@@ -8028,7 +9712,10 @@ def update_project_workspace(workspace_id: int, payload: WorkspaceUpdateRequest)
 
 
 @router.get("/memory/graph")
-def memory_graph(workspace_id: Optional[int] = Query(default=None, ge=1), limit: int = Query(default=60, ge=2, le=200)):
+def memory_graph(
+    workspace_id: Optional[int] = Query(default=None, ge=1),
+    limit: int = Query(default=60, ge=2, le=200),
+):
     return _task_memory.workspace_memory_graph(workspace_id=workspace_id, limit=limit)
 
 
@@ -8067,8 +9754,13 @@ def create_proactive_reminder(payload: ReminderCreateRequest):
 
 
 @router.post("/memory/reminders/generate")
-def generate_proactive_reminders(workspace_id: Optional[int] = Query(default=None, ge=1), limit: int = Query(default=4, ge=1, le=10)):
-    return _task_memory.generate_proactive_reminders(workspace_id=workspace_id, limit=limit)
+def generate_proactive_reminders(
+    workspace_id: Optional[int] = Query(default=None, ge=1),
+    limit: int = Query(default=4, ge=1, le=10),
+):
+    return _task_memory.generate_proactive_reminders(
+        workspace_id=workspace_id, limit=limit
+    )
 
 
 @router.post("/memory/reminders/dispatch-due")
@@ -8078,11 +9770,18 @@ def dispatch_due_proactive_reminders(limit: int = Query(default=10, ge=1, le=50)
 
 @router.get("/memory/reminders/voice-feed")
 def proactive_reminder_voice_feed(limit: int = Query(default=10, ge=1, le=50)):
-    return {"items": _dispatch_due_reminders(limit=limit, include_discord=False, include_voice=True).get("voice", [])}
+    return {
+        "items": _dispatch_due_reminders(
+            limit=limit, include_discord=False, include_voice=True
+        ).get("voice", [])
+    }
 
 
 @router.get("/trust/report")
-def trust_report(limit: int = Query(default=100, ge=10, le=500), session_id: Optional[str] = Query(default=None)):
+def trust_report(
+    limit: int = Query(default=100, ge=10, le=500),
+    session_id: Optional[str] = Query(default=None),
+):
     if session_id:
         recent = _task_memory.list_tool_executions(limit=limit, session_id=session_id)
         return {
@@ -8094,7 +9793,10 @@ def trust_report(limit: int = Query(default=100, ge=10, le=500), session_id: Opt
 
 
 @router.get("/trust/receipts")
-def trust_receipts(limit: int = Query(default=20, ge=1, le=100), session_id: Optional[str] = Query(default=None)):
+def trust_receipts(
+    limit: int = Query(default=20, ge=1, le=100),
+    session_id: Optional[str] = Query(default=None),
+):
     return _trust_receipts_payload(limit=limit, session_id=session_id)
 
 
@@ -8109,7 +9811,9 @@ def next_action(
 @router.post("/next-action/execute")
 def execute_next_action(payload: NextActionExecuteRequest):
     action = payload.action if isinstance(payload.action, dict) else {}
-    execution = action.get("execution") if isinstance(action.get("execution"), dict) else {}
+    execution = (
+        action.get("execution") if isinstance(action.get("execution"), dict) else {}
+    )
     kind = str(execution.get("kind") or "").strip().lower()
     session_id = payload.session_id or str(uuid4())
     if kind == "activate_workspace":
@@ -8122,14 +9826,27 @@ def execute_next_action(payload: NextActionExecuteRequest):
         reminder_id = execution.get("reminder_id")
         if not isinstance(reminder_id, int):
             raise HTTPException(status_code=400, detail="reminder_id is required")
-        ok = _task_memory.update_proactive_reminder(reminder_id, status="done", delivered=True)
+        ok = _task_memory.update_proactive_reminder(
+            reminder_id, status="done", delivered=True
+        )
         reminder = _task_memory.get_proactive_reminder(reminder_id)
         return {"ok": ok, "kind": kind, "session_id": session_id, "result": reminder}
     if kind == "workspace_policy":
         workspace_id = execution.get("workspace_id")
-        policy = _task_memory.get_workspace_policy(workspace_id if isinstance(workspace_id, int) else None)
-        workspace = _task_memory.get_project_workspace(workspace_id) if isinstance(workspace_id, int) else None
-        return {"ok": True, "kind": kind, "session_id": session_id, "result": {"workspace": workspace, "policy": policy}}
+        policy = _task_memory.get_workspace_policy(
+            workspace_id if isinstance(workspace_id, int) else None
+        )
+        workspace = (
+            _task_memory.get_project_workspace(workspace_id)
+            if isinstance(workspace_id, int)
+            else None
+        )
+        return {
+            "ok": True,
+            "kind": kind,
+            "session_id": session_id,
+            "result": {"workspace": workspace, "policy": policy},
+        }
     message = str(execution.get("message") or action.get("action") or "").strip()
     if not message:
         raise HTTPException(status_code=400, detail="action is not executable")
@@ -8171,8 +9888,13 @@ def autonomy_mission_start(payload: MissionStartRequest):
 
 
 @router.get("/autonomy/missions")
-def autonomy_mission_list(limit: int = Query(default=20, ge=1, le=100), workspace_id: Optional[int] = Query(default=None, ge=1)):
-    return {"items": _task_memory.list_mission_runs(limit=limit, workspace_id=workspace_id)}
+def autonomy_mission_list(
+    limit: int = Query(default=20, ge=1, le=100),
+    workspace_id: Optional[int] = Query(default=None, ge=1),
+):
+    return {
+        "items": _task_memory.list_mission_runs(limit=limit, workspace_id=workspace_id)
+    }
 
 
 @router.get("/autonomy/missions/{mission_id}")
@@ -8194,7 +9916,11 @@ def autonomy_mission_resume(mission_id: int, approve: bool = Query(default=False
     auto_approve = bool(item.get("auto_approve")) or bool(approve)
     goal = item.get("goal")
     prior_result = item.get("result") if isinstance(item.get("result"), dict) else {}
-    retry_limit = int(prior_result.get("retry_limit") or prior_result.get("checkpoint", {}).get("retry_limit") or 1)
+    retry_limit = int(
+        prior_result.get("retry_limit")
+        or prior_result.get("checkpoint", {}).get("retry_limit")
+        or 1
+    )
     return _run_and_store_mission(
         workspace_id=workspace_id if isinstance(workspace_id, int) else None,
         session_id=session_id if isinstance(session_id, str) else None,
@@ -8219,8 +9945,12 @@ def integrations_config_set(payload: IntegrationConfigRequest):
 @router.get("/integrations/summary")
 def integrations_summary():
     cfg = _get_integration_config()
-    connected = sum(1 for item in cfg.get("connections", {}).values() if bool(item.get("connected")))
-    enabled = sum(1 for item in cfg.get("connections", {}).values() if bool(item.get("enabled")))
+    connected = sum(
+        1 for item in cfg.get("connections", {}).values() if bool(item.get("connected"))
+    )
+    enabled = sum(
+        1 for item in cfg.get("connections", {}).values() if bool(item.get("enabled"))
+    )
     return {
         "connections": cfg.get("connections", {}),
         "enabled_count": enabled,
@@ -8276,7 +10006,9 @@ def desktop_awareness_get(workspace_id: Optional[int] = Query(default=None, ge=1
 
 @router.post("/desktop/presence")
 def desktop_presence_set(payload: DesktopPresenceSnapshotRequest):
-    workspace_id = payload.workspace_id if isinstance(payload.workspace_id, int) else None
+    workspace_id = (
+        payload.workspace_id if isinstance(payload.workspace_id, int) else None
+    )
     details = dict(payload.details or {})
     if payload.app_name:
         details.setdefault("app_name", payload.app_name)
@@ -8289,7 +10021,11 @@ def desktop_presence_set(payload: DesktopPresenceSnapshotRequest):
         summary=payload.summary or "Desktop presence captured",
         details=details,
     )
-    return {"ok": True, "snapshot": snapshot, "presence": _desktop_presence_payload(workspace_id=workspace_id)}
+    return {
+        "ok": True,
+        "snapshot": snapshot,
+        "presence": _desktop_presence_payload(workspace_id=workspace_id),
+    }
 
 
 @router.get("/voice/wake")
@@ -8347,13 +10083,22 @@ def browser_workflow_auth_templates():
 
 
 @router.get("/control/browser/templates/library")
-def browser_workflow_library_templates(provider: Optional[str] = Query(default=None, max_length=80)):
+def browser_workflow_library_templates(
+    provider: Optional[str] = Query(default=None, max_length=80),
+):
     return {"items": _workflow_library_templates(provider=provider)}
 
 
 @router.get("/control/browser/sessions")
-def browser_sessions(limit: int = Query(default=20, ge=1, le=100), workspace_id: Optional[int] = Query(default=None, ge=1)):
-    return {"items": _task_memory.list_browser_sessions(limit=limit, workspace_id=workspace_id)}
+def browser_sessions(
+    limit: int = Query(default=20, ge=1, le=100),
+    workspace_id: Optional[int] = Query(default=None, ge=1),
+):
+    return {
+        "items": _task_memory.list_browser_sessions(
+            limit=limit, workspace_id=workspace_id
+        )
+    }
 
 
 @router.post("/control/browser/sessions")
@@ -8373,7 +10118,10 @@ def browser_sessions_save(payload: BrowserSessionCreateRequest):
 
 
 @router.delete("/control/browser/sessions")
-def browser_sessions_delete(name: Optional[str] = Query(default=None), session_id: Optional[int] = Query(default=None, ge=1)):
+def browser_sessions_delete(
+    name: Optional[str] = Query(default=None),
+    session_id: Optional[int] = Query(default=None, ge=1),
+):
     target = session_id if session_id is not None else name
     if target in {None, ""}:
         raise HTTPException(status_code=400, detail="name or session_id is required")
@@ -8386,25 +10134,38 @@ def browser_sessions_delete(name: Optional[str] = Query(default=None), session_i
 def browser_sessions_health(payload: BrowserSessionHealthCheckRequest):
     sessions: List[Dict[str, Any]] = []
     if payload.session_id or payload.session_name:
-        target = payload.session_id if payload.session_id is not None else payload.session_name
+        target = (
+            payload.session_id
+            if payload.session_id is not None
+            else payload.session_name
+        )
         session = _task_memory.get_browser_session(target)
         if session is None:
             raise HTTPException(status_code=404, detail="browser session not found")
         sessions = [session]
     else:
-        sessions = _task_memory.list_browser_sessions(limit=payload.limit, workspace_id=payload.workspace_id)
+        sessions = _task_memory.list_browser_sessions(
+            limit=payload.limit, workspace_id=payload.workspace_id
+        )
     items: List[Dict[str, Any]] = []
     for session in sessions:
         try:
             template = _browser_template_for_session(session)
             result = _session_health_from_run(session, template)
-            updated = _task_memory.update_browser_session_health(session["id"], status=result["status"], details=result["details"])
+            updated = _task_memory.update_browser_session_health(
+                session["id"], status=result["status"], details=result["details"]
+            )
             items.append(updated or session)
         except Exception as exc:
             updated = _task_memory.update_browser_session_health(
                 session["id"],
                 status="error",
-                details={"error": str(exc), "template_name": (template or {}).get("name") if 'template' in locals() else None},
+                details={
+                    "error": str(exc),
+                    "template_name": (template or {}).get("name")
+                    if "template" in locals()
+                    else None,
+                },
             )
             items.append(updated or session)
     return {"ok": True, "items": items}
@@ -8412,7 +10173,11 @@ def browser_sessions_health(payload: BrowserSessionHealthCheckRequest):
 
 @router.post("/control/browser/templates")
 def browser_workflow_templates_save(payload: BrowserWorkflowTemplateRequest):
-    items = [item for item in _get_browser_workflow_templates() if str(item.get("name") or "").strip().lower() != payload.name.strip().lower()]
+    items = [
+        item
+        for item in _get_browser_workflow_templates()
+        if str(item.get("name") or "").strip().lower() != payload.name.strip().lower()
+    ]
     items.insert(
         0,
         {
@@ -8421,12 +10186,34 @@ def browser_workflow_templates_save(payload: BrowserWorkflowTemplateRequest):
             "start_url": payload.start_url,
             "category": payload.category.strip() or "custom",
             "auth_template": bool(payload.auth_template),
-            "recommended_session_name": (payload.recommended_session_name.strip() if isinstance(payload.recommended_session_name, str) else None) or None,
-            "provider": (payload.provider.strip() if isinstance(payload.provider, str) else None) or None,
-            "healthcheck_url": (payload.healthcheck_url.strip() if isinstance(payload.healthcheck_url, str) else None) or None,
-            "healthcheck_selector": (payload.healthcheck_selector.strip() if isinstance(payload.healthcheck_selector, str) else None) or None,
-            "logged_out_markers": [str(v).strip() for v in payload.logged_out_markers if str(v).strip()][:12],
-            "healthy_markers": [str(v).strip() for v in payload.healthy_markers if str(v).strip()][:12],
+            "recommended_session_name": (
+                payload.recommended_session_name.strip()
+                if isinstance(payload.recommended_session_name, str)
+                else None
+            )
+            or None,
+            "provider": (
+                payload.provider.strip() if isinstance(payload.provider, str) else None
+            )
+            or None,
+            "healthcheck_url": (
+                payload.healthcheck_url.strip()
+                if isinstance(payload.healthcheck_url, str)
+                else None
+            )
+            or None,
+            "healthcheck_selector": (
+                payload.healthcheck_selector.strip()
+                if isinstance(payload.healthcheck_selector, str)
+                else None
+            )
+            or None,
+            "logged_out_markers": [
+                str(v).strip() for v in payload.logged_out_markers if str(v).strip()
+            ][:12],
+            "healthy_markers": [
+                str(v).strip() for v in payload.healthy_markers if str(v).strip()
+            ][:12],
             "steps": [step.model_dump() for step in payload.steps],
         },
     )
@@ -8434,8 +10221,14 @@ def browser_workflow_templates_save(payload: BrowserWorkflowTemplateRequest):
 
 
 @router.delete("/control/browser/templates")
-def browser_workflow_templates_delete(name: str = Query(..., min_length=1, max_length=80)):
-    items = [item for item in _get_browser_workflow_templates() if str(item.get("name") or "").strip().lower() != name.strip().lower()]
+def browser_workflow_templates_delete(
+    name: str = Query(..., min_length=1, max_length=80),
+):
+    items = [
+        item
+        for item in _get_browser_workflow_templates()
+        if str(item.get("name") or "").strip().lower() != name.strip().lower()
+    ]
     return {"ok": True, "items": _set_browser_workflow_templates(items)}
 
 
@@ -8457,7 +10250,9 @@ def memory_briefing(
     period: str = Query(default="morning", pattern="^(morning|evening)$"),
     recent_project_hours: Optional[int] = Query(default=None, ge=1, le=24 * 30),
 ):
-    return _task_memory.memory_briefing(period=period, recent_project_hours=recent_project_hours)
+    return _task_memory.memory_briefing(
+        period=period, recent_project_hours=recent_project_hours
+    )
 
 
 @router.post("/memory/consolidate")
@@ -8501,7 +10296,9 @@ def pin_long_term_memory(memory_id: int, pinned: bool = Query(default=True)):
 
 @router.post("/memory/actions/bulk")
 def bulk_memory_action(payload: LongTermMemoryBulkActionRequest):
-    return _task_memory.bulk_update_long_term_memories(payload.ids, action=payload.action)
+    return _task_memory.bulk_update_long_term_memories(
+        payload.ids, action=payload.action
+    )
 
 
 @router.post("/memory/pinned/reorder")
@@ -8521,7 +10318,11 @@ def memory_saved_filters_get():
 
 @router.post("/memory/filters/saved")
 def memory_saved_filters_add(payload: MemorySavedFilterRequest):
-    items = [item for item in _memory_saved_filters_get() if str(item.get("name") or "").strip().lower() != payload.name.strip().lower()]
+    items = [
+        item
+        for item in _memory_saved_filters_get()
+        if str(item.get("name") or "").strip().lower() != payload.name.strip().lower()
+    ]
     items.insert(
         0,
         {
@@ -8536,7 +10337,11 @@ def memory_saved_filters_add(payload: MemorySavedFilterRequest):
 
 @router.delete("/memory/filters/saved")
 def memory_saved_filters_delete(name: str = Query(..., min_length=1, max_length=60)):
-    items = [item for item in _memory_saved_filters_get() if str(item.get("name") or "").strip().lower() != name.strip().lower()]
+    items = [
+        item
+        for item in _memory_saved_filters_get()
+        if str(item.get("name") or "").strip().lower() != name.strip().lower()
+    ]
     return {"ok": True, "items": _memory_saved_filters_set(items)}
 
 
@@ -8568,7 +10373,9 @@ def memory_briefing_delivery_set(payload: MemoryBriefingDeliveryConfigRequest):
 
 
 @router.post("/memory/briefings/delivery/test")
-def memory_briefing_delivery_test(period: str = Query(default="morning", pattern="^(morning|evening)$")):
+def memory_briefing_delivery_test(
+    period: str = Query(default="morning", pattern="^(morning|evening)$"),
+):
     briefing = _task_memory.memory_briefing(period=period)
     delivery = _dispatch_briefing_deliveries(briefing)
     return {"ok": True, "briefing": briefing, "delivery": delivery}
@@ -8590,23 +10397,51 @@ def agent_control_config_set(payload: AgentControlConfigRequest):
 
 @router.post("/control/browser/open")
 def control_browser_open(payload: BrowserOpenRequest):
-    resolved_workspace_id, workspace, policy = _resolve_workspace_context(payload.workspace_id)
-    result = _browser_open(payload.url, workspace_id=payload.workspace_id, confirm=payload.confirm)
-    verification = _record_verified_tool_run(tool_name="browser_open", result=result, args=payload.model_dump())
-    return {"ok": True, "workspace": workspace, "workspace_id": resolved_workspace_id, "policy": policy, "result": result, "verification": verification}
+    resolved_workspace_id, workspace, policy = _resolve_workspace_context(
+        payload.workspace_id
+    )
+    result = _browser_open(
+        payload.url, workspace_id=payload.workspace_id, confirm=payload.confirm
+    )
+    verification = _record_verified_tool_run(
+        tool_name="browser_open", result=result, args=payload.model_dump()
+    )
+    return {
+        "ok": True,
+        "workspace": workspace,
+        "workspace_id": resolved_workspace_id,
+        "policy": policy,
+        "result": result,
+        "verification": verification,
+    }
 
 
 @router.post("/control/browser/search")
 def control_browser_search(payload: BrowserSearchRequest):
-    resolved_workspace_id, workspace, policy = _resolve_workspace_context(payload.workspace_id)
-    result = _browser_search(payload.query, workspace_id=payload.workspace_id, confirm=payload.confirm)
-    verification = _record_verified_tool_run(tool_name="browser_search", result=result, args=payload.model_dump())
-    return {"ok": True, "workspace": workspace, "workspace_id": resolved_workspace_id, "policy": policy, "result": result, "verification": verification}
+    resolved_workspace_id, workspace, policy = _resolve_workspace_context(
+        payload.workspace_id
+    )
+    result = _browser_search(
+        payload.query, workspace_id=payload.workspace_id, confirm=payload.confirm
+    )
+    verification = _record_verified_tool_run(
+        tool_name="browser_search", result=result, args=payload.model_dump()
+    )
+    return {
+        "ok": True,
+        "workspace": workspace,
+        "workspace_id": resolved_workspace_id,
+        "policy": policy,
+        "result": result,
+        "verification": verification,
+    }
 
 
 @router.post("/control/browser/workflow")
 def control_browser_workflow(payload: BrowserWorkflowRequest):
-    resolved_workspace_id, workspace, policy = _enforce_workspace_capability("browser", workspace_id=payload.workspace_id)
+    resolved_workspace_id, workspace, policy = _enforce_workspace_capability(
+        "browser", workspace_id=payload.workspace_id
+    )
     loaded_session = None
     storage_state = None
     template = _browser_template_by_name(payload.template_name)
@@ -8616,13 +10451,24 @@ def control_browser_workflow(payload: BrowserWorkflowRequest):
             raise HTTPException(status_code=404, detail="browser session not found")
         storage_state = loaded_session.get("storage_state") if loaded_session else None
     if payload.save_session and not payload.session_name:
-        raise HTTPException(status_code=400, detail="session_name is required when save_session=true")
+        raise HTTPException(
+            status_code=400, detail="session_name is required when save_session=true"
+        )
     steps_payload = [step.model_dump() for step in payload.steps]
     if not steps_payload and template:
-        steps_payload = [dict(step) for step in list(template.get("steps") or []) if isinstance(step, dict)]
+        steps_payload = [
+            dict(step)
+            for step in list(template.get("steps") or [])
+            if isinstance(step, dict)
+        ]
     if not steps_payload:
-        raise HTTPException(status_code=400, detail="steps or template_name with stored steps is required")
-    start_url = payload.start_url or (template.get("start_url") if isinstance(template, dict) else None)
+        raise HTTPException(
+            status_code=400,
+            detail="steps or template_name with stored steps is required",
+        )
+    start_url = payload.start_url or (
+        template.get("start_url") if isinstance(template, dict) else None
+    )
     if _policy_confirmation_required(policy, confirm=payload.confirm):
         result = {
             "ok": True,
@@ -8634,7 +10480,9 @@ def control_browser_workflow(payload: BrowserWorkflowRequest):
             "extracted": [],
             "runtime": _browser_workflow_runtime(),
         }
-        verification = _record_verified_tool_run(tool_name="browser_workflow", result=result, args=payload.model_dump())
+        verification = _record_verified_tool_run(
+            tool_name="browser_workflow", result=result, args=payload.model_dump()
+        )
         return {
             "ok": True,
             "workspace": workspace,
@@ -8653,13 +10501,31 @@ def control_browser_workflow(payload: BrowserWorkflowRequest):
     )
     saved_session = None
     if payload.save_session and payload.session_name:
-        provider = str((template or {}).get("provider") or (loaded_session or {}).get("provider") or "").strip() or None
-        template_name = str((template or {}).get("name") or payload.template_name or (loaded_session or {}).get("template_name") or "").strip() or None
+        provider = (
+            str(
+                (template or {}).get("provider")
+                or (loaded_session or {}).get("provider")
+                or ""
+            ).strip()
+            or None
+        )
+        template_name = (
+            str(
+                (template or {}).get("name")
+                or payload.template_name
+                or (loaded_session or {}).get("template_name")
+                or ""
+            ).strip()
+            or None
+        )
         saved_session = _task_memory.save_browser_session(
             name=payload.session_name,
-            storage_state=result.get("storage_state") if isinstance(result.get("storage_state"), dict) else {},
+            storage_state=result.get("storage_state")
+            if isinstance(result.get("storage_state"), dict)
+            else {},
             workspace_id=resolved_workspace_id,
-            notes=payload.session_notes or (loaded_session.get("notes") if loaded_session else None),
+            notes=payload.session_notes
+            or (loaded_session.get("notes") if loaded_session else None),
             provider=provider,
             template_name=template_name,
         )
@@ -8692,15 +10558,30 @@ def control_browser_workflow(payload: BrowserWorkflowRequest):
 
 @router.post("/control/desktop/launch")
 def control_desktop_launch(payload: DesktopLaunchRequest):
-    resolved_workspace_id, workspace, policy = _resolve_workspace_context(payload.workspace_id)
-    result = _desktop_launch(payload.app, workspace_id=payload.workspace_id, confirm=payload.confirm)
-    verification = _record_verified_tool_run(tool_name="desktop_launch", result=result, args=payload.model_dump())
-    return {"ok": True, "workspace": workspace, "workspace_id": resolved_workspace_id, "policy": policy, "result": result, "verification": verification}
+    resolved_workspace_id, workspace, policy = _resolve_workspace_context(
+        payload.workspace_id
+    )
+    result = _desktop_launch(
+        payload.app, workspace_id=payload.workspace_id, confirm=payload.confirm
+    )
+    verification = _record_verified_tool_run(
+        tool_name="desktop_launch", result=result, args=payload.model_dump()
+    )
+    return {
+        "ok": True,
+        "workspace": workspace,
+        "workspace_id": resolved_workspace_id,
+        "policy": policy,
+        "result": result,
+        "verification": verification,
+    }
 
 
 @router.post("/control/desktop/action")
 def control_desktop_action(payload: DesktopControlRequest):
-    resolved_workspace_id, workspace, policy = _resolve_workspace_context(payload.workspace_id)
+    resolved_workspace_id, workspace, policy = _resolve_workspace_context(
+        payload.workspace_id
+    )
     result = _desktop_control(
         action=payload.action,
         target=payload.target,
@@ -8709,8 +10590,17 @@ def control_desktop_action(payload: DesktopControlRequest):
         workspace_id=payload.workspace_id,
         confirm=payload.confirm,
     )
-    verification = _record_verified_tool_run(tool_name="desktop_control", result=result, args=payload.model_dump())
-    return {"ok": True, "workspace": workspace, "workspace_id": resolved_workspace_id, "policy": policy, "result": result, "verification": verification}
+    verification = _record_verified_tool_run(
+        tool_name="desktop_control", result=result, args=payload.model_dump()
+    )
+    return {
+        "ok": True,
+        "workspace": workspace,
+        "workspace_id": resolved_workspace_id,
+        "policy": policy,
+        "result": result,
+        "verification": verification,
+    }
 
 
 @router.post("/vision/analyze")
@@ -8758,7 +10648,10 @@ def create_autonomous_job(payload: AutonomousJobCreateRequest):
 
 
 @router.get("/autonomy/jobs")
-def list_autonomy_jobs(limit: int = Query(default=100, ge=1, le=200), mode: Optional[str] = Query(default=None)):
+def list_autonomy_jobs(
+    limit: int = Query(default=100, ge=1, le=200),
+    mode: Optional[str] = Query(default=None),
+):
     return {"items": _task_memory.list_autonomous_jobs(limit=limit, mode=mode)}
 
 
@@ -8775,7 +10668,11 @@ def watcher_network():
 @router.post("/autonomy/watchers")
 def ensure_project_watcher(payload: ProjectWatcherRequest):
     watcher_type = str(payload.watcher_type or "project").strip().lower() or "project"
-    workspace = _task_memory.get_project_workspace(payload.workspace_id) if payload.workspace_id else None
+    workspace = (
+        _task_memory.get_project_workspace(payload.workspace_id)
+        if payload.workspace_id
+        else None
+    )
     if watcher_type == "project" and workspace is None:
         raise HTTPException(status_code=404, detail="workspace not found")
     scope_name = workspace.get("name") if workspace else watcher_type.title()
@@ -8783,8 +10680,12 @@ def ensure_project_watcher(payload: ProjectWatcherRequest):
     existing = None
     for job in _task_memory.list_autonomous_jobs(limit=200, mode="watcher"):
         meta = job.get("metadata") or {}
-        same_workspace = int(meta.get("workspace_id") or 0) == int(payload.workspace_id or 0)
-        same_type = str(meta.get("watcher_type") or "project").strip().lower() == watcher_type
+        same_workspace = int(meta.get("workspace_id") or 0) == int(
+            payload.workspace_id or 0
+        )
+        same_type = (
+            str(meta.get("watcher_type") or "project").strip().lower() == watcher_type
+        )
         if same_workspace and same_type:
             existing = job
             break
@@ -8796,8 +10697,8 @@ def ensure_project_watcher(payload: ProjectWatcherRequest):
     }
     goal = (
         f"Monitor workspace {scope_name} and trigger missions when {watcher_type} signals need action."
-        if workspace else
-        f"Monitor {watcher_type} signals and escalate when they need action."
+        if workspace
+        else f"Monitor {watcher_type} signals and escalate when they need action."
     )
     if existing:
         _task_memory.update_autonomous_job(
@@ -8822,7 +10723,14 @@ def ensure_project_watcher(payload: ProjectWatcherRequest):
             enabled=payload.enabled,
             metadata=metadata,
         )
-    job = next((item for item in _task_memory.list_autonomous_jobs(limit=200, mode="watcher") if int(item["id"]) == job_id), None)
+    job = next(
+        (
+            item
+            for item in _task_memory.list_autonomous_jobs(limit=200, mode="watcher")
+            if int(item["id"]) == job_id
+        ),
+        None,
+    )
     return {"ok": True, "job": job}
 
 
@@ -8854,7 +10762,9 @@ def run_autonomy_job(job_id: int):
     if target is None:
         raise HTTPException(status_code=404, detail="autonomous job not found")
     result = _execute_autonomous_job(target)
-    _task_memory.mark_autonomous_job_result(job_id, ok=bool(result.get("ok", True)), error=None, result=result)
+    _task_memory.mark_autonomous_job_result(
+        job_id, ok=bool(result.get("ok", True)), error=None, result=result
+    )
     return {"ok": True, "job_id": job_id, "result": result}
 
 
@@ -8913,9 +10823,15 @@ def benchmark_llm(payload: AgentLlmBenchmarkRequest):
         per_prompt.append({"prompt": prompt[:300], "runs": runs})
 
     successes = [r for pp in per_prompt for r in pp["runs"] if r.get("ok")]
-    success_rate = (len(successes) / max(1, sum(len(pp["runs"]) for pp in per_prompt))) * 100.0
+    success_rate = (
+        len(successes) / max(1, sum(len(pp["runs"]) for pp in per_prompt))
+    ) * 100.0
     avg_latency = (sum(timings_ms) / max(1, len(timings_ms))) if timings_ms else 0.0
-    p95 = sorted(timings_ms)[max(0, int(0.95 * max(1, len(timings_ms))) - 1)] if timings_ms else 0
+    p95 = (
+        sorted(timings_ms)[max(0, int(0.95 * max(1, len(timings_ms))) - 1)]
+        if timings_ms
+        else 0
+    )
     return {
         "ok": True,
         "mode": mode,
@@ -8961,7 +10877,9 @@ def eval_multi_agent(payload: AgentEvalRequest):
 
     overall_scores = [float(r["score"]["overall_score_pct"]) for r in per_run]
     avg_overall = sum(overall_scores) / max(1, len(overall_scores))
-    avg_latency = sum(int(r["score"]["latency_ms"]) for r in per_run) / max(1, len(per_run))
+    avg_latency = sum(int(r["score"]["latency_ms"]) for r in per_run) / max(
+        1, len(per_run)
+    )
     return {
         "ok": True,
         "runs": payload.runs,
@@ -9015,7 +10933,9 @@ async def agent_chat_stream(payload: AgentChatRequest):
                     await asyncio.sleep(0)
 
             final_reply = full_text.strip() or _basic_brain(payload.message)
-            _memory.append(session_id, StoredMessage(role="assistant", text=final_reply))
+            _memory.append(
+                session_id, StoredMessage(role="assistant", text=final_reply)
+            )
             done = {
                 "session_id": session_id,
                 "reply": final_reply,
@@ -9040,7 +10960,9 @@ async def agent_chat_stream(payload: AgentChatRequest):
                     yield f"event: delta\ndata: {json.dumps({'text': chunk})}\n\n"
                     await asyncio.sleep(0)
                 final_reply = full_text.strip()
-                _memory.append(session_id, StoredMessage(role="assistant", text=final_reply))
+                _memory.append(
+                    session_id, StoredMessage(role="assistant", text=final_reply)
+                )
                 done = {
                     "session_id": session_id,
                     "reply": final_reply,
@@ -9081,7 +11003,11 @@ def agent_chat(payload: AgentChatRequest):
 
     if _message_is_rejection(msg_trimmed):
         cleared = _clear_pending_approval(session_id)
-        reply = "Pending approval cleared." if cleared else "There was no pending approval to clear."
+        reply = (
+            "Pending approval cleared."
+            if cleared
+            else "There was no pending approval to clear."
+        )
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
@@ -9098,7 +11024,11 @@ def agent_chat(payload: AgentChatRequest):
             tags=list(memory_candidate.get("tags") or []),
             importance=int(memory_candidate.get("importance") or 3),
             memory_type=str(memory_candidate.get("memory_type") or "general"),
-            subject=(str(memory_candidate.get("subject")).strip() if memory_candidate.get("subject") else None),
+            subject=(
+                str(memory_candidate.get("subject")).strip()
+                if memory_candidate.get("subject")
+                else None
+            ),
             source=str(memory_candidate.get("source") or "chat"),
             session_id=session_id,
         )
@@ -9119,7 +11049,9 @@ def agent_chat(payload: AgentChatRequest):
             reply = "I don't have enough profile memory saved yet to answer that confidently."
             tool_result = {"items": []}
         else:
-            reply = _format_memory_group("What I know about you", profile_items, limit=6)
+            reply = _format_memory_group(
+                "What I know about you", profile_items, limit=6
+            )
             tool_result = {"items": profile_items[:6]}
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
@@ -9130,20 +11062,44 @@ def agent_chat(payload: AgentChatRequest):
             plan=plan,
         )
 
-    workspace_switch = re.search(r"\b(?:switch|set|activate)\s+workspace(?:\s+to)?\s+(.+)$", msg_trimmed, flags=re.IGNORECASE)
+    workspace_switch = re.search(
+        r"\b(?:switch|set|activate)\s+workspace(?:\s+to)?\s+(.+)$",
+        msg_trimmed,
+        flags=re.IGNORECASE,
+    )
     if workspace_switch:
         requested = workspace_switch.group(1).strip().lower()
-        workspaces = _task_memory.list_project_workspaces(limit=100, include_archived=False)
-        target = next((w for w in workspaces if str(w.get("name") or "").strip().lower() == requested), None)
+        workspaces = _task_memory.list_project_workspaces(
+            limit=100, include_archived=False
+        )
+        target = next(
+            (
+                w
+                for w in workspaces
+                if str(w.get("name") or "").strip().lower() == requested
+            ),
+            None,
+        )
         if target is None:
-            target = next((w for w in workspaces if requested in str(w.get("name") or "").strip().lower()), None)
+            target = next(
+                (
+                    w
+                    for w in workspaces
+                    if requested in str(w.get("name") or "").strip().lower()
+                ),
+                None,
+            )
         if target is None:
             reply = f"I couldn't find a workspace named {workspace_switch.group(1).strip()}."
             tool_result = {"items": workspaces}
         else:
             result = _task_memory.set_active_workspace(int(target["id"]))
             workspace = result.get("workspace")
-            reply = f"Active workspace switched to {workspace.get('name')}." + (f" Focus: {workspace.get('focus')}." if workspace and workspace.get("focus") else "")
+            reply = f"Active workspace switched to {workspace.get('name')}." + (
+                f" Focus: {workspace.get('focus')}."
+                if workspace and workspace.get("focus")
+                else ""
+            )
             tool_result = result
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
@@ -9154,14 +11110,24 @@ def agent_chat(payload: AgentChatRequest):
             plan=plan,
         )
 
-    if "what workspace" in msg_lower or "active workspace" in msg_lower or "current workspace" in msg_lower:
+    if (
+        "what workspace" in msg_lower
+        or "active workspace" in msg_lower
+        or "current workspace" in msg_lower
+    ):
         active_workspace_id = _task_memory.get_active_workspace_id()
-        workspace = _task_memory.get_project_workspace(active_workspace_id) if active_workspace_id else None
+        workspace = (
+            _task_memory.get_project_workspace(active_workspace_id)
+            if active_workspace_id
+            else None
+        )
         if not workspace:
             reply = "No active workspace is selected yet."
             tool_result = {"workspace": None}
         else:
-            reply = f"Active workspace: {workspace.get('name')}." + (f" Focus: {workspace.get('focus')}." if workspace.get("focus") else "")
+            reply = f"Active workspace: {workspace.get('name')}." + (
+                f" Focus: {workspace.get('focus')}." if workspace.get("focus") else ""
+            )
             tool_result = {"workspace": workspace}
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
@@ -9172,28 +11138,43 @@ def agent_chat(payload: AgentChatRequest):
             plan=plan,
         )
 
-    if "what project" in msg_lower or "what are my projects" in msg_lower or "what am i working on" in msg_lower:
+    if (
+        "what project" in msg_lower
+        or "what are my projects" in msg_lower
+        or "what am i working on" in msg_lower
+    ):
         overview = _task_memory.memory_overview(limit_per_group=6)
         project_items = overview.get("projects") or []
         active_workspace_id = _task_memory.get_active_workspace_id()
-        active_workspace = _task_memory.get_project_workspace(active_workspace_id) if active_workspace_id else None
+        active_workspace = (
+            _task_memory.get_project_workspace(active_workspace_id)
+            if active_workspace_id
+            else None
+        )
         if not project_items:
             if active_workspace:
-                reply = (
-                    f"Your active workspace is {active_workspace.get('name')}."
-                    + (f" Focus: {active_workspace.get('focus')}." if active_workspace.get("focus") else "")
+                reply = f"Your active workspace is {active_workspace.get('name')}." + (
+                    f" Focus: {active_workspace.get('focus')}."
+                    if active_workspace.get("focus")
+                    else ""
                 )
                 tool_result = {"items": [], "workspace": active_workspace}
             else:
                 reply = "I don't have any active project memories saved yet."
                 tool_result = {"items": []}
         else:
-            reply = _format_memory_group("Active project memory", project_items, limit=6)
+            reply = _format_memory_group(
+                "Active project memory", project_items, limit=6
+            )
             if active_workspace:
                 reply += (
                     "\n\nActive workspace:\n"
                     + f"- {active_workspace.get('name')}"
-                    + (f"\n- Focus: {active_workspace.get('focus')}" if active_workspace.get("focus") else "")
+                    + (
+                        f"\n- Focus: {active_workspace.get('focus')}"
+                        if active_workspace.get("focus")
+                        else ""
+                    )
                 )
             tool_result = {"items": project_items[:6], "workspace": active_workspace}
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
@@ -9213,9 +11194,17 @@ def agent_chat(payload: AgentChatRequest):
         else:
             reply = "\n\n".join(
                 [
-                    _format_memory_group("Profile memory", overview.get("profile") or [], limit=4),
-                    _format_memory_group("Project memory", overview.get("projects") or [], limit=4),
-                    _format_memory_group("Most important memories", overview.get("important") or [], limit=4),
+                    _format_memory_group(
+                        "Profile memory", overview.get("profile") or [], limit=4
+                    ),
+                    _format_memory_group(
+                        "Project memory", overview.get("projects") or [], limit=4
+                    ),
+                    _format_memory_group(
+                        "Most important memories",
+                        overview.get("important") or [],
+                        limit=4,
+                    ),
                 ]
             )
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
@@ -9252,70 +11241,115 @@ def agent_chat(payload: AgentChatRequest):
             session_id=session_id,
             label=f"Tool `{tool_name}`",
         )
-        reply = _approval_prompt_text(pending) if pending else f"Tool `{tool_name}` executed."
+        reply = (
+            _approval_prompt_text(pending)
+            if pending
+            else f"Tool `{tool_name}` executed."
+        )
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
-            tool_result={"tool": tool_name, "result": result, "verification": verification, "pending_approval": pending},
+            tool_result={
+                "tool": tool_name,
+                "result": result,
+                "verification": verification,
+                "pending_approval": pending,
+            },
             timestamp=_now_iso(),
             plan=plan,
         )
 
     # Heuristic tool routing for common requests (helps local models that ignore tool directives).
-    if ("database" in msg_lower and ("connect" in msg_lower or "connectivity" in msg_lower)) or (
-        "db" in msg_lower and "ping" in msg_lower
-    ):
+    if (
+        "database" in msg_lower
+        and ("connect" in msg_lower or "connectivity" in msg_lower)
+    ) or ("db" in msg_lower and "ping" in msg_lower):
         result = _TOOLS["db_ping"].handler({})
-        verification = _record_verified_tool_run(tool_name="db_ping", result=result, args={}, session_id=session_id)
+        verification = _record_verified_tool_run(
+            tool_name="db_ping", result=result, args={}, session_id=session_id
+        )
         reply = "Database connectivity check complete."
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
-            tool_result={"tool": "db_ping", "result": result, "verification": verification},
+            tool_result={
+                "tool": "db_ping",
+                "result": result,
+                "verification": verification,
+            },
             timestamp=_now_iso(),
             plan=plan,
         )
 
     if "time" in msg_lower and "tool" not in msg_lower:
         result = _TOOLS["get_time"].handler({})
-        verification = _record_verified_tool_run(tool_name="get_time", result=result, args={}, session_id=session_id)
+        verification = _record_verified_tool_run(
+            tool_name="get_time", result=result, args={}, session_id=session_id
+        )
         reply = "Current time fetched."
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
-            tool_result={"tool": "get_time", "result": result, "verification": verification},
+            tool_result={
+                "tool": "get_time",
+                "result": result,
+                "verification": verification,
+            },
             timestamp=_now_iso(),
             plan=plan,
         )
 
-    if ("list files" in msg_lower or "show files" in msg_lower or "list the files" in msg_lower) and "tool" not in msg_lower:
+    if (
+        "list files" in msg_lower
+        or "show files" in msg_lower
+        or "list the files" in msg_lower
+    ) and "tool" not in msg_lower:
         # Try to extract a target path like: "list files under data" or "list files in models"
         m = re.search(r"\b(?:in|under|from)\s+([^\s]+)", msg_lower)
         target = m.group(1) if m else "data"
-        result = _TOOLS["list_files"].handler({"path": target, "recursive": False, "max_entries": 200})
-        verification = _record_verified_tool_run(tool_name="list_files", result=result, args={"path": target, "recursive": False, "max_entries": 200}, session_id=session_id)
+        result = _TOOLS["list_files"].handler(
+            {"path": target, "recursive": False, "max_entries": 200}
+        )
+        verification = _record_verified_tool_run(
+            tool_name="list_files",
+            result=result,
+            args={"path": target, "recursive": False, "max_entries": 200},
+            session_id=session_id,
+        )
         reply = f"Listing files under `{target}`."
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
-            tool_result={"tool": "list_files", "result": result, "verification": verification},
+            tool_result={
+                "tool": "list_files",
+                "result": result,
+                "verification": verification,
+            },
             timestamp=_now_iso(),
             plan=plan,
         )
 
-    if ("system info" in msg_lower or "system status" in msg_lower) and "tool" not in msg_lower:
+    if (
+        "system info" in msg_lower or "system status" in msg_lower
+    ) and "tool" not in msg_lower:
         result = _TOOLS["system_info"].handler({})
-        verification = _record_verified_tool_run(tool_name="system_info", result=result, args={}, session_id=session_id)
+        verification = _record_verified_tool_run(
+            tool_name="system_info", result=result, args={}, session_id=session_id
+        )
         reply = "System info fetched."
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
-            tool_result={"tool": "system_info", "result": result, "verification": verification},
+            tool_result={
+                "tool": "system_info",
+                "result": result,
+                "verification": verification,
+            },
             timestamp=_now_iso(),
             plan=plan,
         )
@@ -9364,9 +11398,7 @@ def agent_chat(payload: AgentChatRequest):
             "If the user asks what you can do, describe ONLY these tools and the API/dashboard, briefly.\n"
             "If a tool is disabled, you should say it is disabled by configuration.\n"
             f"Active execution profile: {profile}. In safe/dev profiles, risky commands or sensitive file writes require confirm=true.\n"
-            "Available tools: "
-            + ", ".join(sorted(_TOOLS.keys()))
-            + "\n"
+            "Available tools: " + ", ".join(sorted(_TOOLS.keys())) + "\n"
         )
         if memory_context:
             system += "Relevant long-term memory:\n" + memory_context + "\n"
@@ -9386,7 +11418,9 @@ def agent_chat(payload: AgentChatRequest):
                 directive = parse_tool_directive(raw)
                 if not directive or directive.get("tool") not in _TOOLS:
                     reply = strip_final_answer(raw) or _basic_brain(payload.message)
-                    _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+                    _memory.append(
+                        session_id, StoredMessage(role="assistant", text=reply)
+                    )
                     return AgentChatResponse(
                         session_id=session_id,
                         reply=reply,
@@ -9407,10 +11441,20 @@ def agent_chat(payload: AgentChatRequest):
                     session_id=session_id,
                     label=f"Tool `{tool_name}`",
                 )
-                tool_calls.append({"tool": tool_name, "args": args, "result": result, "verification": verification, "pending_approval": pending})
+                tool_calls.append(
+                    {
+                        "tool": tool_name,
+                        "args": args,
+                        "result": result,
+                        "verification": verification,
+                        "pending_approval": pending,
+                    }
+                )
                 if pending:
                     reply = _approval_prompt_text(pending)
-                    _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+                    _memory.append(
+                        session_id, StoredMessage(role="assistant", text=reply)
+                    )
                     return AgentChatResponse(
                         session_id=session_id,
                         reply=reply,
@@ -9468,7 +11512,13 @@ def agent_chat(payload: AgentChatRequest):
     if not api_key:
         reply = "OPENAI_API_KEY is not set; falling back to basic mode."
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
-        return AgentChatResponse(session_id=session_id, reply=reply, tool_result=None, timestamp=_now_iso(), plan=plan)
+        return AgentChatResponse(
+            session_id=session_id,
+            reply=reply,
+            tool_result=None,
+            timestamp=_now_iso(),
+            plan=plan,
+        )
 
     history = _memory.load(session_id, max_messages=12)
     messages = [m.to_responses_input() for m in history]
@@ -9505,17 +11555,33 @@ def agent_chat(payload: AgentChatRequest):
     except Exception as exc:
         reply = f"OpenAI request failed; falling back to basic mode. Error: {exc}"
         _memory.append(session_id, StoredMessage(role="assistant", text=reply))
-        return AgentChatResponse(session_id=session_id, reply=reply, tool_result=None, timestamp=_now_iso(), plan=plan)
+        return AgentChatResponse(
+            session_id=session_id,
+            reply=reply,
+            tool_result=None,
+            timestamp=_now_iso(),
+            plan=plan,
+        )
 
     call = _extract_first_function_call(first)
     if call is not None:
         tool_name = call.get("name")
         call_id = call.get("call_id")
         raw_args = call.get("arguments", "{}")
-        if not isinstance(tool_name, str) or tool_name not in _TOOLS or not isinstance(call_id, str):
+        if (
+            not isinstance(tool_name, str)
+            or tool_name not in _TOOLS
+            or not isinstance(call_id, str)
+        ):
             reply = "Model requested an unknown tool."
             _memory.append(session_id, StoredMessage(role="assistant", text=reply))
-            return AgentChatResponse(session_id=session_id, reply=reply, tool_result={"tool": tool_name, "error": True}, timestamp=_now_iso(), plan=plan)
+            return AgentChatResponse(
+                session_id=session_id,
+                reply=reply,
+                tool_result={"tool": tool_name, "error": True},
+                timestamp=_now_iso(),
+                plan=plan,
+            )
 
         try:
             parsed_args = json.loads(raw_args) if isinstance(raw_args, str) else {}
@@ -9537,7 +11603,12 @@ def agent_chat(payload: AgentChatRequest):
             return AgentChatResponse(
                 session_id=session_id,
                 reply=final_text,
-                tool_result={"tool": tool_name, "result": result, "verification": verification, "pending_approval": pending},
+                tool_result={
+                    "tool": tool_name,
+                    "result": result,
+                    "verification": verification,
+                    "pending_approval": pending,
+                },
                 timestamp=_now_iso(),
                 plan=plan,
             )
@@ -9553,7 +11624,9 @@ def agent_chat(payload: AgentChatRequest):
                 previous_response_id=first.get("id"),
                 timeout_s=int(os.getenv("OPENAI_TIMEOUT_S", "60")),
             )
-            final_text = _extract_output_text(followup) or f"Tool `{tool_name}` executed."
+            final_text = (
+                _extract_output_text(followup) or f"Tool `{tool_name}` executed."
+            )
         except Exception as exc:
             final_text = f"Tool `{tool_name}` executed, but follow-up failed: {exc}"
 
@@ -9561,11 +11634,21 @@ def agent_chat(payload: AgentChatRequest):
         return AgentChatResponse(
             session_id=session_id,
             reply=final_text,
-            tool_result={"tool": tool_name, "result": result, "verification": verification},
+            tool_result={
+                "tool": tool_name,
+                "result": result,
+                "verification": verification,
+            },
             timestamp=_now_iso(),
             plan=plan,
         )
 
     reply = _extract_output_text(first) or _basic_brain(payload.message)
     _memory.append(session_id, StoredMessage(role="assistant", text=reply))
-    return AgentChatResponse(session_id=session_id, reply=reply, tool_result=None, timestamp=_now_iso(), plan=plan)
+    return AgentChatResponse(
+        session_id=session_id,
+        reply=reply,
+        tool_result=None,
+        timestamp=_now_iso(),
+        plan=plan,
+    )
