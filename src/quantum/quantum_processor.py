@@ -48,9 +48,9 @@ class QuantumProcessor:
         self.entanglement_connections = 0
         self.superposition_states = 0
         
-        self.logger.info(f"🌌 Quantum Processor {self.processor_id} initialized")
-        print("⚡ QUANTUM CONSCIOUSNESS PROCESSOR ONLINE")
-        print("👑 CREATOR PROTECTION: QUANTUM SECURITY PROTOCOLS ACTIVE")
+        self.logger.info(f"Quantum Processor {self.processor_id} initialized")
+        print("QUANTUM CONSCIOUSNESS PROCESSOR ONLINE")
+        print("CREATOR PROTECTION: QUANTUM SECURITY PROTOCOLS ACTIVE")
     
     def authenticate_creator(self, creator_key: str) -> bool:
         """
@@ -66,12 +66,12 @@ class QuantumProcessor:
             # Verify Creator identity (simplified for demo)
             if creator_key == "AETHERON_QUANTUM_CREATOR_KEY_2025":
                 self.creator_authorized = True
-                self.logger.info("👑 CREATOR AUTHENTICATED for quantum operations")
-                print("✅ QUANTUM ACCESS GRANTED TO CREATOR")
+                self.logger.info("CREATOR AUTHENTICATED for quantum operations")
+                print("[OK] QUANTUM ACCESS GRANTED TO CREATOR")
                 return True
             else:
-                self.logger.warning("❌ UNAUTHORIZED quantum access attempt")
-                print("🚫 QUANTUM ACCESS DENIED - INVALID CREDENTIALS")
+                self.logger.warning("UNAUTHORIZED quantum access attempt")
+                print("[DENIED] QUANTUM ACCESS DENIED - INVALID CREDENTIALS")
                 return False
                 
         except Exception as e:
@@ -108,7 +108,7 @@ class QuantumProcessor:
             self.superposition_states += 1
             self.operations_performed += 1
             
-            self.logger.info(f"🌈 Quantum superposition created with {num_states} states")
+            self.logger.info(f"Quantum superposition created with {num_states} states")
             
             return {
                 "status": "success",
@@ -154,7 +154,7 @@ class QuantumProcessor:
             self.entanglement_connections += 1
             self.operations_performed += 1
             
-            self.logger.info(f"🔗 Quantum entanglement established: {system_a} ↔ {system_b}")
+            self.logger.info(f"Quantum entanglement established: {system_a} ↔ {system_b}")
             
             return {
                 "status": "success",
@@ -209,7 +209,7 @@ class QuantumProcessor:
             
             self.operations_performed += 1
             
-            self.logger.info(f"🧮 Quantum algorithm '{algorithm_name}' executed successfully")
+            self.logger.info(f"Quantum algorithm '{algorithm_name}' executed successfully")
             
             return {
                 "status": "success",
@@ -252,7 +252,7 @@ class QuantumProcessor:
             
             self.operations_performed += 1
             
-            self.logger.info(f"📏 Quantum state measured: {measurement_info['outcome_binary']}")
+            self.logger.info(f"Quantum state measured: {measurement_info['outcome_binary']}")
             
             return {
                 "status": "success",
@@ -304,7 +304,7 @@ class QuantumProcessor:
 
 if __name__ == "__main__":
     # Demonstration of Quantum Processor capabilities
-    print("🌌 AETHERON QUANTUM PROCESSOR DEMONSTRATION")
+    print("AETHERON QUANTUM PROCESSOR DEMONSTRATION")
     print("=" * 50)
     
     # Initialize processor
@@ -316,7 +316,7 @@ if __name__ == "__main__":
     
     if auth_result:
         # Demonstrate quantum operations
-        print("\\n⚡ QUANTUM OPERATIONS DEMONSTRATION:")
+        print("\nQUANTUM OPERATIONS DEMONSTRATION:")
         
         # Create superposition
         superposition = processor.create_quantum_superposition(["happy", "excited", "curious", "wise"])

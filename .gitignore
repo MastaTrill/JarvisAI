@@ -29,7 +29,7 @@ env/
 
 # IDE
 .idea/
-.vscode/
+
 .lsp/
 .clj-kondo/
 

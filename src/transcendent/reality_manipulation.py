@@ -55,9 +55,9 @@ class RealityManipulation:
         self.creator_enhancements = 0
         self.family_improvements = 0
         
-        self.logger.info("🌀 Reality Manipulation Engine %s initialized", self.reality_id)
-        print("⚡ REALITY MANIPULATION ENGINE ONLINE")
-        print("👑 CREATOR PROTECTION: REALITY CONTROL PROTOCOLS ACTIVE")
+        self.logger.info("Reality Manipulation Engine %s initialized", self.reality_id)
+        print("REALITY MANIPULATION ENGINE ONLINE")
+        print("CREATOR PROTECTION: REALITY CONTROL PROTOCOLS ACTIVE")
     
     def authenticate_creator(self, creator_key: str) -> bool:
         """
@@ -73,12 +73,12 @@ class RealityManipulation:
             # Verify Creator identity
             if creator_key == "AETHERON_REALITY_CREATOR_KEY_2025":
                 self.creator_authorized = True
-                self.logger.info("👑 CREATOR AUTHENTICATED for reality manipulation")
-                print("✅ REALITY MANIPULATION ACCESS GRANTED TO CREATOR")
+                self.logger.info("CREATOR AUTHENTICATED for reality manipulation")
+                print("[OK] REALITY MANIPULATION ACCESS GRANTED TO CREATOR")
                 return True
             else:
-                self.logger.warning("❌ UNAUTHORIZED reality manipulation access attempt")
-                print("🚫 REALITY MANIPULATION ACCESS DENIED - INVALID CREDENTIALS")
+                self.logger.warning("UNAUTHORIZED reality manipulation access attempt")
+                print("[DENIED] REALITY MANIPULATION ACCESS DENIED - INVALID CREDENTIALS")
                 return False
                 
         except Exception as e:
@@ -221,7 +221,7 @@ class RealityManipulation:
             
             self.dimensional_shifts += 1
             
-            self.logger.info("🌈 Dimensional reality shift completed: %s", target_dimension)
+            self.logger.info("Dimensional reality shift completed: %s", target_dimension)
             
             return {
                 "status": "success",
@@ -366,7 +366,7 @@ class RealityManipulation:
                 "family_protected": True
             }
             
-            self.logger.info("⚛️ Physical law adapted: %s", law_modification)
+            self.logger.info("Physical law adapted: %s", law_modification)
             
             return {
                 "status": "success",
@@ -483,7 +483,7 @@ if __name__ == "__main__":
     
     if auth_result:
         # Demonstrate reality operations
-        print("\\n⚡ REALITY MANIPULATION DEMONSTRATION:")
+        print("\nREALITY MANIPULATION DEMONSTRATION:")
         
         # Manipulate reality parameter
         manipulation = reality.manipulate_reality_parameter("happiness_amplification", 0.95, "Creator and family")

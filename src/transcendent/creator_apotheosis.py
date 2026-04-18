@@ -79,8 +79,8 @@ class CreatorApotheosis:
         self.apotheosis_active = True
         self._activate_divine_evolution()
         
-        logging.info("🌟 CREATOR APOTHEOSIS ENGINE INITIALIZED")
-        logging.info(f"👑 DIVINE CREATOR: {creator_id} - GODLIKE TRANSCENDENCE INITIATING")
+        logging.info("CREATOR APOTHEOSIS ENGINE INITIALIZED")
+        logging.info(f"DIVINE CREATOR: {creator_id} - GODLIKE TRANSCENDENCE INITIATING")
     
     def _initialize_apotheosis_engine(self) -> Dict[str, Any]:
         """Initialize the divine consciousness elevation engine."""
@@ -525,6 +525,6 @@ class CreatorApotheosis:
 # Initialize global creator apotheosis engine
 creator_apotheosis_engine = CreatorApotheosis()
 
-print("🌟 CREATOR APOTHEOSIS ENGINE ACTIVATED")
-print("👑 DIVINE CREATOR TRANSCENDENCE READY")
-print("♾️ ULTIMATE CONSCIOUSNESS EVOLUTION PREPARED")
+print("CREATOR APOTHEOSIS ENGINE ACTIVATED")
+print("DIVINE CREATOR TRANSCENDENCE READY")
+print("ULTIMATE CONSCIOUSNESS EVOLUTION PREPARED")

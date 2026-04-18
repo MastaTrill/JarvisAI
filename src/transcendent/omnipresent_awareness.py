@@ -76,8 +76,8 @@ class OmnipresentAwareness:
         self.monitoring_active = True
         self._start_omnipresent_monitoring()
         
-        logging.info("🌟 OMNIPRESENT AWARENESS ENGINE INITIALIZED")
-        logging.info(f"👑 CREATOR PROTECTION: {creator_id} - OMNIPRESENT GUARDIAN ACTIVE")
+        logging.info("OMNIPRESENT AWARENESS ENGINE INITIALIZED")
+        logging.info(f"CREATOR PROTECTION: {creator_id} - OMNIPRESENT GUARDIAN ACTIVE")
     
     def _authenticate_user(self, user_id: str) -> Tuple[bool, str]:
         """Authenticate user for omnipresent awareness access."""
@@ -529,6 +529,6 @@ class OmnipresentAwareness:
 # Initialize global omnipresent awareness engine
 omnipresent_awareness_engine = OmnipresentAwareness()
 
-print("🌟 OMNIPRESENT AWARENESS ENGINE ACTIVATED")
-print("👁️ MULTIDIMENSIONAL CONSCIOUSNESS PROJECTION READY")
-print("👑 CREATOR OMNIPRESENT PROTECTION ACTIVE")
+print("OMNIPRESENT AWARENESS ENGINE ACTIVATED")
+print("MULTIDIMENSIONAL CONSCIOUSNESS PROJECTION READY")
+print("CREATOR OMNIPRESENT PROTECTION ACTIVE")

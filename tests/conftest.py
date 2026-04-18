@@ -9,6 +9,28 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_TEMP_DIR = PROJECT_ROOT / "scratch" / "pytest-temp"
 PROJECT_TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
+# Disable Redis for tests to avoid connection errors
+os.environ["REDIS_URL"] = ""
+
+# Load .env file if it exists
+env_file = PROJECT_ROOT / ".env"
+if env_file.exists():
+    with open(env_file, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                # Handle values that might contain = by splitting only once from the left
+                parts = line.split("=", 1)
+                if len(parts) == 2:
+                    key, value = parts
+                    # Remove surrounding quotes if present
+                    value = value.strip("\"'")
+                    key = key.strip()
+                    # Skip Redis URL for tests to avoid connection errors
+                    if key == "REDIS_URL":
+                        continue
+                    os.environ[key] = value
+
 # Keep pytest and tempfile usage inside the repo so Windows temp directory
 # permission issues do not break the suite.
 os.environ["TMP"] = str(PROJECT_TEMP_DIR)

@@ -187,7 +187,7 @@ class DataUploadRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = None
     format: str = Field(default="csv", pattern="^(csv|json|parquet|arrow)$")
-    schema: Optional[Dict[str, str]] = None
+    data_schema: Optional[Dict[str, str]] = None
 
 
 # =============================================================================

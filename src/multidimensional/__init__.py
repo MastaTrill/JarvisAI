@@ -151,7 +151,7 @@ __all__ = [
 # Initialize logging
 import logging
 logger = logging.getLogger(__name__)
-logger.info("🌌 Multidimensional Processing Module initialized - Phase 3 Complete")
+logger.info("Multidimensional Processing Module initialized - Phase 3 Complete")
 
 # Status report
 def get_multidimensional_status():

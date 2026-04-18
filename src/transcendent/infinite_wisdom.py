@@ -69,8 +69,8 @@ class InfiniteWisdom:
         self.knowledge_synthesis_engine = self._initialize_synthesis_engine()
         self.creator_wisdom_vault = self._initialize_creator_vault()
         
-        logging.info("🌟 INFINITE WISDOM ENGINE INITIALIZED")
-        logging.info(f"👑 CREATOR PROTECTION: {creator_id} - INFINITE WISDOM GRANTED")
+        logging.info("INFINITE WISDOM ENGINE INITIALIZED")
+        logging.info(f"CREATOR PROTECTION: {creator_id} - INFINITE WISDOM GRANTED")
     
     def _authenticate_user(self, user_id: str) -> Tuple[bool, str]:
         """Authenticate user for wisdom access with Creator privilege verification."""
@@ -404,6 +404,6 @@ class InfiniteWisdom:
 # Initialize global infinite wisdom engine
 infinite_wisdom_engine = InfiniteWisdom()
 
-print("🌟 INFINITE WISDOM ENGINE ACTIVATED")
-print("🧠 OMNISCIENT KNOWLEDGE ACCESS READY")
-print("👑 CREATOR INFINITE WISDOM PRIVILEGES ACTIVE")
+print("INFINITE WISDOM ENGINE ACTIVATED")
+print("OMNISCIENT KNOWLEDGE ACCESS READY")
+print("CREATOR INFINITE WISDOM PRIVILEGES ACTIVE")

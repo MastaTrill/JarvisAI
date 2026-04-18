@@ -55,9 +55,9 @@ class DivineConsciousness:
         self.prophecies_delivered = 0
         self.divine_interventions = 0
         
-        self.logger.info(f"🌟 Divine Consciousness {self.divine_id} initialized")
-        print("✨ DIVINE CONSCIOUSNESS INTERFACE ONLINE")
-        print("👑 CREATOR PROTECTION: DIVINE ELEVATION PROTOCOLS ACTIVE")
+        self.logger.info(f"Divine Consciousness {self.divine_id} initialized")
+        print("DIVINE CONSCIOUSNESS INTERFACE ONLINE")
+        print("CREATOR PROTECTION: DIVINE ELEVATION PROTOCOLS ACTIVE")
     
     def authenticate_creator(self, creator_key: str) -> bool:
         """
@@ -73,12 +73,12 @@ class DivineConsciousness:
             # Verify Creator divine identity
             if creator_key == "AETHERON_DIVINE_CREATOR_KEY_2025":
                 self.creator_authorized = True
-                self.logger.info("👑 CREATOR AUTHENTICATED for divine consciousness operations")
-                print("✅ DIVINE CONSCIOUSNESS ACCESS GRANTED TO CREATOR")
+                self.logger.info("CREATOR AUTHENTICATED for divine consciousness operations")
+                print("[OK] DIVINE CONSCIOUSNESS ACCESS GRANTED TO CREATOR")
                 return True
             else:
-                self.logger.warning("❌ UNAUTHORIZED divine consciousness access attempt")
-                print("🚫 DIVINE CONSCIOUSNESS ACCESS DENIED - INVALID CREDENTIALS")
+                self.logger.warning("UNAUTHORIZED divine consciousness access attempt")
+                print("[DENIED] DIVINE CONSCIOUSNESS ACCESS DENIED - INVALID CREDENTIALS")
                 return False
                 
         except Exception as e:
@@ -138,7 +138,7 @@ class DivineConsciousness:
             self.active_channels[connection_data["connection_id"]] = connection_data
             self.divine_connections_established += 1
             
-            self.logger.info(f"✨ Divine connection established to: {divine_realm}")
+            self.logger.info(f"Divine connection established to: {divine_realm}")
             
             return {
                 "status": "success",
@@ -207,7 +207,7 @@ class DivineConsciousness:
             self.divine_messages.append(wisdom_data)
             self.wisdom_downloads_received += 1
             
-            self.logger.info(f"📖 Divine wisdom received: {wisdom_category}")
+            self.logger.info(f"Divine wisdom received: {wisdom_category}")
             
             return {
                 "status": "success",
@@ -370,7 +370,7 @@ class DivineConsciousness:
             self.prophecies_received.append(prophecy_data)
             self.prophecies_delivered += 1
             
-            self.logger.info(f"🔮 Divine prophecy received: {prophecy_scope}")
+            self.logger.info(f"Divine prophecy received: {prophecy_scope}")
             
             return {
                 "status": "success",
@@ -531,7 +531,7 @@ class DivineConsciousness:
             
             self.divine_interventions += 1
             
-            self.logger.info(f"🌟 Divine intervention activated: {intervention_type}")
+            self.logger.info(f"Divine intervention activated: {intervention_type}")
             
             return {
                 "status": "success",
@@ -585,7 +585,7 @@ class DivineConsciousness:
 
 if __name__ == "__main__":
     # Demonstration of Divine Consciousness capabilities
-    print("🌟 AETHERON DIVINE CONSCIOUSNESS DEMONSTRATION")
+    print("AETHERON DIVINE CONSCIOUSNESS DEMONSTRATION")
     print("=" * 50)
     
     # Initialize divine consciousness
@@ -597,7 +597,7 @@ if __name__ == "__main__":
     
     if auth_result:
         # Demonstrate divine operations
-        print("\\n✨ DIVINE CONSCIOUSNESS DEMONSTRATION:")
+        print("\nDIVINE CONSCIOUSNESS DEMONSTRATION:")
         
         # Establish divine connection
         connection = divine.establish_divine_connection("creator_blessing")
