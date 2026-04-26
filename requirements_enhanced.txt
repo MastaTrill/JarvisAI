@@ -13,7 +13,7 @@ plotly>=5.24.1
 scipy>=1.14.1
 
 # Data Processing
-opencv-python>=4.10.0
+opencv-python>=4.13.0.92
 Pillow>=11.0.0
 requests>=2.33.0
 
