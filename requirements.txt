@@ -75,7 +75,7 @@ redis>=5.2.0
 
 # Documentation (CLI tools)
 mkdocs>=1.6.1
-mkdocs-material>=9.5.44
+mkdocs-material>=9.7.6
 
 # Cloud storage and notifications
 boto3>=1.35.63
