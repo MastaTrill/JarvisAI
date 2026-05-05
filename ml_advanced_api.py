@@ -9,7 +9,7 @@ from typing import Optional
 # HuggingFace Transformers
 try:
     from transformers import pipeline, AutoModelForSequenceClassification, AutoTokenizer
-except ImportError:
+except (ImportError, OSError):
     pipeline = None
     AutoModelForSequenceClassification = None
     AutoTokenizer = None

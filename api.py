@@ -17,7 +17,7 @@ import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 # Third-party imports
 import numpy as np
@@ -96,8 +96,15 @@ try:
         analyze_sentiment,
         generate_summary,
     )
-except ImportError as e:
+except (ImportError, OSError) as e:
     logging.warning("Import warning: %s", e)
+    SimpleNeuralNetwork = None
+    SentimentClassifier = None
+    AdvancedNeuralNetwork = None
+    EnhancedDataProcessor = None
+    extract_keywords = None
+    analyze_sentiment = None
+    generate_summary = None
 
 # Configure logging
 _log_level = getattr(logging, os.environ.get("LOG_LEVEL", "INFO").upper(), logging.INFO)
@@ -111,6 +118,9 @@ logger = logging.getLogger(__name__)
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
+
+# Global app start time
+app_start_time = None
 
 # Custom OpenAPI tags for documentation
 openapi_tags = [
@@ -162,6 +172,8 @@ def _ensure_user_writable_dir(path: Path) -> None:
 async def lifespan(_app: FastAPI):
     """Application lifespan: startup and shutdown logic."""
     # --- Startup ---
+    global app_start_time
+    app_start_time = datetime.now()
     data_root = Path(__file__).with_name("data")
     _ensure_user_writable_dir(data_root)
     for sub in ("uploads", "processed", "versions", "lineage"):
@@ -396,6 +408,7 @@ class SecureHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'"
         return response
 
 
@@ -1227,10 +1240,10 @@ async def monitor_system():
             sys_metrics["active_connections"] = len(manager.active_connections)
             sys_metrics["timestamp"] = datetime.now().isoformat()
             await manager.send_system_metrics(sys_metrics)
-            logger.info(f"System metrics broadcasted: {sys_metrics}")
+            logger.info("System metrics broadcasted: %s", sys_metrics)
             await asyncio.sleep(5)  # Update every 5 seconds
         except Exception as e:
-            logger.error(f"Error in system monitoring: {e}")
+            logger.error("Error in system monitoring: %s", e)
             await asyncio.sleep(10)
 
 
@@ -1696,8 +1709,6 @@ async def analyze_text(
     _current_user: User = Depends(get_current_user),
 ):
     """Analyze text with summarization, sentiment analysis, and keyword extraction."""
-    import time
-
     start_time = time.time()
 
     results = {}
@@ -1769,8 +1780,10 @@ _sentiment_classifier = None
 _sentiment_classifier_lock = None
 
 
-def _get_sentiment_classifier() -> SentimentClassifier:
+def _get_sentiment_classifier():
     """Get or create the sentiment classifier instance with thread safety."""
+    if SentimentClassifier is None:
+        raise HTTPException(status_code=503, detail="Sentiment classifier not available")
     global _sentiment_classifier, _sentiment_classifier_lock
     if _sentiment_classifier_lock is None:
         import threading
@@ -1794,8 +1807,6 @@ async def classify_sentiment(
     _current_user: User = Depends(get_current_user),
 ):
     """Classify the sentiment of input text as positive, negative, or neutral."""
-    import time
-
     start_time = time.time()
 
     # Get classifier
@@ -1915,9 +1926,8 @@ _system_analytics_cache = {}
 _SYSTEM_ANALYTICS_CACHE_TTL = 30
 
 
-def _generate_system_analytics(time_range_seconds: int) -> Dict[str, Any]:
+def _generate_system_analytics(_time_range_seconds: int) -> Dict[str, Any]:
     """Generate system performance analytics with caching."""
-    import time
     import psutil
     import platform
 
@@ -1974,7 +1984,7 @@ def _generate_system_analytics(time_range_seconds: int) -> Dict[str, Any]:
         return {"error": f"Failed to collect system metrics: {str(e)}"}
 
 
-def _generate_api_usage_analytics(time_range_seconds: int) -> Dict[str, Any]:
+def _generate_api_usage_analytics(_time_range_seconds: int) -> Dict[str, Any]:
     """Generate API usage analytics."""
     # Simulate API usage data
     return {
@@ -2052,8 +2062,6 @@ async def generate_analytics(
     _current_user: User = Depends(get_current_user),
 ):
     """Generate comprehensive analytics for the specified metric type."""
-    import time
-
     start_time = time.time()
 
     # Parse time range
