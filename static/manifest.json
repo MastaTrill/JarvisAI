@@ -1,0 +1,16 @@
+{
+  "name": "Jarvis AI Platform",
+  "short_name": "Jarvis AI",
+  "description": "Advanced AI assistant platform with voice control and analytics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#02060d",
+  "theme_color": "#34d7ff",
+  "icons": [
+    {
+      "src": "/static/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
