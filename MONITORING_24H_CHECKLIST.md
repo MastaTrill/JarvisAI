@@ -5,11 +5,19 @@ This checklist covers the first 24 hours after releasing checkpoint tag `stable-
 
 ## Baseline (T+0)
 - [x] Confirm branch/tag state:
-  - `git status --short --branch`
-  - `git rev-parse --short HEAD`
-  - `git tag --list 'stable-*' | tail -n 10`
-- [x] Confirm critical smoke checks:
-  - `python -m pytest -o addopts='' tests/test_agent_tools.py::test_due_reminder_dispatch_and_voice_feed tests/test_auth.py::TestPasswordHashing::test_hash_and_verify tests/test_auth.py::TestJWTTokens::test_create_and_decode_access_token tests/test_api_coverage.py::TestLogin::test_login_success tests/test_api_coverage.py::TestMe::test_me_authenticated -q --maxfail=1`
+  - Current branch: main (synced with origin/main)
+  - HEAD commit: a34f63c (docs: add release checkpoint and 24h monitoring handoff)
+  - Stable tag: stable-2026-05-07-a8cc25d → a8cc25d
+- [x] Confirm critical smoke checks (pytest):
+  - test_due_reminder_dispatch_and_voice_feed: PASSED
+  - test_hash_and_verify: PASSED
+  - test_create_and_decode_access_token: PASSED
+  - test_login_success: PASSED
+  - test_me_authenticated: PASSED
+  - Result: 5/5 passed in 11.04s
+- [x] Full test suite validation:
+  - Result: 218 passed in 190.48s
+  - Covers: all agent tools, API endpoints, auth, training, data processing, versioning
 
 ## Monitoring Cadence
 - T+15m: API health + logs
