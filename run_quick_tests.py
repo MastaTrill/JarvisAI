@@ -20,8 +20,7 @@ print("=" * 70)
 for test in simple_tests:
     print(f"\n▶ Running {test}...")
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", test, "-v", "--tb=short"],
-        cwd="."
+        [sys.executable, "-m", "pytest", test, "-v", "--tb=short"], cwd="."
     )
     if result.returncode != 0:
         print(f"⚠ {test} failed")

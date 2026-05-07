@@ -34,8 +34,9 @@ def admin_dashboard(
     """Render admin dashboard with list of users."""
     users = db.query(User).all()
     return templates.TemplateResponse(
-        "admin_dashboard.html",
-        {"request": request, "users": users, "current_user": current_user},
+        request=request,
+        name="admin_dashboard.html",
+        context={"request": request, "users": users, "current_user": current_user},
     )
 
 
@@ -46,8 +47,10 @@ def admin_dashboard(
 @router.get("/admin/users", response_class=JSONResponse)
 def list_users(
     db: Session = Depends(get_users_db),
+    current_user: User = Depends(admin_required),
 ):
     """List all users in the system."""
+    _ = current_user
     users = db.query(User).all()
     user_list = [
         {
@@ -115,8 +118,10 @@ def delete_user(
 @router.get("/admin/models")
 def list_models(
     db: Session = Depends(get_jobs_db),
+    current_user: User = Depends(admin_required),
 ):
     """List all registered models."""
+    _ = current_user
     models = get_models(db)
     return {
         "models": [
@@ -155,8 +160,10 @@ def create_model_endpoint(
 @router.get("/admin/jobs")
 def list_jobs(
     db: Session = Depends(get_jobs_db),
+    current_user: User = Depends(admin_required),
 ):
     """List all jobs in the system."""
+    _ = current_user
     jobs = db.query(Job).all()
     return {
         "jobs": [

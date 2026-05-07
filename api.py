@@ -14,6 +14,7 @@ import asyncio
 import inspect
 import time
 import uuid
+import redis
 from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
@@ -236,10 +237,28 @@ app.mount(
 )
 
 # --- Rate Limiting Middleware (slowapi) ---
-limiter = Limiter(
-    key_func=get_remote_address,
-    storage_uri=os.getenv("REDIS_URL", "memory://"),
-)
+def _build_limiter() -> Limiter:
+    """Prefer configured Redis storage, but fallback to memory if unavailable."""
+    redis_url = os.getenv("REDIS_URL", "memory://")
+
+    if redis_url != "memory://":
+        try:
+            redis.Redis.from_url(redis_url, socket_connect_timeout=1, socket_timeout=1).ping()
+        except Exception as exc:
+            logger.warning(
+                "Rate limiter Redis unavailable at %s; using memory:// (%s)",
+                redis_url,
+                exc,
+            )
+            redis_url = "memory://"
+
+    return Limiter(
+        key_func=get_remote_address,
+        storage_uri=redis_url,
+    )
+
+
+limiter = _build_limiter()
 app.state.limiter = limiter
 
 
