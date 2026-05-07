@@ -14,6 +14,7 @@ class TestNumpyTraining:
 
     def setup_method(self):
         self.processor = DataProcessor(target_column="target")
+        self.n_features = 4
 
     def test_trainer_initialization(self):
         model = SimpleNeuralNetwork(input_size=4, hidden_sizes=[8, 4], output_size=1)
@@ -65,7 +66,7 @@ class TestNumpyTraining:
         trainer = NumpyTrainer(model=model, learning_rate=0.01, batch_size=5)
 
         # Get sample data
-        data = self.processor.load_sample_data()
+        data = self.processor.load_sample_data(n_features=self.n_features)
         X = data["data"][:20]
         y = data["target"][:20].reshape(-1, 1)
 
@@ -85,7 +86,7 @@ class TestNumpyTraining:
         trainer = NumpyTrainer(model=model, learning_rate=0.01, batch_size=10)
 
         # Get sample data
-        data = self.processor.load_sample_data()
+        data = self.processor.load_sample_data(n_features=self.n_features)
         X_train = data["data"][:50]
         y_train = data["target"][:50].reshape(-1, 1)
         X_val = data["data"][50:70]
@@ -195,7 +196,7 @@ class TestNumpyTraining:
         trainer = NumpyTrainer(model=model, learning_rate=0.01, batch_size=10)
 
         # Get sample data
-        data = self.processor.load_sample_data()
+        data = self.processor.load_sample_data(n_features=self.n_features)
         X_train = data["data"][:60]
         y_train = data["target"][:60].reshape(-1, 1)
         X_val = data["data"][60:80]

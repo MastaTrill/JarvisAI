@@ -2740,6 +2740,15 @@ class AgentTaskMemory:
         if for_voice:
             where.append("pr.voice_announced_at IS NULL")
         clause = " AND ".join(where)
+        order_clause = (
+            "CASE WHEN pr.voice_announced_at IS NOT NULL THEN 0 ELSE 1 END, "
+            "COALESCE(pr.voice_announced_at, '') DESC, "
+            "CASE pr.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END, "
+            "pr.due_at ASC, pr.id ASC"
+            if for_discord
+            else "CASE pr.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END, "
+            "pr.due_at ASC, pr.id ASC"
+        )
         with self._connect() as conn:
             rows = conn.execute(
                 f"""
@@ -2749,8 +2758,7 @@ class AgentTaskMemory:
                 FROM proactive_reminders pr
                 LEFT JOIN project_workspaces pw ON pw.id = pr.workspace_id
                 WHERE {clause}
-                ORDER BY CASE pr.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,
-                         pr.due_at ASC, pr.id ASC
+                ORDER BY {order_clause}
                 LIMIT ?
                 """,
                 tuple(values + [lim]),
