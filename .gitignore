@@ -108,3 +108,6 @@ Untitled-2.txt
 jarvis-ai-project/
 jarvis_ai_project/
 jarvis-ar-visual-system/
+
+# Node dependencies
+node_modules/
