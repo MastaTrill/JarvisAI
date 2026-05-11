@@ -111,4 +111,7 @@ jarvis-ar-visual-system/
 
 # Node dependencies
 node_modules/
+
+# Local editor/tool state
+.kilo/
 .gitignore
