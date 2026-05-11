@@ -111,3 +111,4 @@ jarvis-ar-visual-system/
 
 # Node dependencies
 node_modules/
+.gitignore
