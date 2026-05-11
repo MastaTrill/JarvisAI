@@ -34,7 +34,8 @@ class AgentMemory:
             try:
                 import redis
 
-                self._redis = redis.Redis.from_url(redis_url, decode_responses=True)
+                self._redis = redis.Redis.from_url(
+                    redis_url, decode_responses=True)
             except Exception:
                 self._redis = None
 
@@ -48,7 +49,13 @@ class AgentMemory:
         if self._redis is None:
             return list(self._local.get(session_id, [])[-max_messages:])
 
-        raw = self._redis.get(self._key(session_id))
+        try:
+            raw = self._redis.get(self._key(session_id))
+        except Exception:
+            # Redis is configured but unavailable; degrade to local memory.
+            self._redis = None
+            return list(self._local.get(session_id, [])[-max_messages:])
+
         if not raw:
             return []
 
@@ -73,8 +80,20 @@ class AgentMemory:
             self._local.setdefault(session_id, []).append(message)
             return
 
-        key = self._key(session_id)
         existing = self.load(session_id, max_messages=200)
         existing.append(message)
-        self._redis.set(key, json.dumps([m.__dict__ for m in existing]), ex=self._ttl_seconds)
+        if self._redis is None:
+            self._local[session_id] = existing
+            return
 
+        key = self._key(session_id)
+        try:
+            self._redis.set(
+                key,
+                json.dumps([m.__dict__ for m in existing]),
+                ex=self._ttl_seconds,
+            )
+        except Exception:
+            # Preserve continuity even if Redis drops after initialization.
+            self._redis = None
+            self._local[session_id] = existing

@@ -1,4 +1,4 @@
-"""Azure Functions entrypoint for Jarvis AI FastAPI app (minimal version)."""
+"""Azure Functions entrypoint for Jarvis AI FastAPI app."""
 
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
@@ -8,7 +8,7 @@ import azure.functions as func
 
 
 def _load_fastapi_app():
-    api_file = Path(__file__).with_name("api_minimal.py")
+    api_file = Path(__file__).with_name("api.py")
     spec = spec_from_file_location("jarvis_api_main", api_file)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Unable to load FastAPI module from {api_file}")

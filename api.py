@@ -5,6 +5,34 @@ Provides endpoints for model management, training, data upload, system monitorin
 """
 
 # Standard library imports
+from jobs_persistent import create_job, update_job_status, get_job
+from models_registry import create_model, get_models, activate_model
+from src.interpretability.model_explainer import ModelInterpreter
+from agent_api import router as agent_router
+from models_versioning import router as versioning_orm_router
+from automation_api import router as automation_router
+from ml_advanced_api import router as ml_advanced_router
+from security_api import router as security_router
+from infra_api import router as infra_router
+from collab_api import router as collab_router
+from audit_api import router as audit_router
+from models_drift_api import router as drift_router
+from plugins_api import router as plugins_router
+from models_external_api import router as external_router
+from models_device_api import router as device_router
+from models_versioning_api import router as versioning_router
+from admin_api import router as admin_api_router
+from admin_dashboard import router as admin_router
+from auth_helpers import get_current_user
+from authentication import verify_password
+from models_user import User, get_password_hash
+from database import get_db
+from db_config import SessionLocal
+from cloud_connectors import upload_to_cloud, download_from_cloud
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from slowapi import Limiter
 import sys
 import os
 import glob
@@ -56,36 +84,8 @@ from starlette.responses import Response
 # Point it at inspect.iscoroutinefunction before importing slowapi to avoid warning noise.
 asyncio.iscoroutinefunction = inspect.iscoroutinefunction
 
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 
 # First-party imports
-from cloud_connectors import upload_to_cloud, download_from_cloud
-from db_config import SessionLocal
-from database import get_db
-from models_user import User, get_password_hash
-from authentication import verify_password
-from auth_helpers import get_current_user
-from admin_dashboard import router as admin_router
-from admin_api import router as admin_api_router
-from models_versioning_api import router as versioning_router
-from models_device_api import router as device_router
-from models_external_api import router as external_router
-from plugins_api import router as plugins_router
-from models_drift_api import router as drift_router
-from audit_api import router as audit_router
-from collab_api import router as collab_router
-from infra_api import router as infra_router
-from security_api import router as security_router
-from ml_advanced_api import router as ml_advanced_router
-from automation_api import router as automation_router
-from models_versioning import router as versioning_orm_router
-from agent_api import router as agent_router
-from src.interpretability.model_explainer import ModelInterpreter
-from models_registry import create_model, get_models, activate_model
-from jobs_persistent import create_job, update_job_status, get_job
 
 try:
     from src.models.numpy_neural_network import SimpleNeuralNetwork
@@ -108,7 +108,8 @@ except (ImportError, OSError) as e:
     generate_summary = None
 
 # Configure logging
-_log_level = getattr(logging, os.environ.get("LOG_LEVEL", "INFO").upper(), logging.INFO)
+_log_level = getattr(logging, os.environ.get(
+    "LOG_LEVEL", "INFO").upper(), logging.INFO)
 logging.basicConfig(
     level=_log_level,
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
@@ -237,13 +238,16 @@ app.mount(
 )
 
 # --- Rate Limiting Middleware (slowapi) ---
+
+
 def _build_limiter() -> Limiter:
     """Prefer configured Redis storage, but fallback to memory if unavailable."""
     redis_url = os.getenv("REDIS_URL", "memory://")
 
     if redis_url != "memory://":
         try:
-            redis.Redis.from_url(redis_url, socket_connect_timeout=1, socket_timeout=1).ping()
+            redis.Redis.from_url(
+                redis_url, socket_connect_timeout=1, socket_timeout=1).ping()
         except Exception as exc:
             logger.warning(
                 "Rate limiter Redis unavailable at %s; using memory:// (%s)",
@@ -273,10 +277,19 @@ async def rate_limit_handler(_request, _exc):
 app.add_middleware(SlowAPIMiddleware)
 
 
-# Serve dashboard at root URL
+# Serve direct mission page at root URL
 @app.get("/", response_class=HTMLResponse)
+def serve_mission_box():
+    """Serve the direct mission command page."""
+    static_path = os.path.join(
+        os.path.dirname(__file__), "static", "dashboard", "mission.html"
+    )
+    return FileResponse(static_path, media_type="text/html")
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
 def serve_dashboard():
-    """Serve the dashboard HTML page."""
+    """Serve the full dashboard HTML page."""
     static_path = os.path.join(
         os.path.dirname(__file__), "static", "dashboard", "index.html"
     )
@@ -380,7 +393,8 @@ async def get_counterfactuals(model_name: str, instance_idx: int = 0):
     counterfactuals = []
     for i, feature in enumerate(feature_names):
         shap_val = (
-            shap_values[instance_idx][i] if len(shap_values) > instance_idx else 0
+            shap_values[instance_idx][i] if len(
+                shap_values) > instance_idx else 0
         )
         if shap_val != 0:
             needed_change = -2 * shap_val / abs(shap_val)
@@ -426,8 +440,8 @@ class SecureHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "no-referrer"
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://cdn.jsdelivr.net"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(self)"
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://cdn.jsdelivr.net"
         return response
 
 
@@ -463,7 +477,8 @@ def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     try:
         db_user = db.query(User).filter(User.username == user.username).first()
         if db_user:
-            raise HTTPException(status_code=400, detail="Username already registered")
+            raise HTTPException(
+                status_code=400, detail="Username already registered")
         hashed_password = get_password_hash(user.password)
         new_user = User(
             username=user.username, hashed_password=hashed_password, email=user.email
@@ -475,7 +490,8 @@ def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
         try:
             from audit_trail import log_audit_event
 
-            log_audit_event(user.username, "register", "user", f"email={user.email}")
+            log_audit_event(user.username, "register",
+                            "user", f"email={user.email}")
         except (ImportError, SQLAlchemyError) as e:
             logger.warning("Audit logging failed: %s", e)
         return {"msg": "User registered successfully"}
@@ -483,7 +499,8 @@ def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
         raise
     except Exception as e:
         logger.error("Registration failed: %s", e)
-        raise HTTPException(status_code=400, detail="Unable to register user") from e
+        raise HTTPException(
+            status_code=400, detail="Unable to register user") from e
 
 
 @app.post("/token", response_model=Token, tags=["System"])
@@ -497,7 +514,8 @@ def login(
     _ = request  # required by slowapi rate limiter
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, str(user.hashed_password)):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+        raise HTTPException(
+            status_code=401, detail="Incorrect username or password")
     from authentication import create_access_token
 
     access_token = create_access_token(
@@ -523,7 +541,8 @@ processors = {}
 training_status = {}
 websocket_connections = {}
 active_trainings = {}
-system_metrics = {"cpu_usage": [], "memory_usage": [], "gpu_usage": [], "timestamp": []}
+system_metrics = {"cpu_usage": [], "memory_usage": [],
+                  "gpu_usage": [], "timestamp": []}
 
 
 # WebSocket Connection Manager
@@ -561,7 +580,8 @@ class ConnectionManager:
             try:
                 await connection["websocket"].send_json(data)
             except (ConnectionError, OSError) as e:
-                logger.warning("Failed to send training update to client: %s", e)
+                logger.warning(
+                    "Failed to send training update to client: %s", e)
                 disconnected.append(connection)
 
         # Remove disconnected clients
@@ -812,7 +832,8 @@ async def _train_model_background(
             }
             logger.info("Successfully trained model '%s'", model_name)
         except Exception as e:
-            logger.error("Error during model fitting for '%s': %s", model_name, e)
+            logger.error(
+                "Error during model fitting for '%s': %s", model_name, e)
             training_status[model_name] = {
                 "status": "failed",
                 "error": str(e),
@@ -903,7 +924,8 @@ async def upload_data(
         elif file.filename.endswith(".json"):
             df = processor.load_data(str(file_path), "json")
         else:
-            raise HTTPException(status_code=400, detail="Unsupported file format")
+            raise HTTPException(
+                status_code=400, detail="Unsupported file format")
 
         # Validate data
         quality_report = processor.validate_data(df)
@@ -913,7 +935,8 @@ async def upload_data(
             filename=file.filename or "",
             shape=list(df.shape),
             columns=df.columns.tolist(),
-            data_types={str(col): str(dtype) for col, dtype in df.dtypes.items()},
+            data_types={str(col): str(dtype)
+                        for col, dtype in df.dtypes.items()},
             missing_values={
                 str(k): int(v) for k, v in df.isnull().sum().to_dict().items()
             },
@@ -947,7 +970,8 @@ async def validate_data(filename: str, _current_user: User = Depends(get_current
         elif filename.endswith(".json"):
             df = processor.load_data(str(file_path), "json")
         else:
-            raise HTTPException(status_code=400, detail="Unsupported file format")
+            raise HTTPException(
+                status_code=400, detail="Unsupported file format")
 
         quality_report = processor.validate_data(df)
 
@@ -1171,7 +1195,8 @@ async def export_model(model_name: str, export_format: str = "pkl"):
             with open(export_path, "wb") as f:
                 pickle.dump(model, f)
         else:
-            raise HTTPException(status_code=400, detail="Unsupported export format")
+            raise HTTPException(
+                status_code=400, detail="Unsupported export format")
 
         return {
             "message": f"Model {model_name} exported successfully",
@@ -1203,7 +1228,8 @@ async def explore_data(filename: str, _current_user: User = Depends(get_current_
         elif filename.endswith(".json"):
             df = pd.read_json(file_path)
         else:
-            raise HTTPException(status_code=400, detail="Unsupported file format")
+            raise HTTPException(
+                status_code=400, detail="Unsupported file format")
 
         # Basic statistics
         stats = {
@@ -1453,7 +1479,8 @@ def job_status_db(job_id: str, _current_user: User = Depends(get_current_user)):
 @app.post("/jobs/cancel/{job_id}", tags=["System"], summary="Cancel a job (persistent)")
 def cancel_job_db(job_id: str, _current_user: User = Depends(get_current_user)):
     session = SessionLocal()
-    job = update_job_status(session, job_id, status="cancelled", cancelled=True)
+    job = update_job_status(
+        session, job_id, status="cancelled", cancelled=True)
     # Audit log
     try:
         from audit_trail import log_audit_event
@@ -1657,7 +1684,8 @@ async def predict_external(
     # Example external server URL (should be configurable)
     external_url = f"http://external-model-server:8080/predict/{model_name}"
     try:
-        response = requests.post(external_url, json={"data": request.data}, timeout=10)
+        response = requests.post(
+            external_url, json={"data": request.data}, timeout=10)
         response.raise_for_status()
         result = response.json()
         # Audit log
@@ -1735,7 +1763,8 @@ async def analyze_text(
 
     # Perform requested operations
     if "summary" in request.operations:
-        results["summary"] = generate_summary(request.text, request.max_length or 150)
+        results["summary"] = generate_summary(
+            request.text, request.max_length or 150)
         operations_performed.append("summary")
 
     if "sentiment" in request.operations:
@@ -1743,7 +1772,8 @@ async def analyze_text(
         operations_performed.append("sentiment")
 
     if "keywords" in request.operations:
-        results["keywords"] = extract_keywords(request.text, request.num_keywords or 10)
+        results["keywords"] = extract_keywords(
+            request.text, request.num_keywords or 10)
         operations_performed.append("keywords")
 
     processing_time = time.time() - start_time
@@ -1802,7 +1832,8 @@ _sentiment_classifier_lock = None
 def _get_sentiment_classifier():
     """Get or create the sentiment classifier instance with thread safety."""
     if SentimentClassifier is None:
-        raise HTTPException(status_code=503, detail="Sentiment classifier not available")
+        raise HTTPException(
+            status_code=503, detail="Sentiment classifier not available")
     global _sentiment_classifier, _sentiment_classifier_lock
     if _sentiment_classifier_lock is None:
         import threading
@@ -2035,8 +2066,10 @@ def _generate_insights_and_recommendations(
 
         if cpu_percent > 80:
             insights.append("High CPU utilization detected")
-            recommendations.append("Consider optimizing CPU-intensive operations")
-            recommendations.append("Monitor for potential performance bottlenecks")
+            recommendations.append(
+                "Consider optimizing CPU-intensive operations")
+            recommendations.append(
+                "Monitor for potential performance bottlenecks")
 
         if memory_percent > 85:
             insights.append("High memory usage detected")
@@ -2045,7 +2078,8 @@ def _generate_insights_and_recommendations(
 
         if cpu_percent < 20 and memory_percent < 50:
             insights.append("System resources underutilized")
-            recommendations.append("Resources available for additional workloads")
+            recommendations.append(
+                "Resources available for additional workloads")
 
     elif metric_type == "api_usage":
         error_rate = analytics_data.get("error_rate", 0)
@@ -2106,7 +2140,8 @@ async def generate_analytics(
             "average_session_duration": 1800,  # 30 minutes
         }
     else:
-        analytics_data = {"error": f"Unknown metric type: {request.metric_type}"}
+        analytics_data = {
+            "error": f"Unknown metric type: {request.metric_type}"}
 
     # Generate insights and recommendations
     insights, recommendations = _generate_insights_and_recommendations(
@@ -2220,7 +2255,8 @@ def gdpr_anonymize(
     try:
         from audit_trail import log_audit_event
 
-        log_audit_event(user_id, "anonymize", "user", "GDPR/CCPA anonymization")
+        log_audit_event(user_id, "anonymize", "user",
+                        "GDPR/CCPA anonymization")
     except (ImportError, SQLAlchemyError) as e:
         logger.warning("Audit logging failed: %s", e)
     if success:
@@ -2248,7 +2284,8 @@ def gdpr_delete(
     try:
         from audit_trail import log_audit_event
 
-        log_audit_event(user_id, "secure_delete", "user", "GDPR/CCPA secure deletion")
+        log_audit_event(user_id, "secure_delete", "user",
+                        "GDPR/CCPA secure deletion")
     except (ImportError, SQLAlchemyError) as e:
         logger.warning("Audit logging failed: %s", e)
     if success:
