@@ -15,6 +15,28 @@ function Test-PortListening {
     return $null -ne $conn
 }
 
+function Test-AzuriteReady {
+    return (Test-PortListening -Port 20000) -and (Test-PortListening -Port 20001) -and (Test-PortListening -Port 20002)
+}
+
+function Wait-AzuriteReady {
+    param(
+        [int]$MaxAttempts = 20,
+        [int]$DelaySeconds = 1
+    )
+
+    for ($i = 1; $i -le $MaxAttempts; $i++) {
+        if (Test-AzuriteReady) {
+            Write-Host "Azurite ports are ready (attempt $i/$MaxAttempts)."
+            return $true
+        }
+
+        Start-Sleep -Seconds $DelaySeconds
+    }
+
+    return $false
+}
+
 function Wait-HttpReady {
     param(
         [string]$Url,
@@ -42,16 +64,20 @@ function Wait-HttpReady {
     return $false
 }
 
-$azuriteReady = (Test-PortListening -Port 20000) -and (Test-PortListening -Port 20001) -and (Test-PortListening -Port 20002)
+$azuriteReady = Test-AzuriteReady
 if (-not $azuriteReady) {
-    Write-Host "Starting Azurite on ports 20000/20001/20002..."
-    $azCmd = "azurite --location `"$repoRoot\.azurite`" --blobHost 127.0.0.1 --queueHost 127.0.0.1 --tableHost 127.0.0.1 --blobPort 20000 --queuePort 20001 --tablePort 20002 --skipApiVersionCheck"
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", $azCmd | Out-Null
-    Start-Sleep -Seconds 2
+    $anyAzuritePort = (Test-PortListening -Port 20000) -or (Test-PortListening -Port 20001) -or (Test-PortListening -Port 20002)
+    if ($anyAzuritePort) {
+        Write-Host "Detected partial Azurite port state. Waiting for startup to finish..."
+    }
+    else {
+        Write-Host "Starting Azurite on ports 20000/20001/20002..."
+        $azCmd = "azurite --location `"$repoRoot\.azurite`" --blobHost 127.0.0.1 --queueHost 127.0.0.1 --tableHost 127.0.0.1 --blobPort 20000 --queuePort 20001 --tablePort 20002 --skipApiVersionCheck"
+        Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", $azCmd | Out-Null
+    }
 }
 
-$azuriteReady = (Test-PortListening -Port 20000) -and (Test-PortListening -Port 20001) -and (Test-PortListening -Port 20002)
-if (-not $azuriteReady) {
+if (-not (Wait-AzuriteReady)) {
     throw "Azurite failed to start on ports 20000/20001/20002."
 }
 Write-Host "Azurite is ready."

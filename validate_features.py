@@ -6,7 +6,6 @@ Validates quantum consciousness, temporal features, and neural networks
 
 import sys
 import time
-from pathlib import Path
 
 def print_header(title):
     """Print a formatted header"""

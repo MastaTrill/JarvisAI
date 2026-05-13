@@ -43,9 +43,28 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import pytest
 from fastapi.testclient import TestClient
 
-from main_api import app
+# Global app reference, lazily loaded on first fixture use
+_app = None
+_test_client = None
 
-_test_client = TestClient(app)
+
+def _get_app():
+    """Lazily load the FastAPI app on first access."""
+    global _app
+    if _app is None:
+        from main_api import app as loaded_app
+
+        _app = loaded_app
+    return _app
+
+
+def _get_test_client():
+    """Lazily load the TestClient on first access."""
+    global _test_client
+    if _test_client is None:
+        app = _get_app()
+        _test_client = TestClient(app)
+    return _test_client
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -69,6 +88,7 @@ def _ensure_tables():
 @pytest.fixture(scope="session", autouse=True)
 def _disable_rate_limiter():
     """Disable slowapi rate limiter so auth calls don't get throttled in tests."""
+    app = _get_app()
     if hasattr(app.state, "limiter"):
         app.state.limiter.enabled = False
         yield
@@ -87,11 +107,12 @@ def _make_auth_header(username: str, password: str, email: str) -> dict:
     if username in _auth_header_cache:
         return _auth_header_cache[username]
 
-    _test_client.post(
+    client = _get_test_client()
+    client.post(
         "/register",
         json={"username": username, "password": password, "email": email},
     )
-    login_resp = _test_client.post(
+    login_resp = client.post(
         "/token", data={"username": username, "password": password}
     )
     if login_resp.status_code != 200:
