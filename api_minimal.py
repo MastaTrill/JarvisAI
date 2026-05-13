@@ -1,6 +1,5 @@
 """
 Minimal Jarvis AI API - serves mission page and dashboard only.
-Used temporarily while investigating router import hangs.
 """
 
 from pathlib import Path
@@ -14,7 +13,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from agent_api import router as agent_router
+
+from agent_api import router
 
 # Global app start time
 app_start_time = None
@@ -45,7 +45,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.include_router(agent_router)
+# Include routers
+app.include_router(router)
+
 
 # CORS
 app.add_middleware(
@@ -61,8 +63,7 @@ app.add_middleware(
 try:
     app.mount(
         "/static",
-        StaticFiles(directory=os.path.join(
-            os.path.dirname(__file__), "static")),
+        StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
         name="static",
     )
 except Exception as e:
@@ -73,15 +74,14 @@ except Exception as e:
 @app.get("/")
 async def get_mission():
     """Serve the mission page."""
-    mission_file = Path(__file__).parent / "static" / \
-        "dashboard" / "mission.html"
+    mission_file = Path(__file__).parent / "static" / "dashboard" / "mission.html"
     if mission_file.exists():
         return FileResponse(
             mission_file,
             media_type="text/html",
             headers={
                 "Permissions-Policy": "microphone=(self)",
-                "Content-Security-Policy": "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.googleapis.com fonts.gstatic.com cdn.plot.ly; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; font-src fonts.gstatic.com; connect-src 'self' *.openai.com"
+                "Content-Security-Policy": "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.googleapis.com fonts.gstatic.com cdn.plot.ly; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; font-src fonts.gstatic.com; connect-src 'self' *.openai.com",
             },
         )
     return {"error": "Mission page not found"}, 404
@@ -91,15 +91,14 @@ async def get_mission():
 @app.get("/dashboard")
 async def get_dashboard():
     """Serve the dashboard page."""
-    dashboard_file = Path(__file__).parent / "static" / \
-        "dashboard" / "index.html"
+    dashboard_file = Path(__file__).parent / "static" / "dashboard" / "index.html"
     if dashboard_file.exists():
         return FileResponse(
             dashboard_file,
             media_type="text/html",
             headers={
                 "Permissions-Policy": "microphone=(self)",
-                "Content-Security-Policy": "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.googleapis.com fonts.gstatic.com cdn.plot.ly; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; font-src fonts.gstatic.com; connect-src 'self' *.openai.com"
+                "Content-Security-Policy": "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.googleapis.com fonts.gstatic.com cdn.plot.ly; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; font-src fonts.gstatic.com; connect-src 'self' *.openai.com",
             },
         )
     return {"error": "Dashboard page not found"}, 404
@@ -109,9 +108,15 @@ async def get_dashboard():
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "ok", "uptime": (datetime.now() - app_start_time).total_seconds() if app_start_time else 0}
+    return {
+        "status": "ok",
+        "uptime": (
+            (datetime.now() - app_start_time).total_seconds() if app_start_time else 0
+        ),
+    }
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1", port=7071)

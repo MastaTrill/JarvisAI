@@ -114,4 +114,6 @@ node_modules/
 
 # Local editor/tool state
 .kilo/
-.gitignore
+
+# Azure Blob Storage Emulator
+.azurite/

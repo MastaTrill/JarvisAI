@@ -89,8 +89,22 @@ from llm_ollama import (
 
 
 router = APIRouter(prefix="/agent", tags=["Agent"])
-_memory = AgentMemory()
-_task_memory = AgentTaskMemory()
+_memory = None
+_task_memory = None
+
+
+def _get_memory() -> AgentMemory:
+    global _memory
+    if _memory is None:
+        _memory = AgentMemory()
+    return _memory
+
+
+def _get_task_memory() -> AgentTaskMemory:
+    global _task_memory
+    if _task_memory is None:
+        _task_memory = AgentTaskMemory()
+    return _task_memory
 
 
 class AgentChatRequest(BaseModel):
@@ -829,11 +843,11 @@ def _default_profile() -> str:
 
 
 def _current_profile() -> str:
-    stored = _task_memory.get_setting("agent_profile")
+    stored = _task_get_memory().get_setting("agent_profile")
     if stored in {"safe", "dev", "full"}:
         return str(stored)
     value = _default_profile()
-    _task_memory.set_setting("agent_profile", value)
+    _task_get_memory().set_setting("agent_profile", value)
     return value
 
 
@@ -846,7 +860,7 @@ def _set_profile(value: str) -> str:
             status_code=403,
             detail="full profile requires JARVIS_DANGEROUS_FULL_ACCESS=true",
         )
-    _task_memory.set_setting("agent_profile", v)
+    _task_get_memory().set_setting("agent_profile", v)
     return v
 
 
@@ -855,11 +869,11 @@ def _llm_mode_default() -> str:
 
 
 def _llm_mode() -> str:
-    mode = (_task_memory.get_setting("agent_llm_mode") or "").strip().lower()
+    mode = (_task_get_memory().get_setting("agent_llm_mode") or "").strip().lower()
     if mode in {"fast", "quality"}:
         return mode
     mode = _llm_mode_default()
-    _task_memory.set_setting("agent_llm_mode", mode)
+    _task_get_memory().set_setting("agent_llm_mode", mode)
     return mode
 
 
@@ -867,17 +881,17 @@ def _set_llm_mode(mode: str) -> str:
     m = (mode or "").strip().lower()
     if m not in {"fast", "quality"}:
         raise HTTPException(status_code=400, detail="invalid mode")
-    _task_memory.set_setting("agent_llm_mode", m)
+    _task_get_memory().set_setting("agent_llm_mode", m)
     return m
 
 
 def _llm_model_override() -> str:
-    return (_task_memory.get_setting("agent_llm_model") or "").strip()
+    return (_task_get_memory().get_setting("agent_llm_model") or "").strip()
 
 
 def _set_llm_model_override(model_name: Optional[str]) -> str:
     model = str(model_name or "").strip()
-    _task_memory.set_setting("agent_llm_model", model)
+    _task_get_memory().set_setting("agent_llm_model", model)
     return model
 
 
@@ -906,12 +920,12 @@ def _vision_provider_default() -> str:
 
 
 def _vision_provider() -> str:
-    provider = (_task_memory.get_setting(
+    provider = (_task_get_memory().get_setting(
         "agent_vision_provider") or "").strip().lower()
     if provider in {"auto", "heuristic", "ollama", "openai"}:
         return provider
     provider = _vision_provider_default()
-    _task_memory.set_setting("agent_vision_provider", provider)
+    _task_get_memory().set_setting("agent_vision_provider", provider)
     return provider
 
 
@@ -919,17 +933,17 @@ def _set_vision_provider(provider: str) -> str:
     p = (provider or "").strip().lower()
     if p not in {"auto", "heuristic", "ollama", "openai"}:
         raise HTTPException(status_code=400, detail="invalid vision provider")
-    _task_memory.set_setting("agent_vision_provider", p)
+    _task_get_memory().set_setting("agent_vision_provider", p)
     return p
 
 
 def _vision_model_override() -> str:
-    return (_task_memory.get_setting("agent_vision_model") or "").strip()
+    return (_task_get_memory().get_setting("agent_vision_model") or "").strip()
 
 
 def _set_vision_model_override(model_name: Optional[str]) -> str:
     model = str(model_name or "").strip()
-    _task_memory.set_setting("agent_vision_model", model)
+    _task_get_memory().set_setting("agent_vision_model", model)
     return model
 
 
@@ -961,7 +975,7 @@ def _agent_policy_default() -> Dict[str, Any]:
 
 
 def _get_agent_policy() -> Dict[str, Any]:
-    raw = _task_memory.get_setting("agent_policy")
+    raw = _task_get_memory().get_setting("agent_policy")
     cfg = _agent_policy_default()
     if raw:
         try:
@@ -979,7 +993,7 @@ def _set_agent_policy(data: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(data, dict):
         cfg.update(data)
     cfg["strict_confirm"] = bool(cfg.get("strict_confirm", True))
-    _task_memory.set_setting("agent_policy", json.dumps(cfg))
+    _task_get_memory().set_setting("agent_policy", json.dumps(cfg))
     return cfg
 
 
@@ -999,7 +1013,7 @@ def _control_config_default() -> Dict[str, Any]:
 
 
 def _get_control_config() -> Dict[str, Any]:
-    raw = _task_memory.get_setting("agent_control_config")
+    raw = _task_get_memory().get_setting("agent_control_config")
     cfg = _control_config_default()
     if raw:
         try:
@@ -1033,7 +1047,7 @@ def _set_control_config(data: Dict[str, Any]) -> Dict[str, Any]:
     cfg["search_engine"] = search_engine
     cfg["host_control_available"] = _is_truthy(
         os.getenv("JARVIS_HOST_CONTROL", ""))
-    _task_memory.set_setting("agent_control_config", json.dumps(cfg))
+    _task_get_memory().set_setting("agent_control_config", json.dumps(cfg))
     return cfg
 
 
@@ -1076,14 +1090,14 @@ def _resolve_workspace_context(
     workspace_id: Optional[int] = None,
 ) -> Tuple[Optional[int], Optional[Dict[str, Any]], Dict[str, Any]]:
     resolved_workspace_id = (
-        int(workspace_id) if workspace_id else _task_memory.get_active_workspace_id()
+        int(workspace_id) if workspace_id else _task_get_memory().get_active_workspace_id()
     )
     workspace = (
-        _task_memory.get_project_workspace(resolved_workspace_id)
+        _task_get_memory().get_project_workspace(resolved_workspace_id)
         if resolved_workspace_id
         else None
     )
-    policy = _task_memory.get_workspace_policy(resolved_workspace_id)
+    policy = _task_get_memory().get_workspace_policy(resolved_workspace_id)
     return resolved_workspace_id, workspace, policy
 
 
@@ -1549,13 +1563,13 @@ def _dispatch_due_reminders(
 ) -> Dict[str, Any]:
     cfg = _get_briefing_delivery_config()
     due_for_discord = (
-        _task_memory.list_due_proactive_reminders(
+        _task_get_memory().list_due_proactive_reminders(
             limit=limit, for_discord=True)
         if include_discord
         else []
     )
     due_for_voice = (
-        _task_memory.list_due_proactive_reminders(limit=limit, for_voice=True)
+        _task_get_memory().list_due_proactive_reminders(limit=limit, for_voice=True)
         if include_voice
         else []
     )
@@ -1575,7 +1589,7 @@ def _dispatch_due_reminders(
             result = _dispatch_briefing_discord(
                 str(cfg.get("discord_webhook_url")), payload
             )
-            _task_memory.update_proactive_reminder(
+            _task_get_memory().update_proactive_reminder(
                 int(reminder["id"]), discord_delivered=True, delivered=True
             )
             sent.append(
@@ -1584,7 +1598,7 @@ def _dispatch_due_reminders(
             )
     queued_voice: List[Dict[str, Any]] = []
     for reminder in due_for_voice:
-        _task_memory.update_proactive_reminder(
+        _task_get_memory().update_proactive_reminder(
             int(reminder["id"]), voice_announced=True, delivered=True
         )
         queued_voice.append(
@@ -1669,7 +1683,7 @@ def _local_voice_presets() -> List[Dict[str, Any]]:
 
 def _get_local_voice_config() -> Dict[str, Any]:
     cfg = _local_voice_config_default()
-    raw = _task_memory.get_setting("local_voice_config")
+    raw = _task_get_memory().get_setting("local_voice_config")
     if raw:
         try:
             parsed = json.loads(raw)
@@ -1729,7 +1743,7 @@ def _set_local_voice_config(data: Dict[str, Any]) -> Dict[str, Any]:
     cfg["tts_style"] = (
         str(cfg.get("tts_style") or "assistant").strip().lower() or "assistant"
     )
-    _task_memory.set_setting("local_voice_config", json.dumps(cfg))
+    _task_get_memory().set_setting("local_voice_config", json.dumps(cfg))
     return _get_local_voice_config()
 
 
@@ -1748,7 +1762,7 @@ def _integration_config_default() -> Dict[str, Any]:
 
 def _get_integration_config() -> Dict[str, Any]:
     cfg = _integration_config_default()
-    raw = _task_memory.get_json_setting("elite_integration_config", {})
+    raw = _task_get_memory().get_json_setting("elite_integration_config", {})
     if isinstance(raw, dict):
         cfg.update(raw)
     cfg["github_enabled"] = bool(cfg.get("github_enabled", False))
@@ -1800,7 +1814,7 @@ def _set_integration_config(data: Dict[str, Any]) -> Dict[str, Any]:
     cfg["calendar_id"] = str(cfg.get("calendar_id") or "").strip()
     cfg["email_enabled"] = bool(cfg.get("email_enabled", False))
     cfg["email_to"] = str(cfg.get("email_to") or "").strip()
-    _task_memory.set_json_setting(
+    _task_get_memory().set_json_setting(
         "elite_integration_config",
         {
             "github_enabled": cfg["github_enabled"],
@@ -1819,24 +1833,24 @@ def _set_integration_config(data: Dict[str, Any]) -> Dict[str, Any]:
 def _desktop_presence_payload(*, workspace_id: Optional[int] = None) -> Dict[str, Any]:
     active_workspace = None
     if isinstance(workspace_id, int):
-        active_workspace = _task_memory.get_project_workspace(workspace_id)
+        active_workspace = _task_get_memory().get_project_workspace(workspace_id)
     if active_workspace is None:
-        active_workspace_id = _task_memory.get_active_workspace_id()
+        active_workspace_id = _task_get_memory().get_active_workspace_id()
         if active_workspace_id:
-            active_workspace = _task_memory.get_project_workspace(
+            active_workspace = _task_get_memory().get_project_workspace(
                 active_workspace_id)
-    snapshot = _task_memory.latest_desktop_presence_snapshot(
+    snapshot = _task_get_memory().latest_desktop_presence_snapshot(
         workspace_id=workspace_id if isinstance(workspace_id, int) else None
     )
-    reminders = _task_memory.list_proactive_reminders(
+    reminders = _task_get_memory().list_proactive_reminders(
         limit=5,
         status="open",
         workspace_id=workspace_id if isinstance(workspace_id, int) else None,
     )
-    next_actions = _task_memory.next_best_actions(
+    next_actions = _task_get_memory().next_best_actions(
         workspace_id=workspace_id if isinstance(workspace_id, int) else None, limit=3
     )
-    recent_vision = _task_memory.list_vision_observations(limit=1)
+    recent_vision = _task_get_memory().list_vision_observations(limit=1)
     return {
         "workspace": active_workspace,
         "snapshot": snapshot,
@@ -1861,7 +1875,7 @@ def _run_and_store_mission(
 ) -> Dict[str, Any]:
     prior_result = None
     if mission_id is not None:
-        existing = _task_memory.get_mission_run(int(mission_id))
+        existing = _task_get_memory().get_mission_run(int(mission_id))
         if existing is not None and isinstance(existing.get("result"), dict):
             prior_result = existing.get("result")
     mission = _run_autonomous_mission(
@@ -1877,7 +1891,7 @@ def _run_and_store_mission(
         if mission.get("blocked")
         else ("completed" if mission.get("ok") else "partial")
     )
-    saved = _task_memory.save_mission_run(
+    saved = _task_get_memory().save_mission_run(
         mission_id=mission_id,
         workspace_id=workspace_id,
         session_id=mission.get("session_id"),
@@ -2129,7 +2143,7 @@ def _github_pull_summary(payload: GitHubPullSummaryRequest) -> Dict[str, Any]:
 
 
 def _calendar_events_get() -> List[Dict[str, Any]]:
-    items = _task_memory.get_json_setting("elite_calendar_events", [])
+    items = _task_get_memory().get_json_setting("elite_calendar_events", [])
     return items if isinstance(items, list) else []
 
 
@@ -2138,7 +2152,7 @@ def _calendar_events_set(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     for item in items[:200]:
         if isinstance(item, dict):
             clean.append(item)
-    _task_memory.set_json_setting("elite_calendar_events", clean)
+    _task_get_memory().set_json_setting("elite_calendar_events", clean)
     return clean
 
 
@@ -2377,9 +2391,9 @@ def _desktop_awareness_payload(*, workspace_id: Optional[int] = None) -> Dict[st
 
 
 def _watcher_network_payload() -> Dict[str, Any]:
-    jobs = _task_memory.list_autonomous_jobs(limit=200, mode="watcher")
+    jobs = _task_get_memory().list_autonomous_jobs(limit=200, mode="watcher")
     cfg = _get_integration_config()
-    latest_presence = _task_memory.latest_desktop_presence_snapshot()
+    latest_presence = _task_get_memory().latest_desktop_presence_snapshot()
     coverage: Dict[str, Dict[str, Any]] = {}
     for watcher_type in ["project", "github", "calendar", "email", "desktop"]:
         matching = [
@@ -2465,9 +2479,9 @@ def _watcher_network_payload() -> Dict[str, Any]:
 def _trust_receipts_payload(
     *, limit: int = 20, session_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    tool_runs = _task_memory.list_tool_executions(
+    tool_runs = _task_get_memory().list_tool_executions(
         limit=limit, session_id=session_id)
-    missions = _task_memory.list_mission_runs(limit=max(5, min(limit, 20)))
+    missions = _task_get_memory().list_mission_runs(limit=max(5, min(limit, 20)))
     receipts = []
     rollback_receipts = []
     for item in tool_runs:
@@ -2590,7 +2604,7 @@ def _trust_receipts_payload(
 
 def _get_wakeword_config() -> Dict[str, Any]:
     cfg = _wakeword_config_default()
-    raw = _task_memory.get_setting("voice_wakeword_config")
+    raw = _task_get_memory().get_setting("voice_wakeword_config")
     if raw:
         try:
             parsed = json.loads(raw)
@@ -2617,7 +2631,7 @@ def _set_wakeword_config(data: Dict[str, Any]) -> Dict[str, Any]:
     cfg["threshold"] = max(
         0.05, min(float(cfg.get("threshold", 0.45) or 0.45), 0.99))
     cfg["chunk_ms"] = max(160, min(int(cfg.get("chunk_ms", 960) or 960), 4000))
-    _task_memory.set_setting("voice_wakeword_config", json.dumps(cfg))
+    _task_get_memory().set_setting("voice_wakeword_config", json.dumps(cfg))
     return _get_wakeword_config()
 
 
@@ -3314,7 +3328,7 @@ def _browser_templates_default() -> List[Dict[str, Any]]:
 
 
 def _get_browser_workflow_templates() -> List[Dict[str, Any]]:
-    raw = _task_memory.get_setting("browser_workflow_templates")
+    raw = _task_get_memory().get_setting("browser_workflow_templates")
     defaults = _browser_templates_default()
     items = list(defaults)
     if raw:
@@ -3407,7 +3421,7 @@ def _set_browser_workflow_templates(
                 ][:40],
             }
         )
-    _task_memory.set_setting(
+    _task_get_memory().set_setting(
         "browser_workflow_templates", json.dumps(normalized))
     return normalized
 
@@ -3598,13 +3612,13 @@ def _pending_approval_key(session_id: str) -> str:
 def _save_pending_approval(session_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     entry = dict(payload)
     entry["created_at"] = _now_iso()
-    _task_memory.set_setting(
+    _task_get_memory().set_setting(
         _pending_approval_key(session_id), json.dumps(entry))
     return entry
 
 
 def _get_pending_approval(session_id: str) -> Optional[Dict[str, Any]]:
-    raw = _task_memory.get_setting(_pending_approval_key(session_id))
+    raw = _task_get_memory().get_setting(_pending_approval_key(session_id))
     if not raw:
         return None
     try:
@@ -3615,7 +3629,7 @@ def _get_pending_approval(session_id: str) -> Optional[Dict[str, Any]]:
 
 
 def _clear_pending_approval(session_id: str) -> bool:
-    return _task_memory.delete_setting(_pending_approval_key(session_id))
+    return _task_get_memory().delete_setting(_pending_approval_key(session_id))
 
 
 def _message_is_approval(text: str) -> bool:
@@ -3762,7 +3776,7 @@ def _run_autonomous_mission(
         if isinstance(prior_checkpoint, dict)
         else []
     )
-    plan = _task_memory.next_best_actions(
+    plan = _task_get_memory().next_best_actions(
         workspace_id=workspace_id, limit=limit)
     actions = (
         stored_remaining[:limit]
@@ -3931,7 +3945,7 @@ def _record_verified_tool_run(
     session_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     verification = _verify_tool_result(tool_name, result, args=args)
-    log_id = _task_memory.log_tool_execution(
+    log_id = _task_get_memory().log_tool_execution(
         tool_name=tool_name,
         status=str(verification.get("status") or "unknown"),
         confidence=verification.get("confidence")
@@ -4046,7 +4060,7 @@ def _tool_quantum_superposition(args: Dict[str, Any]) -> Dict[str, Any]:
         )
     qp = _get_quantum_processor()
     result = _json_safe(qp.create_quantum_superposition(states))
-    _task_memory.add_quantum_event(
+    _task_get_memory().add_quantum_event(
         event_type="superposition",
         states=states,
     )
@@ -4067,7 +4081,7 @@ def _tool_quantum_entangle(args: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(result.get("entanglement"), dict)
         else {}
     )
-    _task_memory.add_quantum_event(
+    _task_get_memory().add_quantum_event(
         event_type="entangle",
         entanglement_strength=ent.get("entanglement_strength")
         if isinstance(ent.get("entanglement_strength"), (int, float))
@@ -4091,7 +4105,7 @@ def _tool_quantum_measure(args: Dict[str, Any]) -> Dict[str, Any]:
         result.get("measurement") if isinstance(
             result.get("measurement"), dict) else {}
     )
-    _task_memory.add_quantum_event(
+    _task_get_memory().add_quantum_event(
         event_type="measurement",
         measurement_basis=basis,
         outcome=meas.get("outcome") if isinstance(
@@ -4114,7 +4128,7 @@ def _tool_quantum_decipher(args: Dict[str, Any]) -> Dict[str, Any]:
     ) if event_type_raw is not None else None
     if event_type == "":
         event_type = None
-    events = _task_memory.list_quantum_events(
+    events = _task_get_memory().list_quantum_events(
         limit=500, event_type=event_type, since_hours=hours
     )
     return _quantum_decipher_analysis(events, hours=hours)
@@ -4177,7 +4191,7 @@ def _quantum_alert_config_default() -> Dict[str, Any]:
 
 
 def _get_quantum_alert_config() -> Dict[str, Any]:
-    raw = _task_memory.get_setting("quantum_alert_config")
+    raw = _task_get_memory().get_setting("quantum_alert_config")
     base = _quantum_alert_config_default()
     if not raw:
         return base
@@ -4217,7 +4231,7 @@ def _set_quantum_alert_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     safe_cfg["entanglement_strength_min"] = max(
         0.0, min(safe_cfg["entanglement_strength_min"], 1.0)
     )
-    _task_memory.set_setting("quantum_alert_config", json.dumps(safe_cfg))
+    _task_get_memory().set_setting("quantum_alert_config", json.dumps(safe_cfg))
     return safe_cfg
 
 
@@ -4226,10 +4240,10 @@ def _evaluate_quantum_alerts(cfg: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "active": False,
             "alerts": [],
-            "stats": _task_memory.quantum_stats(hours=int(cfg.get("window_hours", 24))),
+            "stats": _task_get_memory().quantum_stats(hours=int(cfg.get("window_hours", 24))),
         }
 
-    stats = _task_memory.quantum_stats(hours=int(cfg.get("window_hours", 24)))
+    stats = _task_get_memory().quantum_stats(hours=int(cfg.get("window_hours", 24)))
     alerts: List[Dict[str, Any]] = []
 
     measurements = int(stats.get("measurements") or 0)
@@ -4802,7 +4816,7 @@ def _tool_browser_workflow(args: Dict[str, Any]) -> Dict[str, Any]:
         }
     session_name = str(args.get("session_name") or "").strip() or None
     stored_session = (
-        _task_memory.get_browser_session(
+        _task_get_memory().get_browser_session(
             session_name) if session_name else None
     )
     return _run_browser_workflow(
@@ -5591,7 +5605,7 @@ def _score_multi_agent_run(result: Dict[str, Any], latency_ms: int) -> Dict[str,
 
 
 def _memory_quality_report(session_id: str, max_messages: int = 120) -> Dict[str, Any]:
-    msgs = _memory.load(session_id, max_messages=max_messages)
+    msgs = _get_memory().load(session_id, max_messages=max_messages)
     if not msgs:
         return {
             "session_id": session_id,
@@ -5684,12 +5698,12 @@ def _extract_memory_candidate(message: str) -> Optional[Dict[str, Any]]:
 
 
 def _memory_context_for_prompt(message: str, limit: int = 4) -> str:
-    bundle = _task_memory.memory_context_bundle(
+    bundle = _task_get_memory().memory_context_bundle(
         query=message, limit=max(4, limit))
     matches = bundle.get("items") or []
-    active_workspace_id = _task_memory.get_active_workspace_id()
+    active_workspace_id = _task_get_memory().get_active_workspace_id()
     workspace = (
-        _task_memory.get_project_workspace(active_workspace_id)
+        _task_get_memory().get_project_workspace(active_workspace_id)
         if active_workspace_id
         else None
     )
@@ -6006,7 +6020,7 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
         str(metadata.get("watcher_type") or "project").strip().lower() or "project"
     )
     workspace_id = (
-        metadata.get("workspace_id") or _task_memory.get_active_workspace_id()
+        metadata.get("workspace_id") or _task_get_memory().get_active_workspace_id()
     )
     limit = max(1, min(int(metadata.get("limit") or 3), 6))
     min_score = float(metadata.get("min_score") or 6.0)
@@ -6014,7 +6028,7 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
         job, watcher_type, workspace_id, limit, min_score)
 
     if watcher_type == "project":
-        next_actions = _task_memory.next_best_actions(
+        next_actions = _task_get_memory().next_best_actions(
             workspace_id=workspace_id, limit=max(limit + 2, 5)
         )
         actions = list(next_actions.get("actions") or [])
@@ -6023,10 +6037,10 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
         ]
         generated_created: List[Dict[str, Any]] = []
         if not triggers:
-            generated = _task_memory.generate_proactive_reminders(
+            generated = _task_get_memory().generate_proactive_reminders(
                 workspace_id=workspace_id, limit=3
             )
-            next_actions = _task_memory.next_best_actions(
+            next_actions = _task_get_memory().next_best_actions(
                 workspace_id=workspace_id, limit=max(limit + 2, 5)
             )
             actions = list(next_actions.get("actions") or [])
@@ -6101,7 +6115,7 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     if watcher_type == "email":
-        reminders = _task_memory.list_proactive_reminders(
+        reminders = _task_get_memory().list_proactive_reminders(
             limit=12, status="open", workspace_id=workspace_id, due_within_hours=48
         )
         triggers = [
@@ -6116,7 +6130,7 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
                 "reminders": reminders[:limit],
                 "escalation": "quiet",
             }
-        briefing = _task_memory.memory_briefing(
+        briefing = _task_get_memory().memory_briefing(
             period="now", recent_project_hours=24)
         delivery = _dispatch_briefing_deliveries(briefing)
         return base | {
@@ -6130,7 +6144,7 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
 
     if watcher_type == "desktop":
         awareness = _desktop_awareness_payload(workspace_id=workspace_id)
-        next_actions = _task_memory.next_best_actions(
+        next_actions = _task_get_memory().next_best_actions(
             workspace_id=workspace_id, limit=max(limit, 4)
         )
         actions = list(next_actions.get("actions") or [])
@@ -6159,7 +6173,7 @@ def _run_project_watcher(job: Dict[str, Any]) -> Dict[str, Any]:
 
     if watcher_type == "github":
         intel = _integration_intelligence()
-        next_actions = _task_memory.next_best_actions(
+        next_actions = _task_get_memory().next_best_actions(
             workspace_id=workspace_id, limit=max(limit, 4)
         )
         actions = list(next_actions.get("actions") or [])
@@ -6213,11 +6227,11 @@ def _execute_autonomous_job(job: Dict[str, Any]) -> Dict[str, Any]:
         metadata = job.get("metadata") or {}
         period = str(metadata.get("period") or "morning")
         recent_project_hours = metadata.get("recent_project_hours")
-        briefing = _task_memory.memory_briefing(
+        briefing = _task_get_memory().memory_briefing(
             period=period, recent_project_hours=recent_project_hours
         )
-        reminders = _task_memory.generate_proactive_reminders(
-            workspace_id=_task_memory.get_active_workspace_id(),
+        reminders = _task_get_memory().generate_proactive_reminders(
+            workspace_id=_task_get_memory().get_active_workspace_id(),
             limit=3,
         )
         delivery = _dispatch_briefing_deliveries(briefing)
@@ -6409,7 +6423,7 @@ def activate_advanced_features():
     if _dangerous_full_access_enabled():
         profile = _set_profile("full")
 
-    existing = _task_memory.list_goal_schedules(limit=500)
+    existing = _task_get_memory().list_goal_schedules(limit=500)
     existing_goals = {str(s.get("goal") or "").strip().lower()
                       for s in existing}
     created: List[Dict[str, Any]] = []
@@ -6422,7 +6436,7 @@ def activate_advanced_features():
         g = str(d["goal"]).strip().lower()
         if g in existing_goals:
             continue
-        sid = _task_memory.create_goal_schedule(
+        sid = _task_get_memory().create_goal_schedule(
             goal=str(d["goal"]),
             interval_minutes=int(d["interval_minutes"]),
             session_id=None,
@@ -6459,7 +6473,7 @@ def list_tasks(
     status: Optional[str] = None,
     limit: int = Query(default=50, ge=1, le=200),
 ):
-    tasks = _task_memory.list_tasks(
+    tasks = _task_get_memory().list_tasks(
         session_id=session_id, status=status, limit=limit)
     return {
         "tasks": tasks,
@@ -6469,14 +6483,14 @@ def list_tasks(
 
 @router.post("/tasks")
 def create_task(payload: AgentTaskCreateRequest):
-    task_id = _task_memory.create_task(
+    task_id = _task_get_memory().create_task(
         payload.task, session_id=payload.session_id)
     return {"id": task_id, "status": "open"}
 
 
 @router.post("/tasks/{task_id}/status")
 def update_task_status(task_id: int, payload: AgentTaskStatusRequest):
-    ok = _task_memory.update_task_status(
+    ok = _task_get_memory().update_task_status(
         task_id, payload.status, note=payload.note)
     if not ok:
         raise HTTPException(status_code=404, detail="task not found")
@@ -6571,7 +6585,7 @@ def quantum_history(
     since_hours: Optional[int] = Query(default=None, ge=1, le=24 * 365),
 ):
     return {
-        "events": _task_memory.list_quantum_events(
+        "events": _task_get_memory().list_quantum_events(
             limit=limit,
             event_type=event_type,
             since_hours=since_hours,
@@ -6581,7 +6595,7 @@ def quantum_history(
 
 @router.get("/quantum/stats")
 def quantum_stats(hours: int = Query(default=24, ge=1, le=24 * 365)):
-    return _task_memory.quantum_stats(hours=hours)
+    return _task_get_memory().quantum_stats(hours=hours)
 
 
 @router.get("/quantum/alerts")
@@ -6889,7 +6903,7 @@ def _quantum_remediation_default() -> Dict[str, Any]:
 
 
 def _get_quantum_remediation_config() -> Dict[str, Any]:
-    raw = _task_memory.get_setting("quantum_remediation_config")
+    raw = _task_get_memory().get_setting("quantum_remediation_config")
     cfg = _quantum_remediation_default()
     if not raw:
         return cfg
@@ -6905,7 +6919,7 @@ def _get_quantum_remediation_config() -> Dict[str, Any]:
 def _set_quantum_remediation_config(data: Dict[str, Any]) -> Dict[str, Any]:
     cfg = _quantum_remediation_default()
     cfg.update(data)
-    _task_memory.set_setting("quantum_remediation_config", json.dumps(cfg))
+    _task_get_memory().set_setting("quantum_remediation_config", json.dumps(cfg))
     return cfg
 
 
@@ -6921,7 +6935,7 @@ def _quantum_notification_default() -> Dict[str, Any]:
 
 
 def _get_quantum_notification_config() -> Dict[str, Any]:
-    raw = _task_memory.get_setting("quantum_notification_config")
+    raw = _task_get_memory().get_setting("quantum_notification_config")
     cfg = _quantum_notification_default()
     if not raw:
         return cfg
@@ -6937,7 +6951,7 @@ def _get_quantum_notification_config() -> Dict[str, Any]:
 def _set_quantum_notification_config(data: Dict[str, Any]) -> Dict[str, Any]:
     cfg = _quantum_notification_default()
     cfg.update(data)
-    _task_memory.set_setting("quantum_notification_config", json.dumps(cfg))
+    _task_get_memory().set_setting("quantum_notification_config", json.dumps(cfg))
     return cfg
 
 
@@ -6946,7 +6960,7 @@ def _quantum_rbac_default() -> Dict[str, Any]:
 
 
 def _get_quantum_rbac_config() -> Dict[str, Any]:
-    raw = _task_memory.get_setting("quantum_rbac_config")
+    raw = _task_get_memory().get_setting("quantum_rbac_config")
     cfg = _quantum_rbac_default()
     if not raw:
         return cfg
@@ -6970,7 +6984,7 @@ def _set_quantum_rbac_config(data: Dict[str, Any]) -> Dict[str, Any]:
     if role not in {"viewer", "operator", "admin"}:
         raise HTTPException(status_code=400, detail="invalid role")
     cfg["role"] = role
-    _task_memory.set_setting("quantum_rbac_config", json.dumps(cfg))
+    _task_get_memory().set_setting("quantum_rbac_config", json.dumps(cfg))
     return cfg
 
 
@@ -7050,7 +7064,7 @@ def _dispatch_webhook_notification(
 
 def _audit_quantum_op(op_type: str, status: str, details: Dict[str, Any]) -> None:
     try:
-        _task_memory.add_quantum_ops_audit(
+        _task_get_memory().add_quantum_ops_audit(
             op_type=op_type, status=status, details=details
         )
     except Exception:
@@ -7136,7 +7150,7 @@ def _dispatch_configured_notification(
 
 
 def _memory_saved_filters_get() -> List[Dict[str, Any]]:
-    raw = _task_memory.get_setting("memory_archived_saved_filters")
+    raw = _task_get_memory().get_setting("memory_archived_saved_filters")
     if not raw:
         return []
     try:
@@ -7175,7 +7189,7 @@ def _memory_saved_filters_set(items: List[Dict[str, Any]]) -> List[Dict[str, Any
                 "memory_type": str(item.get("memory_type") or "").strip()[:40],
             }
         )
-    _task_memory.set_setting(
+    _task_get_memory().set_setting(
         "memory_archived_saved_filters", json.dumps(clean))
     return clean
 
@@ -7194,7 +7208,7 @@ def _briefing_delivery_default() -> Dict[str, Any]:
 
 
 def _get_briefing_delivery_config() -> Dict[str, Any]:
-    raw = _task_memory.get_setting("memory_briefing_delivery_config")
+    raw = _task_get_memory().get_setting("memory_briefing_delivery_config")
     cfg = _briefing_delivery_default()
     if not raw:
         return cfg
@@ -7223,7 +7237,7 @@ def _set_briefing_delivery_config(data: Dict[str, Any]) -> Dict[str, Any]:
             )
         cfg[field_name] = value
     cfg["email_to"] = str(cfg.get("email_to") or "").strip()
-    _task_memory.set_setting(
+    _task_get_memory().set_setting(
         "memory_briefing_delivery_config", json.dumps(cfg))
     return cfg
 
@@ -7362,7 +7376,7 @@ def _dispatch_briefing_deliveries(briefing: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _get_quantum_incidents() -> List[Dict[str, Any]]:
-    raw = _task_memory.get_setting("quantum_incidents")
+    raw = _task_get_memory().get_setting("quantum_incidents")
     if not raw:
         return []
     try:
@@ -7375,7 +7389,7 @@ def _get_quantum_incidents() -> List[Dict[str, Any]]:
 
 
 def _set_quantum_incidents(items: List[Dict[str, Any]]) -> None:
-    _task_memory.set_setting("quantum_incidents", json.dumps(items))
+    _task_get_memory().set_setting("quantum_incidents", json.dumps(items))
 
 
 def _incident_default_checklist(code: str) -> List[Dict[str, Any]]:
@@ -7478,7 +7492,7 @@ def _incident_service_name(inc: Dict[str, Any]) -> str:
 
 def _quantum_alert_correlations(*, hours: int, window_minutes: int) -> Dict[str, Any]:
     incidents = _get_quantum_incidents()
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     win = max(1, int(window_minutes))
     groups: Dict[str, Dict[str, Any]] = {}
 
@@ -7535,7 +7549,7 @@ def _quantum_alert_correlations(*, hours: int, window_minutes: int) -> Dict[str,
 
 def _compute_quantum_baselines(hours: int) -> Dict[str, Any]:
     h = max(1, min(int(hours), 24 * 365))
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=h)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=h)
     stats = _stats_from_events(events, hours=h)
     measurements = max(1, int(stats.get("measurements") or 0))
     out = stats.get("measurement_outcomes") or {}
@@ -7561,7 +7575,7 @@ def _compute_quantum_baselines(hours: int) -> Dict[str, Any]:
 
 
 def _get_quantum_baselines() -> Dict[str, Any]:
-    raw = _task_memory.get_setting("quantum_baselines")
+    raw = _task_get_memory().get_setting("quantum_baselines")
     if not raw:
         return {}
     try:
@@ -7574,7 +7588,7 @@ def _get_quantum_baselines() -> Dict[str, Any]:
 
 
 def _set_quantum_baselines(baseline: Dict[str, Any]) -> Dict[str, Any]:
-    _task_memory.set_setting("quantum_baselines", json.dumps(baseline))
+    _task_get_memory().set_setting("quantum_baselines", json.dumps(baseline))
     return baseline
 
 
@@ -7618,7 +7632,7 @@ def _quantum_root_cause_graph(
                 break
     if selected is None and incidents:
         selected = incidents[0]
-    events = _task_memory.list_quantum_events(limit=1000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=1000, since_hours=hours)
     stats = _stats_from_events(events, hours=hours)
     root_cause = "measurement_pipeline_drift"
     confidence = 0.55
@@ -7676,10 +7690,10 @@ def _quantum_root_cause_graph(
 
 def _quantum_risk_score(*, horizon_hours: int) -> Dict[str, Any]:
     h = max(1, min(int(horizon_hours), 24 * 7))
-    stats = _task_memory.quantum_stats(hours=24)
+    stats = _task_get_memory().quantum_stats(hours=24)
     alerts_eval = _evaluate_quantum_alerts(_get_quantum_alert_config())
     anomalies = _quantum_anomalies(
-        _task_memory.list_quantum_events(limit=5000, since_hours=24),
+        _task_get_memory().list_quantum_events(limit=5000, since_hours=24),
         hours=24,
         z_threshold=2.0,
     )
@@ -7722,7 +7736,7 @@ def _quantum_playbook_v2_default() -> Dict[str, Any]:
 
 
 def _get_quantum_playbook_v2_config() -> Dict[str, Any]:
-    raw = _task_memory.get_setting("quantum_playbook_v2_config")
+    raw = _task_get_memory().get_setting("quantum_playbook_v2_config")
     cfg = _quantum_playbook_v2_default()
     if not raw:
         return cfg
@@ -7739,13 +7753,13 @@ def _set_quantum_playbook_v2_config(data: Dict[str, Any]) -> Dict[str, Any]:
     cfg = _quantum_playbook_v2_default()
     cfg.update(data)
     cfg["max_actions"] = max(1, min(int(cfg.get("max_actions") or 6), 20))
-    _task_memory.set_setting("quantum_playbook_v2_config", json.dumps(cfg))
+    _task_get_memory().set_setting("quantum_playbook_v2_config", json.dumps(cfg))
     return cfg
 
 
 def _quantum_slo_panel(*, hours: int) -> Dict[str, Any]:
     h = max(1, min(int(hours), 24 * 365))
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=h)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=h)
     alerts_eval = _evaluate_quantum_alerts(_get_quantum_alert_config())
     total = max(1, len(events))
     errors = len(alerts_eval.get("alerts") or [])
@@ -7780,7 +7794,7 @@ def _quantum_slo_panel(*, hours: int) -> Dict[str, Any]:
 
 
 def _quantum_decyphering_lab(*, hours: int) -> Dict[str, Any]:
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     measurements = [e for e in events if e.get("event_type") == "measurement"]
     n = max(1, len(measurements))
     ones = sum(1 for m in measurements if int(m.get("outcome") or 0) == 1)
@@ -7820,7 +7834,7 @@ def _quantum_generate_postmortem(
 ) -> Dict[str, Any]:
     workspace = quantum_incident_workspace(incident_id=incident_id)
     incident = workspace.get("incident")
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     decypher = _quantum_decyphering_lab(hours=hours)
     rc = _quantum_root_cause_graph(
         incident_id=str(incident.get("id")) if incident else None, hours=hours
@@ -7991,9 +8005,9 @@ def _run_quantum_experiment(
                 "result": _tool_quantum_measure({"measurement_basis": basis}),
             }
         )
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=24)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=24)
     decipher = _quantum_decipher_analysis(events, hours=24)
-    snap_id = _task_memory.create_quantum_decipher_snapshot(decipher)
+    snap_id = _task_get_memory().create_quantum_decipher_snapshot(decipher)
     result = {
         "preset": preset,
         "measure_count": measures,
@@ -8013,7 +8027,7 @@ def _run_quantum_experiment(
 
 def _run_quantum_remediation(*, hours: int, force: bool) -> Dict[str, Any]:
     cfg = _get_quantum_remediation_config()
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     decipher = _quantum_decipher_analysis(events, hours=hours)
     pre_stats = _stats_from_events(events, hours=hours)
     pre_alerts = _evaluate_quantum_alerts(_get_quantum_alert_config())
@@ -8059,7 +8073,7 @@ def _run_quantum_remediation(*, hours: int, force: bool) -> Dict[str, Any]:
                     ),
                 }
             )
-    post_events = _task_memory.list_quantum_events(
+    post_events = _task_get_memory().list_quantum_events(
         limit=5000, since_hours=hours)
     post_stats = _stats_from_events(post_events, hours=hours)
     post_alerts = _evaluate_quantum_alerts(_get_quantum_alert_config())
@@ -8082,7 +8096,7 @@ def _run_quantum_remediation(*, hours: int, force: bool) -> Dict[str, Any]:
             _tool_quantum_measure({"measurement_basis": "computational"})
             rollback_steps += 1
         rollback_performed = rollback_steps > 0
-        post_events = _task_memory.list_quantum_events(
+        post_events = _task_get_memory().list_quantum_events(
             limit=5000, since_hours=hours)
         post_stats = _stats_from_events(post_events, hours=hours)
         post_alerts = _evaluate_quantum_alerts(_get_quantum_alert_config())
@@ -8286,7 +8300,7 @@ def quantum_export(
         raise HTTPException(
             status_code=400, detail="start_at must be <= end_at")
 
-    events = _task_memory.list_quantum_events(
+    events = _task_get_memory().list_quantum_events(
         limit=limit, event_type=event_type, since_hours=hours
     )
     events = _filter_events_by_time_window(
@@ -8410,7 +8424,7 @@ def quantum_export_all(
         raise HTTPException(
             status_code=400, detail="start_at must be <= end_at")
 
-    events = _task_memory.list_quantum_events(
+    events = _task_get_memory().list_quantum_events(
         limit=limit, event_type=event_type, since_hours=hours
     )
     events = _filter_events_by_time_window(
@@ -8567,7 +8581,7 @@ def quantum_decipher(
     if start_dt and end_dt and start_dt > end_dt:
         raise HTTPException(
             status_code=400, detail="start_at must be <= end_at")
-    events = _task_memory.list_quantum_events(
+    events = _task_get_memory().list_quantum_events(
         limit=limit, event_type=event_type, since_hours=hours
     )
     events = _filter_events_by_time_window(
@@ -8597,7 +8611,7 @@ def quantum_timeline(
     hours: int = Query(default=24, ge=1, le=24 * 365),
     bucket_minutes: int = Query(default=60, ge=1, le=240),
 ):
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     return _quantum_timeline(events, hours=hours, bucket_minutes=bucket_minutes)
 
 
@@ -8606,13 +8620,13 @@ def quantum_anomalies(
     hours: int = Query(default=24, ge=1, le=24 * 365),
     z_threshold: float = Query(default=2.0, ge=0.5, le=6.0),
 ):
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     return _quantum_anomalies(events, hours=hours, z_threshold=z_threshold)
 
 
 @router.get("/quantum/basis-analysis")
 def quantum_basis_analysis(hours: int = Query(default=24, ge=1, le=24 * 365)):
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     return _quantum_basis_analysis(events, hours=hours)
 
 
@@ -8627,9 +8641,9 @@ def quantum_experiment_run(payload: QuantumExperimentRequest):
 
 @router.post("/quantum/decipher/snapshot")
 def quantum_decipher_snapshot(hours: int = Query(default=24, ge=1, le=24 * 365)):
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     decipher = _quantum_decipher_analysis(events, hours=hours)
-    snap_id = _task_memory.create_quantum_decipher_snapshot(decipher)
+    snap_id = _task_get_memory().create_quantum_decipher_snapshot(decipher)
     _audit_quantum_op(
         "snapshot_create",
         "ok",
@@ -8640,12 +8654,12 @@ def quantum_decipher_snapshot(hours: int = Query(default=24, ge=1, le=24 * 365))
 
 @router.get("/quantum/decipher/snapshots")
 def quantum_decipher_snapshots(limit: int = Query(default=20, ge=1, le=200)):
-    return {"snapshots": _task_memory.list_quantum_decipher_snapshots(limit=limit)}
+    return {"snapshots": _task_get_memory().list_quantum_decipher_snapshots(limit=limit)}
 
 
 @router.get("/quantum/ops-audit")
 def quantum_ops_audit(limit: int = Query(default=100, ge=1, le=500)):
-    return {"items": _task_memory.list_quantum_ops_audit(limit=limit)}
+    return {"items": _task_get_memory().list_quantum_ops_audit(limit=limit)}
 
 
 @router.get("/quantum/remediation/config")
@@ -8662,7 +8676,7 @@ def quantum_remediation_config_set(payload: QuantumRemediationConfigRequest):
 def quantum_remediation_tune(
     hours: int = Query(default=168, ge=24, le=24 * 365), apply: bool = False
 ):
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     stats = _stats_from_events(events, hours=hours)
     m = stats.get("measurement_outcomes") or {}
     measurements = max(1, int(stats.get("measurements") or 0))
@@ -8718,7 +8732,7 @@ def quantum_remediation_run(
 
 @router.get("/quantum/health-score")
 def quantum_health_score(hours: int = Query(default=24, ge=1, le=24 * 365)):
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     stats = _stats_from_events(events, hours=hours)
     alerts_eval = _evaluate_quantum_alerts(_get_quantum_alert_config())
     anomalies = _quantum_anomalies(events, hours=hours, z_threshold=2.0)
@@ -8738,14 +8752,14 @@ def quantum_health_score(hours: int = Query(default=24, ge=1, le=24 * 365)):
 
 @router.get("/quantum/noc")
 def quantum_noc(hours: int = Query(default=24, ge=1, le=24 * 365)):
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     stats = _stats_from_events(events, hours=hours)
     alerts_eval = _evaluate_quantum_alerts(_get_quantum_alert_config())
     anomalies = _quantum_anomalies(events, hours=hours, z_threshold=2.0)
     score = _quantum_health_score(
         stats=stats, alerts=alerts_eval["alerts"], anomalies=anomalies["anomalies"]
     )
-    snaps = _task_memory.list_quantum_decipher_snapshots(limit=2)
+    snaps = _task_get_memory().list_quantum_decipher_snapshots(limit=2)
     delta = None
     if len(snaps) >= 2:
         a = float((snaps[0].get("signals") or {}).get(
@@ -8783,7 +8797,7 @@ def quantum_incident_workspace(incident_id: Optional[str] = None):
         target = items[0]
     incident_annotations: List[Dict[str, Any]] = []
     if target:
-        incident_annotations = _task_memory.list_quantum_annotations(
+        incident_annotations = _task_get_memory().list_quantum_annotations(
             limit=100, item_type="incident", item_id=str(target.get("id"))
         )
     return {
@@ -8851,7 +8865,7 @@ def quantum_incident_checklist_toggle(
 async def quantum_stream():
     async def event_gen():
         for _ in range(300):
-            events = _task_memory.list_quantum_events(
+            events = _task_get_memory().list_quantum_events(
                 limit=5000, since_hours=24)
             alerts_eval = _evaluate_quantum_alerts(_get_quantum_alert_config())
             incidents = _sync_incidents_from_alerts(alerts_eval["alerts"])
@@ -8861,7 +8875,7 @@ async def quantum_stream():
                 "noc": noc,
                 "alerts": alerts_eval,
                 "incidents": incidents[:25],
-                "recent_audit": _task_memory.list_quantum_ops_audit(limit=10),
+                "recent_audit": _task_get_memory().list_quantum_ops_audit(limit=10),
                 "risk": _quantum_risk_score(horizon_hours=24),
                 "slo": _quantum_slo_panel(hours=24),
             }
@@ -8874,7 +8888,7 @@ async def quantum_stream():
 
 @router.post("/quantum/annotations")
 def quantum_annotations_create(payload: QuantumAnnotationCreateRequest):
-    aid = _task_memory.add_quantum_annotation(
+    aid = _task_get_memory().add_quantum_annotation(
         item_type=payload.item_type,
         item_id=payload.item_id,
         note=payload.note,
@@ -8895,7 +8909,7 @@ def quantum_annotations_list(
     item_id: Optional[str] = None,
 ):
     return {
-        "annotations": _task_memory.list_quantum_annotations(
+        "annotations": _task_get_memory().list_quantum_annotations(
             limit=limit, item_type=item_type, item_id=item_id
         )
     }
@@ -8903,9 +8917,9 @@ def quantum_annotations_list(
 
 @router.get("/quantum/memory-graph")
 def quantum_memory_graph(hours: int = Query(default=24, ge=1, le=24 * 365)):
-    events = _task_memory.list_quantum_events(limit=400, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=400, since_hours=hours)
     alerts_eval = _evaluate_quantum_alerts(_get_quantum_alert_config())
-    audits = _task_memory.list_quantum_ops_audit(limit=100)
+    audits = _task_get_memory().list_quantum_ops_audit(limit=100)
     nodes: List[Dict[str, Any]] = []
     edges: List[Dict[str, Any]] = []
     nodes.append({"id": "root", "type": "system", "label": "Quantum Core"})
@@ -8940,7 +8954,7 @@ def quantum_memory_graph(hours: int = Query(default=24, ge=1, le=24 * 365)):
 def quantum_agent_replay(
     limit: int = Query(default=20, ge=1, le=200), session_id: Optional[str] = None
 ):
-    runs = _task_memory.list_goal_runs(limit=limit, session_id=session_id)
+    runs = _task_get_memory().list_goal_runs(limit=limit, session_id=session_id)
     timeline: List[Dict[str, Any]] = []
     for r in runs:
         timeline.append(
@@ -8982,7 +8996,7 @@ def quantum_simulate(
         "window_hours": hours,
     }
     evald = _evaluate_quantum_alerts(sim_cfg)
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     stats = _stats_from_events(events, hours=hours)
     health = _quantum_health_score(
         stats=stats,
@@ -9033,7 +9047,7 @@ def quantum_replay(
         else datetime.now(timezone.utc)
     )
     start_dt = end_dt - timedelta(hours=hours)
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=24 * 365)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=24 * 365)
     window_events = _filter_events_by_time_window(
         events, start_at=start_dt, end_at=end_dt
     )
@@ -9057,7 +9071,7 @@ def quantum_replay(
 
 @router.get("/quantum/summary.pdf")
 def quantum_summary_pdf(hours: int = Query(default=24, ge=1, le=24 * 365)):
-    events = _task_memory.list_quantum_events(limit=5000, since_hours=hours)
+    events = _task_get_memory().list_quantum_events(limit=5000, since_hours=hours)
     stats = _stats_from_events(events, hours=hours)
     decipher = _quantum_decipher_analysis(events, hours=hours)
     health = quantum_health_score(hours=hours)
@@ -9376,10 +9390,10 @@ def quantum_sandbox_run(payload: QuantumSandboxRunRequest):
     }
     merged_alerts = list(real_alerts.get("alerts") or []) + [fake_alert]
     fake_health = _quantum_health_score(
-        stats=_task_memory.quantum_stats(hours=payload.hours),
+        stats=_task_get_memory().quantum_stats(hours=payload.hours),
         alerts=merged_alerts,
         anomalies=_quantum_anomalies(
-            _task_memory.list_quantum_events(
+            _task_get_memory().list_quantum_events(
                 limit=5000, since_hours=payload.hours),
             hours=payload.hours,
             z_threshold=2.0,
@@ -9413,10 +9427,10 @@ def _execute_goal_run(
     profile = _current_profile()
     plan = _build_plan(goal_text)
 
-    task_id = _task_memory.create_task(goal_text, session_id=sid)
-    _task_memory.update_task_status(
+    task_id = _task_get_memory().create_task(goal_text, session_id=sid)
+    _task_get_memory().update_task_status(
         task_id, "in_progress", note="Goal runner started")
-    run_id = _task_memory.create_goal_run(
+    run_id = _task_get_memory().create_goal_run(
         task_id=task_id, session_id=sid, goal=goal_text, plan=plan
     )
 
@@ -9506,22 +9520,22 @@ def _execute_goal_run(
 
     if blocked:
         status = "blocked"
-        _task_memory.update_task_status(
+        _task_get_memory().update_task_status(
             task_id, "blocked", note="Awaiting approval")
         final_result["status"] = "blocked"
     elif failed:
         status = "failed"
-        _task_memory.update_task_status(
+        _task_get_memory().update_task_status(
             task_id, "failed", note="Goal execution failed")
         final_result["status"] = "failed"
     else:
         status = "done"
-        _task_memory.update_task_status(
+        _task_get_memory().update_task_status(
             task_id, "done", note="Goal execution complete")
         final_result["status"] = "done"
 
     final_result["steps_executed"] = len(steps)
-    _task_memory.update_goal_run(
+    _task_get_memory().update_goal_run(
         run_id, status=status, steps=steps, result=final_result
     )
 
@@ -9553,13 +9567,13 @@ def goal_history(
     limit: int = Query(default=20, ge=1, le=100), session_id: Optional[str] = None
 ):
     return GoalHistoryResponse(
-        runs=_task_memory.list_goal_runs(limit=limit, session_id=session_id)
+        runs=_task_get_memory().list_goal_runs(limit=limit, session_id=session_id)
     )
 
 
 @router.post("/goals/schedule")
 def create_goal_schedule(payload: GoalScheduleCreateRequest):
-    schedule_id = _task_memory.create_goal_schedule(
+    schedule_id = _task_get_memory().create_goal_schedule(
         goal=payload.goal.strip(),
         interval_minutes=payload.interval_minutes,
         session_id=payload.session_id,
@@ -9571,12 +9585,12 @@ def create_goal_schedule(payload: GoalScheduleCreateRequest):
 
 @router.get("/goals/schedule")
 def list_goal_schedules(limit: int = Query(default=100, ge=1, le=500)):
-    return {"schedules": _task_memory.list_goal_schedules(limit=limit)}
+    return {"schedules": _task_get_memory().list_goal_schedules(limit=limit)}
 
 
 @router.post("/goals/schedule/{schedule_id}")
 def update_goal_schedule(schedule_id: int, payload: GoalScheduleUpdateRequest):
-    ok = _task_memory.update_goal_schedule(
+    ok = _task_get_memory().update_goal_schedule(
         schedule_id,
         enabled=payload.enabled,
         interval_minutes=payload.interval_minutes,
@@ -9592,7 +9606,7 @@ def update_goal_schedule(schedule_id: int, payload: GoalScheduleUpdateRequest):
 def run_multi_agent(payload: MultiAgentRunRequest):
     session_id = payload.session_id or str(uuid4())
     task = payload.task.strip()
-    _memory.append(session_id, StoredMessage(
+    _get_memory().append(session_id, StoredMessage(
         role="user", text=f"[multi-agent] {task}"))
 
     provider = os.getenv("LLM_PROVIDER", "").strip().lower() or "auto"
@@ -9693,7 +9707,7 @@ def run_multi_agent(payload: MultiAgentRunRequest):
     for a in merged_actions[:8]:
         synthesis_lines.append(f"- {a}")
     synthesis = "\n".join(synthesis_lines)
-    _memory.append(session_id, StoredMessage(role="assistant", text=synthesis))
+    _get_memory().append(session_id, StoredMessage(role="assistant", text=synthesis))
     return {
         "session_id": session_id,
         "task": task,
@@ -9722,7 +9736,7 @@ def memory_quality(
 
 @router.post("/memory/remember")
 def remember_memory(payload: LongTermMemoryCreateRequest):
-    memory_id = _task_memory.create_long_term_memory(
+    memory_id = _task_get_memory().create_long_term_memory(
         content=payload.content.strip(),
         tags=payload.tags,
         importance=payload.importance,
@@ -9740,7 +9754,7 @@ def remember_memory(payload: LongTermMemoryCreateRequest):
 def search_memories(
     query: str = Query(..., min_length=1), limit: int = Query(default=8, ge=1, le=50)
 ):
-    return {"items": _task_memory.search_long_term_memories(query=query, limit=limit)}
+    return {"items": _task_get_memory().search_long_term_memories(query=query, limit=limit)}
 
 
 @router.get("/memory/long-term")
@@ -9756,7 +9770,7 @@ def list_long_term_memories(
     lane: Optional[str] = Query(default=None),
 ):
     return {
-        "items": _task_memory.list_long_term_memories(
+        "items": _task_get_memory().list_long_term_memories(
             limit=limit,
             memory_type=memory_type,
             subject=subject,
@@ -9776,7 +9790,7 @@ def memory_overview(
     since_hours: Optional[int] = Query(default=None, ge=1, le=24 * 365),
     archived: bool = Query(default=False),
 ):
-    return _task_memory.memory_overview(
+    return _task_get_memory().memory_overview(
         limit_per_group=limit_per_group, since_hours=since_hours, archived=archived
     )
 
@@ -9786,7 +9800,7 @@ def memory_profile(
     limit: int = Query(default=8, ge=1, le=50),
     since_hours: Optional[int] = Query(default=None, ge=1, le=24 * 365),
 ):
-    overview = _task_memory.memory_overview(
+    overview = _task_get_memory().memory_overview(
         limit_per_group=max(3, limit), since_hours=since_hours
     )
     items = (overview.get("profile") or [])[:limit]
@@ -9798,7 +9812,7 @@ def memory_projects(
     limit: int = Query(default=8, ge=1, le=50),
     since_hours: Optional[int] = Query(default=None, ge=1, le=24 * 365),
 ):
-    overview = _task_memory.memory_overview(
+    overview = _task_get_memory().memory_overview(
         limit_per_group=max(3, limit), since_hours=since_hours
     )
     items = (overview.get("projects") or [])[:limit]
@@ -9810,17 +9824,17 @@ def list_project_workspaces(
     limit: int = Query(default=20, ge=1, le=100),
     include_archived: bool = Query(default=False),
 ):
-    items = _task_memory.list_project_workspaces(
+    items = _task_get_memory().list_project_workspaces(
         limit=limit, include_archived=include_archived
     )
-    active_workspace_id = _task_memory.get_active_workspace_id()
+    active_workspace_id = _task_get_memory().get_active_workspace_id()
     return {"items": items, "active_workspace_id": active_workspace_id}
 
 
 @router.post("/memory/workspaces")
 def create_project_workspace(payload: WorkspaceCreateRequest):
     try:
-        workspace = _task_memory.create_project_workspace(
+        workspace = _task_get_memory().create_project_workspace(
             name=payload.name,
             description=payload.description,
             focus=payload.focus,
@@ -9835,9 +9849,9 @@ def create_project_workspace(payload: WorkspaceCreateRequest):
 
 @router.get("/memory/workspaces/active")
 def active_project_workspace():
-    active_workspace_id = _task_memory.get_active_workspace_id()
+    active_workspace_id = _task_get_memory().get_active_workspace_id()
     workspace = (
-        _task_memory.get_project_workspace(active_workspace_id)
+        _task_get_memory().get_project_workspace(active_workspace_id)
         if active_workspace_id
         else None
     )
@@ -9847,7 +9861,7 @@ def active_project_workspace():
 @router.post("/memory/workspaces/active")
 def set_active_project_workspace(payload: WorkspaceActivationRequest):
     try:
-        result = _task_memory.set_active_workspace(payload.workspace_id)
+        result = _task_get_memory().set_active_workspace(payload.workspace_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"ok": True, **result}
@@ -9855,35 +9869,35 @@ def set_active_project_workspace(payload: WorkspaceActivationRequest):
 
 @router.get("/memory/workspaces/policy/current")
 def get_current_workspace_policy():
-    active_workspace_id = _task_memory.get_active_workspace_id()
+    active_workspace_id = _task_get_memory().get_active_workspace_id()
     workspace = (
-        _task_memory.get_project_workspace(active_workspace_id)
+        _task_get_memory().get_project_workspace(active_workspace_id)
         if active_workspace_id
         else None
     )
     return {
         "workspace": workspace,
-        "policy": _task_memory.get_workspace_policy(active_workspace_id),
+        "policy": _task_get_memory().get_workspace_policy(active_workspace_id),
     }
 
 
 @router.get("/memory/workspaces/{workspace_id}/policy")
 def get_workspace_policy_route(workspace_id: int):
-    workspace = _task_memory.get_project_workspace(workspace_id)
+    workspace = _task_get_memory().get_project_workspace(workspace_id)
     if workspace is None:
         raise HTTPException(status_code=404, detail="workspace not found")
     return {
         "workspace": workspace,
-        "policy": _task_memory.get_workspace_policy(workspace_id),
+        "policy": _task_get_memory().get_workspace_policy(workspace_id),
     }
 
 
 @router.post("/memory/workspaces/{workspace_id}/policy")
 def set_workspace_policy_route(workspace_id: int, payload: WorkspacePolicyRequest):
-    workspace = _task_memory.get_project_workspace(workspace_id)
+    workspace = _task_get_memory().get_project_workspace(workspace_id)
     if workspace is None:
         raise HTTPException(status_code=404, detail="workspace not found")
-    policy = _task_memory.set_workspace_policy(
+    policy = _task_get_memory().set_workspace_policy(
         workspace_id,
         browser_allowed=payload.browser_allowed,
         desktop_allowed=payload.desktop_allowed,
@@ -9896,7 +9910,7 @@ def set_workspace_policy_route(workspace_id: int, payload: WorkspacePolicyReques
 
 @router.get("/memory/workspaces/{workspace_id}")
 def get_project_workspace(workspace_id: int):
-    workspace = _task_memory.get_project_workspace(workspace_id)
+    workspace = _task_get_memory().get_project_workspace(workspace_id)
     if workspace is None:
         raise HTTPException(status_code=404, detail="workspace not found")
     return workspace
@@ -9904,7 +9918,7 @@ def get_project_workspace(workspace_id: int):
 
 @router.post("/memory/workspaces/{workspace_id}")
 def update_project_workspace(workspace_id: int, payload: WorkspaceUpdateRequest):
-    ok = _task_memory.update_project_workspace(
+    ok = _task_get_memory().update_project_workspace(
         workspace_id,
         name=payload.name,
         description=payload.description,
@@ -9915,7 +9929,7 @@ def update_project_workspace(workspace_id: int, payload: WorkspaceUpdateRequest)
     )
     if not ok:
         raise HTTPException(status_code=404, detail="workspace not found")
-    return {"ok": True, "workspace": _task_memory.get_project_workspace(workspace_id)}
+    return {"ok": True, "workspace": _task_get_memory().get_project_workspace(workspace_id)}
 
 
 @router.get("/memory/graph")
@@ -9923,7 +9937,7 @@ def memory_graph(
     workspace_id: Optional[int] = Query(default=None, ge=1),
     limit: int = Query(default=60, ge=2, le=200),
 ):
-    return _task_memory.workspace_memory_graph(workspace_id=workspace_id, limit=limit)
+    return _task_get_memory().workspace_memory_graph(workspace_id=workspace_id, limit=limit)
 
 
 @router.get("/memory/reminders")
@@ -9935,7 +9949,7 @@ def proactive_reminders(
     due_within_hours: Optional[int] = Query(default=None, ge=1, le=24 * 30),
 ):
     return {
-        "items": _task_memory.list_proactive_reminders(
+        "items": _task_get_memory().list_proactive_reminders(
             limit=limit,
             status=status,
             workspace_id=workspace_id,
@@ -9947,7 +9961,7 @@ def proactive_reminders(
 @router.post("/memory/reminders")
 def create_proactive_reminder(payload: ReminderCreateRequest):
     try:
-        reminder = _task_memory.create_proactive_reminder(
+        reminder = _task_get_memory().create_proactive_reminder(
             title=payload.title,
             content=payload.content,
             due_at=payload.due_at,
@@ -9966,7 +9980,7 @@ def generate_proactive_reminders(
     workspace_id: Optional[int] = Query(default=None, ge=1),
     limit: int = Query(default=4, ge=1, le=10),
 ):
-    return _task_memory.generate_proactive_reminders(
+    return _task_get_memory().generate_proactive_reminders(
         workspace_id=workspace_id, limit=limit
     )
 
@@ -9991,14 +10005,14 @@ def trust_report(
     session_id: Optional[str] = Query(default=None),
 ):
     if session_id:
-        recent = _task_memory.list_tool_executions(
+        recent = _task_get_memory().list_tool_executions(
             limit=limit, session_id=session_id)
         return {
             "session_id": session_id,
             "total_runs": len(recent),
             "recent": recent,
         }
-    return _task_memory.tool_reliability_report(limit=limit)
+    return _task_get_memory().tool_reliability_report(limit=limit)
 
 
 @router.get("/trust/receipts")
@@ -10014,7 +10028,7 @@ def next_action(
     workspace_id: Optional[int] = Query(default=None, ge=1),
     limit: int = Query(default=5, ge=1, le=12),
 ):
-    return _task_memory.next_best_actions(workspace_id=workspace_id, limit=limit)
+    return _task_get_memory().next_best_actions(workspace_id=workspace_id, limit=limit)
 
 
 @router.post("/next-action/execute")
@@ -10031,25 +10045,25 @@ def execute_next_action(payload: NextActionExecuteRequest):
         if not isinstance(workspace_id, int):
             raise HTTPException(
                 status_code=400, detail="workspace_id is required")
-        result = _task_memory.set_active_workspace(workspace_id)
+        result = _task_get_memory().set_active_workspace(workspace_id)
         return {"ok": True, "kind": kind, "session_id": session_id, "result": result}
     if kind == "reminder_done":
         reminder_id = execution.get("reminder_id")
         if not isinstance(reminder_id, int):
             raise HTTPException(
                 status_code=400, detail="reminder_id is required")
-        ok = _task_memory.update_proactive_reminder(
+        ok = _task_get_memory().update_proactive_reminder(
             reminder_id, status="done", delivered=True
         )
-        reminder = _task_memory.get_proactive_reminder(reminder_id)
+        reminder = _task_get_memory().get_proactive_reminder(reminder_id)
         return {"ok": ok, "kind": kind, "session_id": session_id, "result": reminder}
     if kind == "workspace_policy":
         workspace_id = execution.get("workspace_id")
-        policy = _task_memory.get_workspace_policy(
+        policy = _task_get_memory().get_workspace_policy(
             workspace_id if isinstance(workspace_id, int) else None
         )
         workspace = (
-            _task_memory.get_project_workspace(workspace_id)
+            _task_get_memory().get_project_workspace(workspace_id)
             if isinstance(workspace_id, int)
             else None
         )
@@ -10107,13 +10121,13 @@ def autonomy_mission_list(
     workspace_id: Optional[int] = Query(default=None, ge=1),
 ):
     return {
-        "items": _task_memory.list_mission_runs(limit=limit, workspace_id=workspace_id)
+        "items": _task_get_memory().list_mission_runs(limit=limit, workspace_id=workspace_id)
     }
 
 
 @router.get("/autonomy/missions/{mission_id}")
 def autonomy_mission_get(mission_id: int):
-    item = _task_memory.get_mission_run(mission_id)
+    item = _task_get_memory().get_mission_run(mission_id)
     if item is None:
         raise HTTPException(status_code=404, detail="mission not found")
     return {"mission": item}
@@ -10121,7 +10135,7 @@ def autonomy_mission_get(mission_id: int):
 
 @router.post("/autonomy/missions/{mission_id}/resume")
 def autonomy_mission_resume(mission_id: int, approve: bool = Query(default=False)):
-    item = _task_memory.get_mission_run(mission_id)
+    item = _task_get_memory().get_mission_run(mission_id)
     if item is None:
         raise HTTPException(status_code=404, detail="mission not found")
     workspace_id = item.get("workspace_id")
@@ -10230,7 +10244,7 @@ def desktop_presence_set(payload: DesktopPresenceSnapshotRequest):
         details.setdefault("app_name", payload.app_name)
     if payload.window_title:
         details.setdefault("window_title", payload.window_title)
-    snapshot = _task_memory.save_desktop_presence_snapshot(
+    snapshot = _task_get_memory().save_desktop_presence_snapshot(
         workspace_id=workspace_id,
         app_name=payload.app_name,
         window_title=payload.window_title,
@@ -10311,7 +10325,7 @@ def browser_sessions(
     workspace_id: Optional[int] = Query(default=None, ge=1),
 ):
     return {
-        "items": _task_memory.list_browser_sessions(
+        "items": _task_get_memory().list_browser_sessions(
             limit=limit, workspace_id=workspace_id
         )
     }
@@ -10320,7 +10334,7 @@ def browser_sessions(
 @router.post("/control/browser/sessions")
 def browser_sessions_save(payload: BrowserSessionCreateRequest):
     try:
-        item = _task_memory.save_browser_session(
+        item = _task_get_memory().save_browser_session(
             name=payload.name,
             storage_state=payload.storage_state,
             workspace_id=payload.workspace_id,
@@ -10342,10 +10356,10 @@ def browser_sessions_delete(
     if target in {None, ""}:
         raise HTTPException(
             status_code=400, detail="name or session_id is required")
-    if not _task_memory.delete_browser_session(target):
+    if not _task_get_memory().delete_browser_session(target):
         raise HTTPException(
             status_code=404, detail="browser session not found")
-    return {"ok": True, "items": _task_memory.list_browser_sessions(limit=50)}
+    return {"ok": True, "items": _task_get_memory().list_browser_sessions(limit=50)}
 
 
 @router.post("/control/browser/sessions/health")
@@ -10357,13 +10371,13 @@ def browser_sessions_health(payload: BrowserSessionHealthCheckRequest):
             if payload.session_id is not None
             else payload.session_name
         )
-        session = _task_memory.get_browser_session(target)
+        session = _task_get_memory().get_browser_session(target)
         if session is None:
             raise HTTPException(
                 status_code=404, detail="browser session not found")
         sessions = [session]
     else:
-        sessions = _task_memory.list_browser_sessions(
+        sessions = _task_get_memory().list_browser_sessions(
             limit=payload.limit, workspace_id=payload.workspace_id
         )
     items: List[Dict[str, Any]] = []
@@ -10371,12 +10385,12 @@ def browser_sessions_health(payload: BrowserSessionHealthCheckRequest):
         try:
             template = _browser_template_for_session(session)
             result = _session_health_from_run(session, template)
-            updated = _task_memory.update_browser_session_health(
+            updated = _task_get_memory().update_browser_session_health(
                 session["id"], status=result["status"], details=result["details"]
             )
             items.append(updated or session)
         except Exception as exc:
-            updated = _task_memory.update_browser_session_health(
+            updated = _task_get_memory().update_browser_session_health(
                 session["id"],
                 status="error",
                 details={
@@ -10453,7 +10467,7 @@ def browser_workflow_templates_delete(
 
 @router.post("/memory/reminders/{reminder_id}")
 def update_proactive_reminder(reminder_id: int, payload: ReminderUpdateRequest):
-    ok = _task_memory.update_proactive_reminder(
+    ok = _task_get_memory().update_proactive_reminder(
         reminder_id,
         status=payload.status,
         due_at=payload.due_at,
@@ -10461,7 +10475,7 @@ def update_proactive_reminder(reminder_id: int, payload: ReminderUpdateRequest):
     )
     if not ok:
         raise HTTPException(status_code=404, detail="reminder not found")
-    return {"ok": True, "reminder": _task_memory.get_proactive_reminder(reminder_id)}
+    return {"ok": True, "reminder": _task_get_memory().get_proactive_reminder(reminder_id)}
 
 
 @router.get("/memory/briefing")
@@ -10470,19 +10484,19 @@ def memory_briefing(
     recent_project_hours: Optional[int] = Query(
         default=None, ge=1, le=24 * 30),
 ):
-    return _task_memory.memory_briefing(
+    return _task_get_memory().memory_briefing(
         period=period, recent_project_hours=recent_project_hours
     )
 
 
 @router.post("/memory/consolidate")
 def consolidate_long_term_memories(limit: int = Query(default=200, ge=10, le=1000)):
-    return _task_memory.consolidate_long_term_memories(limit=limit)
+    return _task_get_memory().consolidate_long_term_memories(limit=limit)
 
 
 @router.post("/memory/{memory_id}")
 def update_long_term_memory(memory_id: int, payload: LongTermMemoryUpdateRequest):
-    ok = _task_memory.update_long_term_memory(
+    ok = _task_get_memory().update_long_term_memory(
         memory_id,
         content=payload.content,
         tags=payload.tags,
@@ -10500,7 +10514,7 @@ def update_long_term_memory(memory_id: int, payload: LongTermMemoryUpdateRequest
 
 @router.delete("/memory/{memory_id}")
 def delete_long_term_memory(memory_id: int):
-    ok = _task_memory.archive_long_term_memory(memory_id, archived=True)
+    ok = _task_get_memory().archive_long_term_memory(memory_id, archived=True)
     if not ok:
         raise HTTPException(status_code=404, detail="memory not found")
     return {"ok": True, "id": memory_id, "archived": True}
@@ -10508,7 +10522,7 @@ def delete_long_term_memory(memory_id: int):
 
 @router.post("/memory/{memory_id}/pin")
 def pin_long_term_memory(memory_id: int, pinned: bool = Query(default=True)):
-    ok = _task_memory.update_long_term_memory(memory_id, pinned=pinned)
+    ok = _task_get_memory().update_long_term_memory(memory_id, pinned=pinned)
     if not ok:
         raise HTTPException(status_code=404, detail="memory not found")
     return {"ok": True, "id": memory_id, "pinned": pinned}
@@ -10516,19 +10530,19 @@ def pin_long_term_memory(memory_id: int, pinned: bool = Query(default=True)):
 
 @router.post("/memory/actions/bulk")
 def bulk_memory_action(payload: LongTermMemoryBulkActionRequest):
-    return _task_memory.bulk_update_long_term_memories(
+    return _task_get_memory().bulk_update_long_term_memories(
         payload.ids, action=payload.action
     )
 
 
 @router.post("/memory/pinned/reorder")
 def reorder_pinned_memories(payload: LongTermMemoryPinOrderRequest):
-    return _task_memory.reorder_pinned_memories(payload.ids)
+    return _task_get_memory().reorder_pinned_memories(payload.ids)
 
 
 @router.post("/memory/projects/reorder")
 def reorder_project_memories(payload: LongTermMemoryProjectOrderRequest):
-    return _task_memory.reorder_project_memories(payload.ids)
+    return _task_get_memory().reorder_project_memories(payload.ids)
 
 
 @router.get("/memory/filters/saved")
@@ -10567,12 +10581,12 @@ def memory_saved_filters_delete(name: str = Query(..., min_length=1, max_length=
 
 @router.get("/memory/briefings/automations")
 def list_memory_briefing_automations():
-    return {"items": _task_memory.list_autonomous_jobs(limit=50, mode="briefing")}
+    return {"items": _task_get_memory().list_autonomous_jobs(limit=50, mode="briefing")}
 
 
 @router.post("/memory/briefings/automations")
 def ensure_memory_briefing_automations(payload: MemoryBriefingAutomationRequest):
-    items = _task_memory.ensure_daily_briefing_automations(
+    items = _task_get_memory().ensure_daily_briefing_automations(
         session_id=payload.session_id,
         timezone_name=payload.timezone_name,
         morning_hour=payload.morning_hour,
@@ -10596,7 +10610,7 @@ def memory_briefing_delivery_set(payload: MemoryBriefingDeliveryConfigRequest):
 def memory_briefing_delivery_test(
     period: str = Query(default="morning", pattern="^(morning|evening)$"),
 ):
-    briefing = _task_memory.memory_briefing(period=period)
+    briefing = _task_get_memory().memory_briefing(period=period)
     delivery = _dispatch_briefing_deliveries(briefing)
     return {"ok": True, "briefing": briefing, "delivery": delivery}
 
@@ -10666,7 +10680,7 @@ def control_browser_workflow(payload: BrowserWorkflowRequest):
     storage_state = None
     template = _browser_template_by_name(payload.template_name)
     if payload.session_name:
-        loaded_session = _task_memory.get_browser_session(payload.session_name)
+        loaded_session = _task_get_memory().get_browser_session(payload.session_name)
         if loaded_session is None and not payload.save_session:
             raise HTTPException(
                 status_code=404, detail="browser session not found")
@@ -10741,7 +10755,7 @@ def control_browser_workflow(payload: BrowserWorkflowRequest):
             ).strip()
             or None
         )
-        saved_session = _task_memory.save_browser_session(
+        saved_session = _task_get_memory().save_browser_session(
             name=payload.session_name,
             storage_state=result.get("storage_state")
             if isinstance(result.get("storage_state"), dict)
@@ -10753,7 +10767,7 @@ def control_browser_workflow(payload: BrowserWorkflowRequest):
             template_name=template_name,
         )
     if payload.session_name:
-        _task_memory.touch_browser_session(payload.session_name)
+        _task_get_memory().touch_browser_session(payload.session_name)
     verification = _record_verified_tool_run(
         tool_name="browser_workflow",
         result=result,
@@ -10837,7 +10851,7 @@ async def vision_analyze(
     if not data:
         raise HTTPException(status_code=400, detail="image file is empty")
     analysis = _vision_summary_from_image(data, prompt=prompt)
-    obs_id = _task_memory.add_vision_observation(
+    obs_id = _task_get_memory().add_vision_observation(
         summary=analysis["summary"],
         details=analysis["details"],
         source=source,
@@ -10848,12 +10862,12 @@ async def vision_analyze(
 
 @router.get("/vision/observations")
 def list_vision_observations(limit: int = Query(default=20, ge=1, le=100)):
-    return {"items": _task_memory.list_vision_observations(limit=limit)}
+    return {"items": _task_get_memory().list_vision_observations(limit=limit)}
 
 
 @router.post("/autonomy/jobs")
 def create_autonomous_job(payload: AutonomousJobCreateRequest):
-    job_id = _task_memory.create_autonomous_job(
+    job_id = _task_get_memory().create_autonomous_job(
         name=payload.name,
         goal=payload.goal,
         mode=payload.mode,
@@ -10875,12 +10889,12 @@ def list_autonomy_jobs(
     limit: int = Query(default=100, ge=1, le=200),
     mode: Optional[str] = Query(default=None),
 ):
-    return {"items": _task_memory.list_autonomous_jobs(limit=limit, mode=mode)}
+    return {"items": _task_get_memory().list_autonomous_jobs(limit=limit, mode=mode)}
 
 
 @router.get("/autonomy/watchers")
 def list_project_watchers(limit: int = Query(default=50, ge=1, le=200)):
-    return {"items": _task_memory.list_autonomous_jobs(limit=limit, mode="watcher")}
+    return {"items": _task_get_memory().list_autonomous_jobs(limit=limit, mode="watcher")}
 
 
 @router.get("/autonomy/watchers/network")
@@ -10893,7 +10907,7 @@ def ensure_project_watcher(payload: ProjectWatcherRequest):
     watcher_type = str(
         payload.watcher_type or "project").strip().lower() or "project"
     workspace = (
-        _task_memory.get_project_workspace(payload.workspace_id)
+        _task_get_memory().get_project_workspace(payload.workspace_id)
         if payload.workspace_id
         else None
     )
@@ -10902,7 +10916,7 @@ def ensure_project_watcher(payload: ProjectWatcherRequest):
     scope_name = workspace.get("name") if workspace else watcher_type.title()
     name = f"Watcher: {scope_name} [{watcher_type}]"
     existing = None
-    for job in _task_memory.list_autonomous_jobs(limit=200, mode="watcher"):
+    for job in _task_get_memory().list_autonomous_jobs(limit=200, mode="watcher"):
         meta = job.get("metadata") or {}
         same_workspace = int(meta.get("workspace_id") or 0) == int(
             payload.workspace_id or 0
@@ -10926,7 +10940,7 @@ def ensure_project_watcher(payload: ProjectWatcherRequest):
         else f"Monitor {watcher_type} signals and escalate when they need action."
     )
     if existing:
-        _task_memory.update_autonomous_job(
+        _task_get_memory().update_autonomous_job(
             int(existing["id"]),
             name=name,
             goal=goal,
@@ -10938,7 +10952,7 @@ def ensure_project_watcher(payload: ProjectWatcherRequest):
         )
         job_id = int(existing["id"])
     else:
-        job_id = _task_memory.create_autonomous_job(
+        job_id = _task_get_memory().create_autonomous_job(
             name=name,
             goal=goal,
             mode="watcher",
@@ -10951,7 +10965,7 @@ def ensure_project_watcher(payload: ProjectWatcherRequest):
     job = next(
         (
             item
-            for item in _task_memory.list_autonomous_jobs(limit=200, mode="watcher")
+            for item in _task_get_memory().list_autonomous_jobs(limit=200, mode="watcher")
             if int(item["id"]) == job_id
         ),
         None,
@@ -10961,7 +10975,7 @@ def ensure_project_watcher(payload: ProjectWatcherRequest):
 
 @router.post("/autonomy/jobs/{job_id}")
 def update_autonomy_job(job_id: int, payload: AutonomousJobUpdateRequest):
-    ok = _task_memory.update_autonomous_job(
+    ok = _task_get_memory().update_autonomous_job(
         job_id,
         enabled=payload.enabled,
         interval_minutes=payload.interval_minutes,
@@ -10982,12 +10996,12 @@ def update_autonomy_job(job_id: int, payload: AutonomousJobUpdateRequest):
 
 @router.post("/autonomy/jobs/{job_id}/run")
 def run_autonomy_job(job_id: int):
-    jobs = _task_memory.list_autonomous_jobs(limit=500)
+    jobs = _task_get_memory().list_autonomous_jobs(limit=500)
     target = next((j for j in jobs if int(j["id"]) == int(job_id)), None)
     if target is None:
         raise HTTPException(status_code=404, detail="autonomous job not found")
     result = _execute_autonomous_job(target)
-    _task_memory.mark_autonomous_job_result(
+    _task_get_memory().mark_autonomous_job_result(
         job_id, ok=bool(result.get("ok", True)), error=None, result=result
     )
     return {"ok": True, "job_id": job_id, "result": result}
@@ -11121,7 +11135,7 @@ def eval_multi_agent(payload: AgentEvalRequest):
 async def agent_chat_stream(payload: AgentChatRequest):
     session_id = payload.session_id or str(uuid4())
     plan = _build_plan(payload.message)
-    _memory.append(session_id, StoredMessage(
+    _get_memory().append(session_id, StoredMessage(
         role="user", text=payload.message))
 
     provider = os.getenv("LLM_PROVIDER", "").strip().lower()
@@ -11138,7 +11152,7 @@ async def agent_chat_stream(payload: AgentChatRequest):
         try:
             if provider == "ollama":
                 runtime = _effective_ollama_runtime()
-                history = _memory.load(session_id, max_messages=12)
+                history = _get_memory().load(session_id, max_messages=12)
                 system = (
                     "You are Jarvis, concise and helpful.\n"
                     "For streaming chat mode, answer directly in plain text.\n"
@@ -11163,7 +11177,7 @@ async def agent_chat_stream(payload: AgentChatRequest):
                     await asyncio.sleep(0)
 
             final_reply = full_text.strip() or _basic_brain(payload.message)
-            _memory.append(
+            _get_memory().append(
                 session_id, StoredMessage(role="assistant", text=final_reply)
             )
             done = {
@@ -11191,7 +11205,7 @@ async def agent_chat_stream(payload: AgentChatRequest):
                     yield f"event: delta\ndata: {json.dumps({'text': chunk})}\n\n"
                     await asyncio.sleep(0)
                 final_reply = full_text.strip()
-                _memory.append(
+                _get_memory().append(
                     session_id, StoredMessage(
                         role="assistant", text=final_reply)
                 )
@@ -11205,7 +11219,7 @@ async def agent_chat_stream(payload: AgentChatRequest):
                 return
 
             err_text = f"Streaming failed: {detail}"
-            _memory.append(session_id, StoredMessage(
+            _get_memory().append(session_id, StoredMessage(
                 role="assistant", text=err_text))
             yield f"event: error\ndata: {json.dumps({'error': err_text, 'session_id': session_id, 'plan': plan})}\n\n"
 
@@ -11218,7 +11232,7 @@ def agent_chat(payload: AgentChatRequest):
     plan = _build_plan(payload.message)
 
     # Always store the raw user message first.
-    _memory.append(session_id, StoredMessage(
+    _get_memory().append(session_id, StoredMessage(
         role="user", text=payload.message))
 
     msg_trimmed = payload.message.strip()
@@ -11226,7 +11240,7 @@ def agent_chat(payload: AgentChatRequest):
 
     if _message_is_approval(msg_trimmed):
         reply, tool_result = _execute_pending_approval(session_id)
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11242,7 +11256,7 @@ def agent_chat(payload: AgentChatRequest):
             if cleared
             else "There was no pending approval to clear."
         )
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11253,7 +11267,7 @@ def agent_chat(payload: AgentChatRequest):
 
     memory_candidate = _extract_memory_candidate(msg_trimmed)
     if memory_candidate is not None and memory_candidate.get("content"):
-        memory_id = _task_memory.create_long_term_memory(
+        memory_id = _task_get_memory().create_long_term_memory(
             content=str(memory_candidate["content"]),
             tags=list(memory_candidate.get("tags") or []),
             importance=int(memory_candidate.get("importance") or 3),
@@ -11267,7 +11281,7 @@ def agent_chat(payload: AgentChatRequest):
             session_id=session_id,
         )
         reply = f"I'll remember that. Saved as memory #{memory_id}."
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11277,7 +11291,7 @@ def agent_chat(payload: AgentChatRequest):
         )
 
     if "who am i" in msg_lower:
-        overview = _task_memory.memory_overview(limit_per_group=6)
+        overview = _task_get_memory().memory_overview(limit_per_group=6)
         profile_items = overview.get("profile") or []
         if not profile_items:
             reply = "I don't have enough profile memory saved yet to answer that confidently."
@@ -11287,7 +11301,7 @@ def agent_chat(payload: AgentChatRequest):
                 "What I know about you", profile_items, limit=6
             )
             tool_result = {"items": profile_items[:6]}
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11303,7 +11317,7 @@ def agent_chat(payload: AgentChatRequest):
     )
     if workspace_switch:
         requested = workspace_switch.group(1).strip().lower()
-        workspaces = _task_memory.list_project_workspaces(
+        workspaces = _task_get_memory().list_project_workspaces(
             limit=100, include_archived=False
         )
         target = next(
@@ -11327,7 +11341,7 @@ def agent_chat(payload: AgentChatRequest):
             reply = f"I couldn't find a workspace named {workspace_switch.group(1).strip()}."
             tool_result = {"items": workspaces}
         else:
-            result = _task_memory.set_active_workspace(int(target["id"]))
+            result = _task_get_memory().set_active_workspace(int(target["id"]))
             workspace = result.get("workspace")
             reply = f"Active workspace switched to {workspace.get('name')}." + (
                 f" Focus: {workspace.get('focus')}."
@@ -11335,7 +11349,7 @@ def agent_chat(payload: AgentChatRequest):
                 else ""
             )
             tool_result = result
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11349,9 +11363,9 @@ def agent_chat(payload: AgentChatRequest):
         or "active workspace" in msg_lower
         or "current workspace" in msg_lower
     ):
-        active_workspace_id = _task_memory.get_active_workspace_id()
+        active_workspace_id = _task_get_memory().get_active_workspace_id()
         workspace = (
-            _task_memory.get_project_workspace(active_workspace_id)
+            _task_get_memory().get_project_workspace(active_workspace_id)
             if active_workspace_id
             else None
         )
@@ -11364,7 +11378,7 @@ def agent_chat(payload: AgentChatRequest):
                     "focus") else ""
             )
             tool_result = {"workspace": workspace}
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11378,11 +11392,11 @@ def agent_chat(payload: AgentChatRequest):
         or "what are my projects" in msg_lower
         or "what am i working on" in msg_lower
     ):
-        overview = _task_memory.memory_overview(limit_per_group=6)
+        overview = _task_get_memory().memory_overview(limit_per_group=6)
         project_items = overview.get("projects") or []
-        active_workspace_id = _task_memory.get_active_workspace_id()
+        active_workspace_id = _task_get_memory().get_active_workspace_id()
         active_workspace = (
-            _task_memory.get_project_workspace(active_workspace_id)
+            _task_get_memory().get_project_workspace(active_workspace_id)
             if active_workspace_id
             else None
         )
@@ -11413,7 +11427,7 @@ def agent_chat(payload: AgentChatRequest):
                 )
             tool_result = {
                 "items": project_items[:6], "workspace": active_workspace}
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11423,8 +11437,8 @@ def agent_chat(payload: AgentChatRequest):
         )
 
     if "what do you remember" in msg_lower or "what do you know about me" in msg_lower:
-        overview = _task_memory.memory_overview(limit_per_group=6)
-        matches = _task_memory.list_long_term_memories(limit=8)
+        overview = _task_get_memory().memory_overview(limit_per_group=6)
+        matches = _task_get_memory().list_long_term_memories(limit=8)
         if not matches:
             reply = "I don't have any long-term memories saved yet."
         else:
@@ -11443,7 +11457,7 @@ def agent_chat(payload: AgentChatRequest):
                     ),
                 ]
             )
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11454,10 +11468,10 @@ def agent_chat(payload: AgentChatRequest):
     if msg_lower.startswith("todo:") or msg_lower.startswith("task:"):
         task_text = msg_trimmed.split(":", 1)[1].strip()
         if task_text:
-            task_id = _task_memory.create_task(
+            task_id = _task_get_memory().create_task(
                 task_text, session_id=session_id)
             reply = f"Task captured as #{task_id}: {task_text}"
-            _memory.append(session_id, StoredMessage(
+            _get_memory().append(session_id, StoredMessage(
                 role="assistant", text=reply))
             return AgentChatResponse(
                 session_id=session_id,
@@ -11485,7 +11499,7 @@ def agent_chat(payload: AgentChatRequest):
             if pending
             else f"Tool `{tool_name}` executed."
         )
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11509,7 +11523,7 @@ def agent_chat(payload: AgentChatRequest):
             tool_name="db_ping", result=result, args={}, session_id=session_id
         )
         reply = "Database connectivity check complete."
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11528,7 +11542,7 @@ def agent_chat(payload: AgentChatRequest):
             tool_name="get_time", result=result, args={}, session_id=session_id
         )
         reply = "Current time fetched."
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11559,7 +11573,7 @@ def agent_chat(payload: AgentChatRequest):
             session_id=session_id,
         )
         reply = f"Listing files under `{target}`."
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11580,7 +11594,7 @@ def agent_chat(payload: AgentChatRequest):
             tool_name="system_info", result=result, args={}, session_id=session_id
         )
         reply = "System info fetched."
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11605,7 +11619,7 @@ def agent_chat(payload: AgentChatRequest):
             + ".\n"
             + "Note: `shell_run` requires JARVIS_ALLOW_SHELL=true; `repo_write_file` requires JARVIS_ALLOW_REPO_WRITE=true; `write_file` writes under /data and requires JARVIS_ALLOW_WRITE=true."
         )
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11622,7 +11636,7 @@ def agent_chat(payload: AgentChatRequest):
             provider = "basic"
 
     if provider == "ollama":
-        history = _memory.load(session_id, max_messages=12)
+        history = _get_memory().load(session_id, max_messages=12)
         memory_context = _memory_context_for_prompt(payload.message)
         max_steps = int(os.getenv("AGENT_MAX_TOOL_STEPS", "3"))
         max_steps = max(0, min(max_steps, 8))
@@ -11658,7 +11672,7 @@ def agent_chat(payload: AgentChatRequest):
                 if not directive or directive.get("tool") not in _TOOLS:
                     reply = strip_final_answer(
                         raw) or _basic_brain(payload.message)
-                    _memory.append(
+                    _get_memory().append(
                         session_id, StoredMessage(role="assistant", text=reply)
                     )
                     return AgentChatResponse(
@@ -11693,7 +11707,7 @@ def agent_chat(payload: AgentChatRequest):
                 )
                 if pending:
                     reply = _approval_prompt_text(pending)
-                    _memory.append(
+                    _get_memory().append(
                         session_id, StoredMessage(role="assistant", text=reply)
                     )
                     return AgentChatResponse(
@@ -11714,7 +11728,7 @@ def agent_chat(payload: AgentChatRequest):
                 )
 
             reply = "Tool calls complete."
-            _memory.append(session_id, StoredMessage(
+            _get_memory().append(session_id, StoredMessage(
                 role="assistant", text=reply))
             return AgentChatResponse(
                 session_id=session_id,
@@ -11729,7 +11743,7 @@ def agent_chat(payload: AgentChatRequest):
                 reply = f"{detail} Falling back to basic mode."
             else:
                 reply = f"Ollama request failed; falling back to basic mode. Error: {detail}"
-            _memory.append(session_id, StoredMessage(
+            _get_memory().append(session_id, StoredMessage(
                 role="assistant", text=reply))
             return AgentChatResponse(
                 session_id=session_id,
@@ -11741,7 +11755,7 @@ def agent_chat(payload: AgentChatRequest):
 
     if provider != "openai":
         reply = _basic_brain(payload.message)
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11754,7 +11768,7 @@ def agent_chat(payload: AgentChatRequest):
     model = os.getenv("OPENAI_MODEL", "gpt-4.1").strip()
     if not api_key:
         reply = "OPENAI_API_KEY is not set; falling back to basic mode."
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11763,7 +11777,7 @@ def agent_chat(payload: AgentChatRequest):
             plan=plan,
         )
 
-    history = _memory.load(session_id, max_messages=12)
+    history = _get_memory().load(session_id, max_messages=12)
     messages = [m.to_responses_input() for m in history]
     memory_context = _memory_context_for_prompt(payload.message)
 
@@ -11797,7 +11811,7 @@ def agent_chat(payload: AgentChatRequest):
         )
     except Exception as exc:
         reply = f"OpenAI request failed; falling back to basic mode. Error: {exc}"
-        _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
             session_id=session_id,
             reply=reply,
@@ -11817,7 +11831,7 @@ def agent_chat(payload: AgentChatRequest):
             or not isinstance(call_id, str)
         ):
             reply = "Model requested an unknown tool."
-            _memory.append(session_id, StoredMessage(
+            _get_memory().append(session_id, StoredMessage(
                 role="assistant", text=reply))
             return AgentChatResponse(
                 session_id=session_id,
@@ -11844,7 +11858,7 @@ def agent_chat(payload: AgentChatRequest):
 
         if pending:
             final_text = _approval_prompt_text(pending)
-            _memory.append(session_id, StoredMessage(
+            _get_memory().append(session_id, StoredMessage(
                 role="assistant", text=final_text))
             return AgentChatResponse(
                 session_id=session_id,
@@ -11877,7 +11891,7 @@ def agent_chat(payload: AgentChatRequest):
         except Exception as exc:
             final_text = f"Tool `{tool_name}` executed, but follow-up failed: {exc}"
 
-        _memory.append(session_id, StoredMessage(
+        _get_memory().append(session_id, StoredMessage(
             role="assistant", text=final_text))
         return AgentChatResponse(
             session_id=session_id,
@@ -11892,7 +11906,7 @@ def agent_chat(payload: AgentChatRequest):
         )
 
     reply = _extract_output_text(first) or _basic_brain(payload.message)
-    _memory.append(session_id, StoredMessage(role="assistant", text=reply))
+    _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
     return AgentChatResponse(
         session_id=session_id,
         reply=reply,
