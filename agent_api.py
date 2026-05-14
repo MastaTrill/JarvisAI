@@ -86,6 +86,11 @@ from llm_ollama import (
     parse_tool_directive,
     strip_final_answer,
 )
+from llm_groq import (
+    is_groq_configured,
+    groq_chat,
+    groq_extract_tool_call,
+)
 
 
 router = APIRouter(prefix="/agent", tags=["Agent"])
@@ -11632,6 +11637,10 @@ def agent_chat(payload: AgentChatRequest):
     if not provider:
         if is_openai_configured():
             provider = "openai"
+        elif is_groq_configured():
+            provider = "groq"
+        elif is_ollama_configured():
+            provider = "ollama"
         else:
             provider = "basic"
 
@@ -11753,7 +11762,47 @@ def agent_chat(payload: AgentChatRequest):
                 plan=plan,
             )
 
-    if provider != "openai":
+    if provider == "groq":
+        history = _get_memory().load(session_id, max_messages=12)
+        memory_context = _memory_context_for_prompt(payload.message)
+        system = (
+            "You are Jarvis, an AI assistant.\n"
+            "Be concise and helpful.\n"
+            "If the user asks what tools are available, mention you can help with chat, analysis, and tasks.\n"
+        )
+        if memory_context:
+            system += "Relevant context:\n" + memory_context + "\n"
+
+        try:
+            messages = [m.to_responses_input() for m in history]
+            model = os.getenv("GROQ_MODEL", "mixtral-8x7b-32768").strip()
+            reply = groq_chat(
+                model=model,
+                messages=messages,
+                system=system,
+                temperature=0.7,
+                timeout_s=int(os.getenv("GROQ_TIMEOUT_S", "30")),
+            )
+            _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
+            return AgentChatResponse(
+                session_id=session_id,
+                reply=reply,
+                tool_result=None,
+                timestamp=_now_iso(),
+                plan=plan,
+            )
+        except Exception as exc:
+            reply = f"Groq request failed; falling back to basic mode. Error: {exc}"
+            _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
+            return AgentChatResponse(
+                session_id=session_id,
+                reply=reply,
+                tool_result=None,
+                timestamp=_now_iso(),
+                plan=plan,
+            )
+
+    if provider not in ("openai", "groq", "ollama"):
         reply = _basic_brain(payload.message)
         _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
         return AgentChatResponse(
