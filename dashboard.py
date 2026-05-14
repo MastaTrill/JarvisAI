@@ -5,7 +5,6 @@ Real-time monitoring, quantum consciousness visualization, and system control
 """
 
 from datetime import datetime
-import os
 import time
 
 import streamlit as st
@@ -16,7 +15,7 @@ import numpy as np
 # Configure page
 st.set_page_config(
     page_title="JARVIS — Quantum Platform",
-    page_icon="⚡",
+    page_icon="*",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -226,7 +225,7 @@ def main_dashboard():
         f"""
     <div class="jarvis-header">
         <div>
-            <p class="jarvis-title">⚡ JARVIS</p>
+            <p class="jarvis-title">* JARVIS</p>
             <p class="jarvis-subtitle">Quantum Consciousness Platform &nbsp;·&nbsp; Phase 6</p>
         </div>
         <div class="status-badge">
@@ -401,15 +400,12 @@ def quantum_console(qp):
             pd.DataFrame(status_data), use_container_width=True, hide_index=True
         )
 
-        st.markdown(
-            """
+        st.markdown("""
         <div style="background:#0d1e14;border:1px solid #1a4a2a;border-radius:6px;padding:12px 16px;margin-top:10px;font-size:0.8rem;color:#7ab898;line-height:1.8;">
         🔒 Creator Protection: <strong style="color:#00e676">ACTIVE</strong><br>
         🛡️ Security Level: <strong style="color:#00e676">MAXIMUM</strong>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        """, unsafe_allow_html=True)
 
 
 def temporal_analysis(ta):
@@ -489,15 +485,7 @@ def temporal_analysis(ta):
         data = linear + cyclical + noise
 
         fig = go.Figure()
-        fig.add_trace(
-            go.Scatter(
-                x=dates,
-                y=data,
-                mode="lines",
-                name="Temporal Data",
-                line=dict(color="#00d4ff", width=1.5),
-            )
-        )
+        fig.add_trace(go.Scatter(x=dates, y=data, mode="lines", name="Temporal Data", line=dict(color="#00d4ff", width=1.5)))
         fig.update_layout(
             title="Temporal Pattern Visualization",
             xaxis_title="Time",
@@ -515,46 +503,13 @@ def ai_agents():
     """AI agents interface — calls the real /agent/chat endpoint"""
     import requests
 
-    JARVIS_API = os.getenv("JARVIS_API_URL", "http://localhost:7071/agent/chat")
-    FALLBACK_API = os.getenv(
-        "JARVIS_API_FALLBACK_URL", "http://localhost:8000/agent/chat"
-    )
-
-    def _local_fallback_reply(message: str) -> str:
-        msg = (message or "").strip().lower()
-        if not msg:
-            return "I'm here. Tell me what you want to work on."
-        if any(k in msg for k in ["hello", "hi", "hey"]):
-            return "Hey. I'm online in local fallback mode. Ask me about your repo, tasks, or next steps."
-        if "status" in msg or "health" in msg:
-            return "Dashboard is running. API chat backends were unavailable, so I answered locally."
-        if "help" in msg or "what can you do" in msg:
-            return (
-                "I can still help you reason about code and workflow from this dashboard. "
-                "When the backend is up, I can also use the full agent toolchain."
-            )
-        return (
-            "I couldn't reach the chat backend, so this is a local fallback response. "
-            f"You said: {message}"
-        )
-
-    def _post_chat(endpoint: str, message: str, session_id: str, timeout_s: int = 90):
-        resp = requests.post(
-            endpoint,
-            json={"message": message, "session_id": session_id},
-            timeout=timeout_s,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        reply = data.get("reply") or data.get("response") or str(data)
-        return str(reply), None
+    JARVIS_API = "http://localhost:7071/agent/chat"
 
     st.markdown("### Talk to Jarvis")
 
     # Persistent session ID so Jarvis keeps context across messages
     if "chat_session_id" not in st.session_state:
         import uuid
-
         st.session_state.chat_session_id = str(uuid.uuid4())
 
     col1, col2 = st.columns([3, 1])
@@ -577,7 +532,7 @@ def ai_agents():
                     <div style="margin-top:6px;">
                         <span style="background:#0d1e14;border:1px solid #1a4a2a;border-radius:12px 12px 12px 2px;
                             padding:8px 14px;display:inline-block;color:#90d4a0;font-size:0.85rem;max-width:80%;">
-                            ⚡ {msg['agent']}
+                            * {msg['agent']}
                         </span>
                     </div>
                 </div>
@@ -590,50 +545,30 @@ def ai_agents():
 
         if user_input:
             with st.spinner(""):
-                reply = None
-                used_backend = None
                 try:
-                    reply, _ = _post_chat(
+                    resp = requests.post(
                         JARVIS_API,
-                        user_input,
-                        st.session_state.chat_session_id,
-                        timeout_s=90,
+                        json={
+                            "message": user_input,
+                            "session_id": st.session_state.chat_session_id,
+                        },
+                        timeout=30,
                     )
-                    used_backend = JARVIS_API
+                    resp.raise_for_status()
+                    data = resp.json()
+                    reply = data.get("reply") or data.get("response") or str(data)
                 except requests.exceptions.ConnectionError:
-                    try:
-                        reply, _ = _post_chat(
-                            FALLBACK_API,
-                            user_input,
-                            st.session_state.chat_session_id,
-                            timeout_s=90,
-                        )
-                        used_backend = FALLBACK_API
-                    except Exception:
-                        reply = _local_fallback_reply(user_input)
+                    reply = "⚠️ Cannot reach the Functions host. Is it running on port 7071?"
                 except requests.exceptions.Timeout:
-                    try:
-                        reply, _ = _post_chat(
-                            FALLBACK_API,
-                            user_input,
-                            st.session_state.chat_session_id,
-                            timeout_s=90,
-                        )
-                        used_backend = FALLBACK_API
-                    except Exception:
-                        reply = _local_fallback_reply(user_input)
+                    reply = "⚠️ Request timed out. Jarvis may be loading a heavy model."
                 except Exception as e:
-                    reply = _local_fallback_reply(user_input)
-                    if used_backend is None:
-                        reply += f"\n\n(Backend error: {e})"
+                    reply = f"⚠️ Error: {e}"
 
-                st.session_state.history.append(
-                    {
-                        "user": user_input,
-                        "agent": reply,
-                        "timestamp": datetime.now(),
-                    }
-                )
+                st.session_state.history.append({
+                    "user": user_input,
+                    "agent": reply,
+                    "timestamp": datetime.now(),
+                })
                 st.rerun()
 
     with col2:
@@ -648,22 +583,11 @@ def ai_agents():
         st.divider()
         st.markdown("**Status**")
         # Quick ping to check if API is up
-        api_status = "🔴 Offline"
         try:
             ping = requests.get("http://localhost:7071/health", timeout=2)
-            api_status = (
-                "🟢 Online" if ping.status_code == 200 else f"🟡 {ping.status_code}"
-            )
+            api_status = "🟢 Online" if ping.status_code == 200 else f"🟡 {ping.status_code}"
         except Exception:
-            try:
-                ping = requests.get("http://localhost:8000/health", timeout=2)
-                api_status = (
-                    "🟢 Online (fallback)"
-                    if ping.status_code == 200
-                    else f"🟡 fallback {ping.status_code}"
-                )
-            except Exception:
-                api_status = "🟠 Local fallback"
+            api_status = "🔴 Offline"
         st.markdown(
             f"<div style='font-size:0.8rem;color:#c0d8f0;margin-top:4px;'>API: {api_status}</div>",
             unsafe_allow_html=True,
@@ -673,9 +597,9 @@ def ai_agents():
         if st.button("Clear Chat", use_container_width=True):
             st.session_state.history = []
             import uuid
-
             st.session_state.chat_session_id = str(uuid.uuid4())
             st.rerun()
+
 
 
 def performance_metrics():
@@ -801,7 +725,7 @@ def system_control():
         st.divider()
 
         if st.button(
-            "⚡ Run Performance Benchmark",
+            "* Run Performance Benchmark",
             use_container_width=True,
             key="benchmark_btn",
         ):
@@ -869,49 +793,34 @@ def system_control():
 
         st.divider()
 
-        st.markdown(
-            """
+        st.markdown("""
         <div style="background:#0d1e14;border:1px solid #1a4a2a;border-radius:6px;padding:14px 18px;font-size:0.8rem;color:#7ab898;line-height:2;">
         <strong style="color:#00e676;letter-spacing:0.06em;">PROTECTION SYSTEMS</strong><br>
         👑 Creator Protection: <strong style="color:#00e676">MAXIMUM</strong><br>
         👨‍👩‍👧‍👦 Family Shield: <strong style="color:#00e676">ETERNAL</strong><br>
         🚫 Autonomous Mode: <strong style="color:#ff6b6b">DISABLED</strong>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        """, unsafe_allow_html=True)
 
 
 # Sidebar — compact system info only
 with st.sidebar:
-    st.markdown(
-        """
+    st.markdown("""
     <div style="text-align:center;padding:12px 0 8px 0;">
-        <div style="font-size:1.5rem;font-weight:800;color:#00d4ff;letter-spacing:0.15em;">⚡ JARVIS</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#00d4ff;letter-spacing:0.15em;">* JARVIS</div>
         <div style="font-size:0.65rem;color:#3a5a78;letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;">Quantum Platform</div>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
     st.divider()
-    st.markdown(
-        "<div style='font-size:0.7rem;color:#3a5a78;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;'>System</div>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("<div style='font-size:0.7rem;color:#3a5a78;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;'>System</div>", unsafe_allow_html=True)
     st.metric("Features", "5 / 5", "100%")
     st.metric("Phase", "6", "Quantum Consciousness")
     st.metric("Status", "OPTIMAL")
 
     st.divider()
-    st.markdown(
-        "<div style='font-size:0.7rem;color:#3a5a78;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;'>Runtime</div>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f"<div style='font-size:0.75rem;color:#5a7fa0;'>Python 3.14 · Azure Functions v4<br>Local dev · Azurite storage</div>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("<div style='font-size:0.7rem;color:#3a5a78;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;'>Runtime</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-size:0.75rem;color:#5a7fa0;'>Python 3.14 · Azure Functions v4<br>Local dev · Azurite storage</div>", unsafe_allow_html=True)
 
     st.divider()
     st.caption(f"Updated: {datetime.now().strftime('%H:%M:%S')}")
