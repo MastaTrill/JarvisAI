@@ -216,6 +216,16 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan,
 )
+
+
+from advanced_features.multimodal_api import router as multimodal_router
+from advanced_features.advanced_demo_api import router as advanced_demo_router
+from advanced_features.self_healing import SelfHealingAI
+
+# Global self-healing instance and event log
+self_healing_ai = SelfHealingAI()
+self_healing_events = []
+
 app.include_router(admin_router)
 app.include_router(admin_api_router)
 app.include_router(versioning_router)
@@ -231,6 +241,36 @@ app.include_router(ml_advanced_router)
 app.include_router(automation_router)
 app.include_router(versioning_orm_router)
 app.include_router(agent_router)
+
+app.include_router(multimodal_router)
+app.include_router(advanced_demo_router)
+
+# Example: wrap a critical function with self-healing logic
+def critical_backend_task(x):
+    if x < 0:
+        raise ValueError("Negative value not allowed")
+    return x * 2
+
+def critical_task_with_logging(x):
+    result = self_healing_ai.run(critical_backend_task, x)
+    event = {
+        "input": x,
+        "result": result,
+        "status": "recovered" if result is not None else "failed",
+    }
+    self_healing_events.append(event)
+    return event
+
+# API endpoint to trigger and view self-healing events
+from fastapi import Query
+@app.post("/system/self-healing/trigger", tags=["System"], summary="Trigger a critical task with self-healing")
+def trigger_self_healing(x: int = Query(..., description="Input for critical task")):
+    event = critical_task_with_logging(x)
+    return {"event": event}
+
+@app.get("/system/self-healing/events", tags=["System"], summary="Get self-healing event log")
+def get_self_healing_events():
+    return {"events": self_healing_events[-50:]}  # last 50 events
 app.mount(
     "/static",
     StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),

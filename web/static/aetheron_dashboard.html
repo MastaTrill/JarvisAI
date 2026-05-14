@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,8 +43,13 @@
         }
 
         @keyframes twinkle {
-            0% { opacity: 0.3; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 0.3;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         /* Header */
@@ -91,7 +97,8 @@
             text-decoration: none;
         }
 
-        .nav-tab:hover, .nav-tab.active {
+        .nav-tab:hover,
+        .nav-tab.active {
             background: rgba(0, 162, 255, 0.3);
             border-color: rgba(0, 162, 255, 0.6);
             transform: translateY(-2px);
@@ -209,8 +216,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
 
         /* Feature Demo */
@@ -240,17 +254,18 @@
                 flex-direction: column;
                 align-items: center;
             }
-            
+
             .header h1 {
                 font-size: 2rem;
             }
-            
+
             .card-grid {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="space-background" id="spaceBackground"></div>
 
@@ -270,7 +285,7 @@
     <!-- Overview Section -->
     <section id="overview" class="content-section active">
         <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Platform Status Dashboard</h2>
-        
+
         <div class="status-grid">
             <div class="status-item">
                 <div class="status-icon"></div>
@@ -299,21 +314,32 @@
         </div>
 
         <div class="card-grid">
+            <!-- Self-Healing AI Card -->
+            <div class="card">
+                <h3>🛡️ Self-Healing AI</h3>
+                <p>Monitors and recovers from backend errors automatically. View recent recovery events or trigger a
+                    test recovery.</p>
+                <button class="btn" onclick="triggerSelfHealing()">Trigger Self-Healing Event</button>
+                <div id="selfHealingEvents" class="demo-output" style="display:none;"></div>
+            </div>
             <div class="card">
                 <h3>🧠 Neural Networks</h3>
-                <p>Advanced neural network architectures with modern activation functions, regularization, and optimization techniques.</p>
+                <p>Advanced neural network architectures with modern activation functions, regularization, and
+                    optimization techniques.</p>
                 <button class="btn" onclick="runDemo('neural_network')">Test Neural Network</button>
             </div>
-            
+
             <div class="card">
                 <h3>📊 Data Pipeline</h3>
-                <p>Comprehensive data processing with quality validation, feature engineering, and versioning capabilities.</p>
+                <p>Comprehensive data processing with quality validation, feature engineering, and versioning
+                    capabilities.</p>
                 <button class="btn" onclick="runDemo('data_pipeline')">Test Data Pipeline</button>
             </div>
-            
+
             <div class="card">
                 <h3>🎭 Data Augmentation</h3>
-                <p>Sophisticated augmentation techniques including SMOTE, Mixup, Cutmix, and noise injection for robust models.</p>
+                <p>Sophisticated augmentation techniques including SMOTE, Mixup, Cutmix, and noise injection for robust
+                    models.</p>
                 <button class="btn" onclick="runDemo('augmentation')">Test Augmentation</button>
             </div>
         </div>
@@ -322,73 +348,248 @@
     <!-- Features Section -->
     <section id="features" class="content-section">
         <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Platform Features</h2>
-        
+
         <div class="card-grid">
             <div class="card">
                 <h3>🏗️ Advanced Neural Networks</h3>
                 <p>• Modern activation functions (ReLU, Sigmoid, Tanh, Leaky ReLU, Swish, GELU)<br>
-                • Regularization techniques (L1/L2, Dropout, Batch Normalization)<br>
-                • Optimizers (SGD with momentum, Adam)<br>
-                • Automatic differentiation and backpropagation</p>
+                    • Regularization techniques (L1/L2, Dropout, Batch Normalization)<br>
+                    • Optimizers (SGD with momentum, Adam)<br>
+                    • Automatic differentiation and backpropagation</p>
             </div>
-            
+
             <div class="card">
                 <h3>📈 Data Processing Pipeline</h3>
                 <p>• Multi-format data connectors (CSV, JSON, Database)<br>
-                • Data quality validation and scoring<br>
-                • Feature engineering and selection<br>
-                • Data versioning and lineage tracking</p>
+                    • Data quality validation and scoring<br>
+                    • Feature engineering and selection<br>
+                    • Data versioning and lineage tracking</p>
+                <!-- Explainable AI Card -->
+                <div class="card">
+                    <h3>🔍 Explainable AI (XAI)</h3>
+                    <p>Generate model explanations, feature importances, and counterfactuals. Enter sample input to see
+                        how the model makes decisions.</p>
+                    <form id="xaiForm" style="margin-bottom: 1rem;">
+                        <input type="text" name="text" placeholder="Enter text for explanation"
+                            style="margin-bottom: 0.5rem; width: 100%; padding: 0.5rem; border-radius: 5px; border: 1px solid #0051ff;">
+                        <button class="btn" type="submit">Explain Prediction</button>
+                    </form>
+                    <div id="xaiResult" class="demo-output" style="display:none;"></div>
+                </div>
+                <!-- Generative AI Studio Card -->
+                <div class="card">
+                    <h3>🎨 Generative AI Studio</h3>
+                    <p>Generate creative text or images using state-of-the-art generative models. Enter a prompt and
+                        select the type of generation.</p>
+                    <form id="genaiForm" style="margin-bottom: 1rem;">
+                        <input type="text" name="prompt" placeholder="Enter prompt"
+                            style="margin-bottom: 0.5rem; width: 100%; padding: 0.5rem; border-radius: 5px; border: 1px solid #0051ff;">
+                        <select name="mode"
+                            style="margin-bottom: 0.5rem; width: 100%; padding: 0.5rem; border-radius: 5px; border: 1px solid #0051ff;">
+                            <option value="text">Text Generation</option>
+                            <option value="image">Image Generation</option>
+                        </select>
+                        <button class="btn" type="submit">Generate</button>
+                    </form>
+                    <div id="genaiResult" class="demo-output" style="display:none;"></div>
+                </div>
             </div>
-            
+
             <div class="card">
                 <h3>🎯 Model Validation</h3>
                 <p>• Cross-validation techniques (K-fold, Stratified)<br>
-                • Bias and fairness analysis<br>
-                • Robustness testing against adversarial inputs<br>
-                • Performance metrics and reporting</p>
+                    • Bias and fairness analysis<br>
+                    • Robustness testing against adversarial inputs<br>
+                    • Performance metrics and reporting</p>
             </div>
-            
+
             <div class="card">
                 <h3>🔬 Experiment Tracking</h3>
                 <p>• Comprehensive experiment management<br>
-                • Hyperparameter optimization (Grid/Random Search)<br>
-                • Learning rate scheduling<br>
-                • Metrics visualization and comparison</p>
+                    • Hyperparameter optimization (Grid/Random Search)<br>
+                    • Learning rate scheduling<br>
+                    • Metrics visualization and comparison</p>
             </div>
-            
+
             <div class="card">
                 <h3>🎭 Data Augmentation</h3>
                 <p>• SMOTE for class balancing<br>
-                • Mixup and Cutmix techniques<br>
-                • Noise injection (Gaussian, Uniform)<br>
-                • Time series augmentation</p>
+                    • Mixup and Cutmix techniques<br>
+                    • Noise injection (Gaussian, Uniform)<br>
+                    • Time series augmentation</p>
             </div>
-            
+
             <div class="card">
                 <h3>🌐 Web Interface</h3>
                 <p>• Interactive 3D humanoid robot<br>
-                • Real-time training visualization<br>
-                • Voice-activated commands<br>
-                • Responsive space-themed design</p>
+                    • Real-time training visualization<br>
+                    • Voice-activated commands<br>
+                    • Responsive space-themed design</p>
+            </div>
+            <!-- Multimodal AI Card Inserted Here -->
+            <div class="card">
+                <h3>🧬 Multimodal AI</h3>
+                <p>Integrate and analyze text, audio, and image inputs in real time. Try the new multimodal inference
+                    engine!</p>
+                <form id="multimodalForm" enctype="multipart/form-data" style="margin-bottom: 1rem;">
+                    <input type="text" name="text" placeholder="Enter text"
+                        style="margin-bottom: 0.5rem; width: 100%; padding: 0.5rem; border-radius: 5px; border: 1px solid #0051ff;">
+                    <input type="file" name="audio" accept="audio/*" style="margin-bottom: 0.5rem; width: 100%;">
+                    <input type="file" name="image" accept="image/*" style="margin-bottom: 0.5rem; width: 100%;">
+                    <button class="btn" type="submit">Run Multimodal Inference</button>
+                </form>
+                <div id="multimodalResult" class="demo-output" style="display:none;"></div>
             </div>
         </div>
     </section>
+    <script>
+        // Multimodal AI Form
+        document.addEventListener('DOMContentLoaded', function () {
+            // Self-Healing AI Events
+            async function loadSelfHealingEvents() {
+                const eventsDiv = document.getElementById('selfHealingEvents');
+                if (!eventsDiv) return;
+                try {
+                    const resp = await fetch('/system/self-healing/events');
+                    const data = await resp.json();
+                    if (data.events && data.events.length > 0) {
+                        eventsDiv.style.display = 'block';
+                        eventsDiv.innerHTML = '<b>Recent Self-Healing Events:</b><br><pre>' + JSON.stringify(data.events, null, 2) + '</pre>';
+                    } else {
+                        eventsDiv.style.display = 'block';
+                        eventsDiv.innerHTML = 'No recent self-healing events.';
+                    }
+                } catch (err) {
+                    eventsDiv.style.display = 'block';
+                    eventsDiv.innerHTML = '❌ Error loading events: ' + err.message;
+                }
+            }
+
+            window.triggerSelfHealing = async function () {
+                const eventsDiv = document.getElementById('selfHealingEvents');
+                eventsDiv.style.display = 'block';
+                eventsDiv.innerHTML = '⏳ Triggering self-healing...';
+                try {
+                    // Purposely trigger with a negative value to cause recovery
+                    const resp = await fetch('/system/self-healing/trigger?x=-1', { method: 'POST' });
+                    const data = await resp.json();
+                    eventsDiv.innerHTML = '<b>Triggered Event:</b><br><pre>' + JSON.stringify(data.event, null, 2) + '</pre>';
+                    await loadSelfHealingEvents();
+                } catch (err) {
+                    eventsDiv.innerHTML = '❌ Error: ' + err.message;
+                }
+            };
+
+            // Load events on page load
+            loadSelfHealingEvents();
+            const form = document.getElementById('multimodalForm');
+            const resultDiv = document.getElementById('multimodalResult');
+            if (form) {
+                form.onsubmit = async function (e) {
+                    e.preventDefault();
+                    resultDiv.style.display = 'block';
+                    resultDiv.innerHTML = '⏳ Running multimodal inference...';
+                    const formData = new FormData(form);
+                    try {
+                        const resp = await fetch('/advanced/multimodal/infer', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await resp.json();
+                        resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    } catch (err) {
+                        resultDiv.innerHTML = '❌ Error: ' + err.message;
+                    }
+                };
+            }
+            // XAI Form
+            const xaiForm = document.getElementById('xaiForm');
+            const xaiResult = document.getElementById('xaiResult');
+            if (xaiForm) {
+                xaiForm.onsubmit = async function (e) {
+                    e.preventDefault();
+                    xaiResult.style.display = 'block';
+                    xaiResult.innerHTML = '⏳ Generating explanation...';
+                    const formData = new FormData(xaiForm);
+                    try {
+                        const resp = await fetch('/advanced/xai/explain', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await resp.json();
+                        xaiResult.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    } catch (err) {
+                        xaiResult.innerHTML = '❌ Error: ' + err.message;
+                    }
+                };
+            }
+            // Generative AI Studio Form
+            const genaiForm = document.getElementById('genaiForm');
+            const genaiResult = document.getElementById('genaiResult');
+            if (genaiForm) {
+                genaiForm.onsubmit = async function (e) {
+                    e.preventDefault();
+                    genaiResult.style.display = 'block';
+                    genaiResult.innerHTML = '⏳ Generating...';
+                    const formData = new FormData(genaiForm);
+                    try {
+                        const resp = await fetch('/advanced/genai/generate', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await resp.json();
+                        if (formData.get('mode') === 'image' && data.image_url) {
+                            genaiResult.innerHTML = `<img src="${data.image_url}" alt="Generated Image" style="max-width:100%;border-radius:10px;"><br><pre>` + JSON.stringify(data, null, 2) + '</pre>';
+                        } else {
+                            genaiResult.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                        }
+                    } catch (err) {
+                        genaiResult.innerHTML = '❌ Error: ' + err.message;
+                    }
+                };
+            }
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('multimodalForm');
+            const resultDiv = document.getElementById('multimodalResult');
+            if (form) {
+                form.onsubmit = async function (e) {
+                    e.preventDefault();
+                    resultDiv.style.display = 'block';
+                    resultDiv.innerHTML = '⏳ Running multimodal inference...';
+                    const formData = new FormData(form);
+                    try {
+                        const resp = await fetch('/advanced/multimodal/infer', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await resp.json();
+                        resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    } catch (err) {
+                        resultDiv.innerHTML = '❌ Error: ' + err.message;
+                    }
+                };
+            }
+        });
+    </script>
 
     <!-- Demos Section -->
     <section id="demos" class="content-section">
         <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Live Feature Demonstrations</h2>
-        
+
         <div class="demo-container">
             <h3>🚀 Quick Demo Launcher</h3>
             <p>Select a demo to run and see the results in real-time:</p>
-            
+
             <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0;">
                 <button class="btn" onclick="runFullDemo('simplified')">Simplified Demo</button>
                 <button class="btn" onclick="runFullDemo('advanced')">Advanced Demo</button>
                 <button class="btn" onclick="runFullDemo('integration')">Integration Demo</button>
                 <button class="btn" onclick="runFullDemo('end_to_end')">End-to-End Workflow</button>
             </div>
-            
+
             <div id="demoOutput" class="demo-output" style="display: none;">
                 <div id="demoText">Demo output will appear here...</div>
             </div>
@@ -398,12 +599,12 @@
     <!-- Analytics Section -->
     <section id="analytics" class="content-section">
         <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Performance Analytics</h2>
-        
+
         <div class="chart-container">
             <h3>Training Metrics</h3>
             <canvas id="trainingChart" width="400" height="200"></canvas>
         </div>
-        
+
         <div class="chart-container">
             <h3>Model Performance</h3>
             <div id="performanceChart" style="height: 400px;"></div>
@@ -413,7 +614,7 @@
     <!-- Experiments Section -->
     <section id="experiments" class="content-section">
         <h2 style="text-align: center; color: #00a2ff; margin-bottom: 2rem;">Experiment Management</h2>
-        
+
         <div class="card-grid">
             <div class="card">
                 <h3>📊 Recent Experiments</h3>
@@ -421,7 +622,7 @@
                     <p>Loading experiments...</p>
                 </div>
             </div>
-            
+
             <div class="card">
                 <h3>🎯 Model Registry</h3>
                 <div id="modelsList">
@@ -451,16 +652,16 @@
             document.querySelectorAll('.content-section').forEach(section => {
                 section.classList.remove('active');
             });
-            
+
             // Remove active class from all tabs
             document.querySelectorAll('.nav-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            
+
             // Show selected section and activate tab
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
-            
+
             // Load specific content based on tab
             if (tabName === 'analytics') {
                 loadAnalytics();
@@ -473,10 +674,10 @@
         function runDemo(demoType) {
             const output = document.getElementById('demoOutput');
             const text = document.getElementById('demoText');
-            
+
             output.style.display = 'block';
             text.innerHTML = `🚀 Running ${demoType} demo...\n`;
-            
+
             // Simulate demo output
             setTimeout(() => {
                 text.innerHTML += `✅ ${demoType.charAt(0).toUpperCase() + demoType.slice(1)} demo completed successfully!\n`;
@@ -489,22 +690,22 @@
         function runFullDemo(demoType) {
             const output = document.getElementById('demoOutput');
             const text = document.getElementById('demoText');
-            
+
             output.style.display = 'block';
             text.innerHTML = `🚀 Launching ${demoType} demonstration...\n`;
-            
+
             // Make API call to run actual demo
             fetch(`/api/run-demo/${demoType}`, {
                 method: 'POST'
             })
-            .then(response => response.json())
-            .then(data => {
-                text.innerHTML += `✅ Demo completed!\n`;
-                text.innerHTML += `📊 Results: ${JSON.stringify(data, null, 2)}\n`;
-            })
-            .catch(error => {
-                text.innerHTML += `❌ Error: ${error.message}\n`;
-            });
+                .then(response => response.json())
+                .then(data => {
+                    text.innerHTML += `✅ Demo completed!\n`;
+                    text.innerHTML += `📊 Results: ${JSON.stringify(data, null, 2)}\n`;
+                })
+                .catch(error => {
+                    text.innerHTML += `❌ Error: ${error.message}\n`;
+                });
         }
 
         // Analytics
@@ -581,7 +782,7 @@
             // Simulate loading experiments
             const experimentsList = document.getElementById('experimentsList');
             const modelsList = document.getElementById('modelsList');
-            
+
             experimentsList.innerHTML = `
                 <div style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 162, 255, 0.1); border-radius: 5px;">
                     <strong>Experiment #1</strong><br>
@@ -594,7 +795,7 @@
                     Progress: 60%
                 </div>
             `;
-            
+
             modelsList.innerHTML = `
                 <div style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 162, 255, 0.1); border-radius: 5px;">
                     <strong>Advanced Neural Net v1.0</strong><br>
@@ -610,10 +811,11 @@
         }
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             createStars();
             loadAnalytics();
         });
     </script>
 </body>
+
 </html>

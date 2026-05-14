@@ -1,0 +1,36 @@
+<div class="card">
+    <h3>🧬 Multimodal AI</h3>
+    <p>Integrate and analyze text, audio, and image inputs in real time. Try the new multimodal inference engine!</p>
+    <form id="multimodalForm" enctype="multipart/form-data" style="margin-bottom: 1rem;">
+        <input type="text" name="text" placeholder="Enter text"
+            style="margin-bottom: 0.5rem; width: 100%; padding: 0.5rem; border-radius: 5px; border: 1px solid #0051ff;">
+        <input type="file" name="audio" accept="audio/*" style="margin-bottom: 0.5rem; width: 100%;">
+        <input type="file" name="image" accept="image/*" style="margin-bottom: 0.5rem; width: 100%;">
+        <button class="btn" type="submit">Run Multimodal Inference</button>
+    </form>
+    <div id="multimodalResult" class="demo-output" style="display:none;"></div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('multimodalForm');
+        const resultDiv = document.getElementById('multimodalResult');
+        if (form) {
+            form.onsubmit = async function (e) {
+                e.preventDefault();
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '⏳ Running multimodal inference...';
+                const formData = new FormData(form);
+                try {
+                    const resp = await fetch('/advanced/multimodal/infer', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await resp.json();
+                    resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } catch (err) {
+                    resultDiv.innerHTML = '❌ Error: ' + err.message;
+                }
+            };
+        }
+    });
+</script>

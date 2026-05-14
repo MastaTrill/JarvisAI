@@ -1,0 +1,35 @@
+<div class="card">
+    <h3>🔍 Explainable AI (XAI)</h3>
+    <p>Generate model explanations, feature importances, and counterfactuals. Enter sample input to see how the model
+        makes decisions.</p>
+    <form id="xaiForm" style="margin-bottom: 1rem;">
+        <input type="text" name="text" placeholder="Enter text for explanation"
+            style="margin-bottom: 0.5rem; width: 100%; padding: 0.5rem; border-radius: 5px; border: 1px solid #0051ff;">
+        <button class="btn" type="submit">Explain Prediction</button>
+    </form>
+    <div id="xaiResult" class="demo-output" style="display:none;"></div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('xaiForm');
+        const resultDiv = document.getElementById('xaiResult');
+        if (form) {
+            form.onsubmit = async function (e) {
+                e.preventDefault();
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '⏳ Generating explanation...';
+                const formData = new FormData(form);
+                try {
+                    const resp = await fetch('/advanced/xai/explain', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await resp.json();
+                    resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } catch (err) {
+                    resultDiv.innerHTML = '❌ Error: ' + err.message;
+                }
+            };
+        }
+    });
+</script>
