@@ -503,7 +503,7 @@ def ai_agents():
     """AI agents interface — calls the real /agent/chat endpoint"""
     import requests
 
-    JARVIS_API = "http://localhost:7071/agent/chat"
+    JARVIS_API = "http://127.0.0.1:8888/agent/chat"
 
     st.markdown("### Talk to Jarvis")
 
@@ -558,7 +558,7 @@ def ai_agents():
                     data = resp.json()
                     reply = data.get("reply") or data.get("response") or str(data)
                 except requests.exceptions.ConnectionError:
-                    reply = "⚠️ Cannot reach the Functions host. Is it running on port 7071?"
+                    reply = "⚠️ Cannot reach the Jarvis API. Is it running on port 8888?"
                 except requests.exceptions.Timeout:
                     reply = "⚠️ Request timed out. Jarvis may be loading a heavy model."
                 except Exception as e:
@@ -584,7 +584,7 @@ def ai_agents():
         st.markdown("**Status**")
         # Quick ping to check if API is up
         try:
-            ping = requests.get("http://localhost:7071/health", timeout=2)
+            ping = requests.get("http://127.0.0.1:8888/health", timeout=2)
             api_status = "🟢 Online" if ping.status_code == 200 else f"🟡 {ping.status_code}"
         except Exception:
             api_status = "🔴 Offline"
