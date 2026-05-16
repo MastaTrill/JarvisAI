@@ -5,19 +5,14 @@ This module re-exports the canonical FastAPI app defined in top-level
 while routes are maintained in one place.
 """
 
-from importlib.util import module_from_spec, spec_from_file_location
-from pathlib import Path
+import sys
+import os
 
-_api_path = Path(__file__).with_name("api.py")
-_api_spec = spec_from_file_location("jarvis_legacy_api_module", _api_path)
-if _api_spec is None or _api_spec.loader is None:
-    raise ImportError(f"Unable to load API module from {_api_path}")
+os.environ.setdefault('OPENAI_API_KEY', '')
+os.environ.setdefault('GROQ_API_KEY', '')
+os.environ.setdefault('REDIS_URL', 'memory://')
 
-_api_module = module_from_spec(_api_spec)
-_api_spec.loader.exec_module(_api_module)
-
-app = _api_module.app
-get_current_user = _api_module.get_current_user
+from jarvis_api import app, get_current_user
 
 __all__ = ["app", "get_current_user"]
 

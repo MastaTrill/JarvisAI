@@ -5,27 +5,31 @@ Multimodal AI: Real-time integration of text, voice, image, and video.
 import numpy as np
 from typing import Optional, Any, Dict
 
-# Optional: import libraries for real processing
-try:
-    from transformers import pipeline
-    import librosa
-    import cv2
-    transformers_available = True
-except ImportError:
-    transformers_available = False
+_transformers_available = False
+_pipeline = None
+
+def _init_transformers():
+    global _transformers_available, _pipeline
+    if _transformers_available:
+        return
+    try:
+        from transformers import pipeline
+        import librosa
+        import cv2
+        _transformers_available = True
+        try:
+            _pipeline = pipeline("sentiment-analysis")
+        except Exception:
+            _pipeline = None
+    except ImportError:
+        pass
 
 class MultimodalAI:
     """Enhanced real-time multimodal AI integration."""
     def __init__(self):
-        self.text_pipe = None
-        self.transformers_ok = False
-        if transformers_available:
-            try:
-                self.text_pipe = pipeline("sentiment-analysis")
-                self.transformers_ok = True
-            except Exception as e:
-                self.text_pipe = None
-                self.transformers_ok = False
+        _init_transformers()
+        self.text_pipe = _pipeline
+        self.transformers_ok = _transformers_available
 
     def process(self, text: Optional[str] = None, audio: Optional[Any] = None, image: Optional[Any] = None, video: Optional[Any] = None) -> Dict[str, Any]:
         """
@@ -33,6 +37,16 @@ class MultimodalAI:
         Returns a summary dictionary of detected inputs and analysis.
         """
         result = {}
+        librosa_mod = None
+        cv2_mod = None
+        if _transformers_available:
+            try:
+                import librosa
+                import cv2
+                librosa_mod = librosa
+                cv2_mod = cv2
+            except ImportError:
+                pass
         # Text analysis
         if text:
             if self.text_pipe:
@@ -47,9 +61,9 @@ class MultimodalAI:
         # Audio analysis
         if audio is not None:
             try:
-                if transformers_available and isinstance(audio, str):
-                    y, sr = librosa.load(audio, sr=None)
-                    duration = librosa.get_duration(y=y, sr=sr)
+                if _transformers_available and isinstance(audio, str) and librosa_mod:
+                    y, sr = librosa_mod.load(audio, sr=None)
+                    duration = librosa_mod.get_duration(y=y, sr=sr)
                     result['audio_duration'] = duration
                     result['audio_sr'] = sr
                 elif hasattr(audio, '__len__'):
@@ -61,8 +75,8 @@ class MultimodalAI:
         # Image analysis
         if image is not None:
             try:
-                if transformers_available and isinstance(image, str):
-                    img = cv2.imread(image)
+                if _transformers_available and isinstance(image, str) and cv2_mod:
+                    img = cv2_mod.imread(image)
                     if img is not None:
                         result['image_shape'] = img.shape
                         result['image_mean'] = float(np.mean(img))

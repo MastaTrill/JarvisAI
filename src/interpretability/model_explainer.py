@@ -16,8 +16,6 @@ Version: 1.0.0
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from typing import Dict, List, Tuple, Optional, Any, Union
 import logging
 from pathlib import Path
@@ -25,6 +23,20 @@ import json
 import pickle
 
 logger = logging.getLogger(__name__)
+
+def _get_matplotlib():
+    try:
+        import matplotlib.pyplot as plt
+        return plt
+    except ImportError:
+        return None
+
+def _get_seaborn():
+    try:
+        import seaborn as sns
+        return sns
+    except ImportError:
+        return None
 
 class ModelInterpreter:
     """Advanced model interpretability with multiple explanation methods"""
@@ -251,9 +263,10 @@ class ModelInterpreter:
                 save_dir.mkdir(parents=True, exist_ok=True)
             
             viz_paths = {}
+            plt = _get_matplotlib()
             
             # Visualize feature importance if available
-            if self.feature_importance is not None:
+            if self.feature_importance is not None and plt is not None:
                 plt.figure(figsize=(12, 8))
                 
                 # Get top 15 features
@@ -285,7 +298,7 @@ class ModelInterpreter:
             
             # Visualize LIME explanations if available
             lime_explanations = {k: v for k, v in self.explanations.items() if k.startswith('lime_')}
-            if lime_explanations:
+            if lime_explanations and plt is not None:
                 for lime_key, lime_data in lime_explanations.items():
                     if 'top_features' in lime_data:
                         plt.figure(figsize=(10, 6))
