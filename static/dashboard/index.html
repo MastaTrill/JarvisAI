@@ -267,6 +267,22 @@
             .hero-grid, .lower-grid { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
+        @media (max-width: 640px) {
+            body { padding: 12px 8px 24px; }
+            .topbar { flex-direction: column; align-items: flex-start; padding: 12px; }
+            .topbar-actions { width: 100%; justify-content: flex-start; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .stat-value { font-size: 1.1rem; }
+            .tab-bar { gap: 4px; }
+            .tab { padding: 4px 8px; font-size: 0.68rem; }
+            .panel { padding: 12px; border-radius: 16px; }
+            .chat-input-row { flex-direction: column; }
+            .chat-send { width: 100%; }
+            .button-row { flex-direction: column; }
+            .button, .ghost { width: 100%; }
+            .headline { font-size: 1.4rem; }
+            .subcopy { font-size: 0.8rem; }
+        }
     </style>
 </head>
 
@@ -318,6 +334,9 @@
                 <div class="tab" data-tab="files">Files</div>
                 <div class="tab" data-tab="rag">Documents</div>
                 <div class="tab" data-tab="sandbox">Sandbox</div>
+                <div class="tab" data-tab="events">Events</div>
+                <div class="tab" data-tab="personality">Personality</div>
+                <div class="tab" data-tab="analytics">Analytics</div>
                 <div class="tab" data-tab="experiments">Experiments</div>
                 <div class="tab" data-tab="benchmarks">Benchmarks</div>
                 <div class="tab" data-tab="models">Models</div>
@@ -451,6 +470,56 @@
                 <div id="sandboxOutput" class="terminal" style="height:150px;white-space:pre-wrap">Output will appear here...</div>
                 <div class="panel-title" style="margin-top:12px"><h3>History</h3></div>
                 <div id="sandboxHistory" style="max-height:200px;overflow-y:auto"></div>
+            </div>
+
+            <!-- Events Tab -->
+            <div class="tab-content" id="tab-events">
+                <div class="panel-title">
+                    <h3>Live Event Stream</h3>
+                    <button class="cmd-btn" id="eventsToggle" onclick="toggleEvents()"><i class="fas fa-play"></i> Connect</button>
+                </div>
+                <div id="eventsLog" class="terminal" style="height:300px;white-space:pre-wrap">Disconnected. Click Connect to start streaming...</div>
+                <div class="chat-commands" style="margin-top:8px">
+                    <button class="cmd-btn" onclick="publishEvent('test')"><i class="fas fa-paper-plane"></i> Send Test</button>
+                    <button class="cmd-btn" onclick="document.getElementById('eventsLog').innerHTML=''"><i class="fas fa-broom"></i> Clear</button>
+                </div>
+            </div>
+
+            <!-- Personality Tab -->
+            <div class="tab-content" id="tab-personality">
+                <div class="panel-title">
+                    <h3>Agent Personality</h3>
+                    <button class="cmd-btn" onclick="fetchPersonalities()"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+                <div id="personalitiesList" class="list" style="max-height:300px;overflow-y:auto;margin-bottom:14px">
+                    <div class="terminal">Loading personalities...</div>
+                </div>
+                <div class="panel-title"><h3>Create Personality</h3></div>
+                <div style="display:grid;gap:8px">
+                    <input type="text" class="chat-input" id="persName" placeholder="Name (e.g., 'jarvis-pro')" />
+                    <input type="text" class="chat-input" id="persDisplay" placeholder="Display Name (e.g., 'Jarvis Pro')" />
+                    <select id="persTone" style="padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:0.82rem">
+                        <option value="professional">Professional</option>
+                        <option value="casual">Casual</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="technical">Technical</option>
+                        <option value="concise">Concise</option>
+                    </select>
+                    <textarea id="persPrompt" class="terminal" style="height:80px;resize:vertical;font-size:0.78rem" placeholder="System prompt (optional)..."></textarea>
+                    <input type="text" class="chat-input" id="persExpertise" placeholder="Expertise (comma-separated)" />
+                    <button class="button" onclick="createPersonality()"><i class="fas fa-plus"></i> Create</button>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div class="tab-content" id="tab-analytics">
+                <div class="panel-title">
+                    <h3>API Analytics</h3>
+                    <button class="refresh-btn" onclick="fetchAnalytics()"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+                <div id="analyticsOverview" style="margin-bottom:14px"></div>
+                <div class="panel-title"><h3>Top Endpoints</h3></div>
+                <div id="analyticsEndpoints" style="max-height:300px;overflow-y:auto"></div>
             </div>
 
             <!-- Benchmarks Tab -->
@@ -883,6 +952,108 @@
             } catch (e) { el.innerHTML = '<div class="terminal">Failed: ' + e.message + '</div>'; }
         }
 
+        // --- Events SSE ---
+        let eventsSource = null;
+
+        function toggleEvents() {
+            const btn = document.getElementById("eventsToggle");
+            const log = document.getElementById("eventsLog");
+            if (eventsSource) {
+                eventsSource.close();
+                eventsSource = null;
+                btn.innerHTML = '<i class="fas fa-play"></i> Connect';
+                log.textContent = "Disconnected.";
+            } else {
+                eventsSource = new EventSource("/events/stream/general");
+                eventsSource.onmessage = (e) => {
+                    const data = JSON.parse(e.data);
+                    log.textContent += "\n[" + data.timestamp + "] " + data.type + ": " + JSON.stringify(data.data);
+                    log.scrollTop = log.scrollHeight;
+                };
+                eventsSource.onerror = () => {
+                    log.textContent += "\n[error] Connection lost.";
+                };
+                btn.innerHTML = '<i class="fas fa-stop"></i> Disconnect';
+            }
+        }
+
+        async function publishEvent(msg) {
+            await fetch("/events/publish", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({channel: "general", event_type: "test", data: msg || "Hello from dashboard"})
+            });
+        }
+
+        // --- Personality ---
+        async function fetchPersonalities() {
+            const el = document.getElementById("personalitiesList");
+            try {
+                const resp = await fetch("/agent/config/personalities");
+                const data = await resp.json();
+                if (!data.length) { el.innerHTML = '<div class="terminal">No personalities yet.</div>'; return; }
+                let html = "";
+                for (const p of data) {
+                    const defBadge = p.is_default ? '<span style="color:var(--accent2);font-size:0.7rem;margin-left:8px">[ACTIVE]</span>' : '';
+                    html += `<div class="list-item">
+                        <strong>${p.display_name}${defBadge}</strong>
+                        <p class="mono" style="margin-top:4px">${p.name} | tone: ${p.tone} | expertise: ${p.expertise || "general"}</p>
+                        ${!p.is_default ? `<button class="cmd-btn" style="margin-top:4px" onclick="activatePersonality('${p.name}')">Activate</button>` : ''}
+                    </div>`;
+                }
+                el.innerHTML = html;
+            } catch (e) { el.innerHTML = '<div class="terminal">Failed: ' + e.message + '</div>'; }
+        }
+
+        async function createPersonality() {
+            const body = {
+                name: document.getElementById("persName").value.trim(),
+                display_name: document.getElementById("persDisplay").value.trim(),
+                tone: document.getElementById("persTone").value,
+                system_prompt: document.getElementById("persPrompt").value.trim(),
+                expertise: document.getElementById("persExpertise").value.trim(),
+            };
+            if (!body.name) return;
+            await fetch("/agent/config/personality", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+            fetchPersonalities();
+        }
+
+        async function activatePersonality(name) {
+            await fetch(`/agent/config/personality/${name}/activate`, {method: "POST"});
+            fetchPersonalities();
+        }
+
+        // --- Analytics ---
+        async function fetchAnalytics() {
+            const overviewEl = document.getElementById("analyticsOverview");
+            const endpointsEl = document.getElementById("analyticsEndpoints");
+            try {
+                const resp = await fetch("/analytics/overview");
+                const data = await resp.json();
+                overviewEl.innerHTML = `
+                    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+                        <div class="panel stat"><div class="stat-label mono">Total Requests</div><div class="stat-value">${data.total_requests}</div></div>
+                        <div class="panel stat"><div class="stat-label mono">Last 24h</div><div class="stat-value">${data.requests_last_24h}</div></div>
+                        <div class="panel stat"><div class="stat-label mono">Unique Users</div><div class="stat-value">${data.unique_users}</div></div>
+                        <div class="panel stat"><div class="stat-label mono">Uptime</div><div class="stat-value">${Math.round(data.uptime_seconds/60)}m</div></div>
+                    </div>`;
+
+                const epResp = await fetch("/analytics/endpoints?limit=20");
+                const epData = await epResp.json();
+                let html = "";
+                for (const e of epData.endpoints) {
+                    const errColor = e.error_rate > 5 ? "var(--danger)" : e.error_rate > 1 ? "var(--warn)" : "var(--accent2)";
+                    html += `<div class="metric-row">
+                        <span class="metric-name mono" style="font-size:0.72rem">${e.endpoint}</span>
+                        <span style="font-size:0.72rem">${e.count} req | ${e.avg_ms}ms | <span style="color:${errColor}">${e.error_rate}% err</span></span>
+                    </div>`;
+                }
+                endpointsEl.innerHTML = html;
+            } catch (e) {
+                overviewEl.innerHTML = '<div class="terminal">Failed: ' + e.message + '</div>';
+            }
+        }
+
         // Initial load
         fetchHealth();
         fetchExperiments();
@@ -892,6 +1063,8 @@
         fetchFiles();
         fetchRagDocs();
         fetchSandboxHistory();
+        fetchPersonalities();
+        fetchAnalytics();
     </script>
 </body>
 </html>

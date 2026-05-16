@@ -310,6 +310,18 @@ app.include_router(rag_router)
 from code_sandbox import router as sandbox_router
 app.include_router(sandbox_router)
 
+# Real-time Events
+from events_stream import router as events_router
+app.include_router(events_router)
+
+# Agent Personality & Model Routing
+from agent_config import router as agent_config_router
+app.include_router(agent_config_router)
+
+# API Analytics
+from analytics import router as analytics_router
+app.include_router(analytics_router)
+
 # Example: wrap a critical function with self-healing logic
 def critical_backend_task(x):
     if x < 0:
