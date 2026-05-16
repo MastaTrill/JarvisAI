@@ -122,7 +122,6 @@ def chat_with_tools(
         "input": messages,
         "tools": tools,
         "tool_choice": "auto",
-        "parallel_tool_calls": False,
     }
     if previous_response_id:
         payload["previous_response_id"] = previous_response_id
