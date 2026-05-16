@@ -746,6 +746,73 @@ async def health_check(request: Request):
     }
 
 
+@app.get("/health/dashboard", tags=["System"], summary="Detailed health dashboard")
+@limiter.limit("30/minute")
+async def health_dashboard(request: Request):
+    """Detailed health dashboard with system stats, endpoint counts, and component status."""
+    _ = request
+    import psutil
+
+    # System resources
+    mem = psutil.virtual_memory()
+    disk = psutil.disk_usage("/")
+
+    # Endpoint summary
+    from fastapi.routing import APIRoute
+    route_methods = {}
+    for route in request.app.routes:
+        if isinstance(route, APIRoute):
+            for method in route.methods:
+                route_methods[method] = route_methods.get(method, 0) + 1
+
+    # Component status
+    components = {
+        "database": _check_database(),
+        "redis": _check_redis(),
+        "models_loaded": len(models),
+        "processors_loaded": len(processors),
+    }
+
+    return {
+        "status": "ok",
+        "timestamp": datetime.now().isoformat(),
+        "uptime_seconds": round(time.time() - request.app.state.start_time, 1) if hasattr(request.app.state, "start_time") else None,
+        "system": {
+            "cpu_percent": psutil.cpu_percent(interval=0.1),
+            "memory_percent": mem.percent,
+            "memory_available_mb": round(mem.available / (1024 ** 2)),
+            "disk_percent": disk.percent,
+            "disk_free_gb": round(disk.free / (1024 ** 3), 2),
+        },
+        "api": {
+            "total_endpoints": sum(route_methods.values()),
+            "methods": route_methods,
+        },
+        "components": components,
+    }
+
+
+def _check_database():
+    """Check database connectivity."""
+    try:
+        db = SessionLocal()
+        db.execute(db.bind.dialect.statement_cache.get("SELECT 1", "SELECT 1"))
+        db.close()
+        return "connected"
+    except Exception:
+        return "disconnected"
+
+
+def _check_redis():
+    """Check Redis connectivity."""
+    try:
+        r = redis.from_url(os.environ.get("REDIS_URL", ""))
+        r.ping()
+        return "connected"
+    except Exception:
+        return "disconnected"
+
+
 @app.get(
     "/models",
     response_model=List[ModelInfo],
