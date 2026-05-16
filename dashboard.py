@@ -260,10 +260,11 @@ def main_dashboard():
 
     st.divider()
 
-    # Main content tabs — Chat first so Jarvis talks on landing
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    # Main content tabs
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
         [
             "💬 Chat with Jarvis",
+            "Autonomous",
             "Quantum Console",
             "Temporal Analysis",
             "Performance",
@@ -275,15 +276,18 @@ def main_dashboard():
         ai_agents()
 
     with tab2:
-        quantum_console(qp)
+        autonomous_tab()
 
     with tab3:
-        temporal_analysis(ta)
+        quantum_console(qp)
 
     with tab4:
-        performance_metrics()
+        temporal_analysis(ta)
 
     with tab5:
+        performance_metrics()
+
+    with tab6:
         system_control()
 
 
@@ -441,30 +445,6 @@ def temporal_analysis(ta):
     with col2:
         st.subheader("Time Series Simulation")
 
-        # Generate sample time series
-        patterns = ta.known_patterns if ta else {}
-        if patterns:
-            pattern_df = pd.DataFrame(
-                [
-                    {
-                        "Pattern": name,
-                        "Type": info.get("detection_method", "N/A"),
-                        "Threshold": info.get("significance_threshold", "N/A"),
-                    }
-                    for name, info in patterns.items()
-                ]
-            )
-
-            st.dataframe(pattern_df, use_container_width=True, hide_index=True)
-
-        st.metric(
-            "Pattern Sensitivity", f"{ta.pattern_sensitivity:.2f}" if ta else "N/A"
-        )
-        st.metric("Anomaly Threshold", f"{ta.anomaly_threshold:.2f}" if ta else "N/A")
-
-    with col2:
-        st.subheader("Time Series Simulation")
-
         # Generate sample time series - SLIDER OUTSIDE BUTTON
         st.session_state.temporal_days = st.slider(
             "Days to simulate",
@@ -600,6 +580,210 @@ def ai_agents():
             st.session_state.chat_session_id = str(uuid.uuid4())
             st.rerun()
 
+
+
+def autonomous_tab():
+    """Autonomous job management — create, monitor, and control self-running tasks."""
+    import requests as _req
+
+    API = "http://127.0.0.1:8888/agent"
+
+    def _api_get(path, params=None):
+        try:
+            r = _req.get(f"{API}{path}", params=params, timeout=5)
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            return {"error": str(e), "items": []}
+
+    def _api_post(path, json=None):
+        try:
+            r = _req.post(f"{API}{path}", json=json, timeout=10)
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            return {"error": str(e)}
+
+    def _api_delete(path):
+        try:
+            r = _req.delete(f"{API}{path}", timeout=10)
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            return {"error": str(e)}
+
+    # ── Header ──
+    st.markdown("### Autonomous Operations")
+    st.caption("Create and manage self-running jobs. Jarvis executes these on schedule or on demand.")
+
+    # ── Status bar ──
+    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+    jobs_data = _api_get("/autonomy/jobs", params={"limit": 200})
+    jobs = jobs_data.get("items", []) if isinstance(jobs_data, dict) else []
+    active_jobs = [j for j in jobs if j.get("enabled")]
+    running_jobs = [j for j in jobs if j.get("status") == "running"]
+    error_jobs = [j for j in jobs if j.get("last_error")]
+    with col_s1:
+        st.metric("Total Jobs", len(jobs))
+    with col_s2:
+        st.metric("Active", len(active_jobs))
+    with col_s3:
+        st.metric("Running Now", len(running_jobs))
+    with col_s4:
+        st.metric("Errors", len(error_jobs))
+
+    st.divider()
+
+    # ── Two columns: Create | Manage ──
+    col_left, col_right = st.columns([1, 2])
+
+    # ── LEFT: Create new job ──
+    with col_left:
+        st.markdown("**Create New Job**")
+
+        with st.form("create_autonomous_job"):
+            job_name = st.text_input("Job Name", placeholder="e.g. Daily Code Review")
+            job_goal = st.text_area("Goal / Instructions", placeholder="What should Jarvis do?", height=100)
+            job_mode = st.selectbox(
+                "Mode",
+                options=["goal", "multi_agent", "briefing", "watcher"],
+                format_func=lambda m: {
+                    "goal": "🎯 Goal — single task to completion",
+                    "multi_agent": "🤖 Multi-Agent — parallel agents + synthesis",
+                    "briefing": "📋 Briefing — periodic memory digest",
+                    "watcher": "👁️ Watcher — monitor workspace signals",
+                }.get(m, m),
+            )
+            col_a1, col_a2 = st.columns(2)
+            with col_a1:
+                interval = st.number_input("Interval (minutes)", min_value=1, value=60, step=5)
+            with col_a2:
+                auto_approve = st.checkbox("Auto-approve actions", value=False,
+                    help="If off, Jarvis asks before risky actions")
+            enabled = st.checkbox("Enable immediately", value=True)
+
+            submitted = st.form_submit_button("Create Job", use_container_width=True)
+
+            if submitted:
+                if not job_name or not job_goal:
+                    st.error("Name and goal are required.")
+                else:
+                    payload = {
+                        "name": job_name,
+                        "goal": job_goal,
+                        "mode": job_mode,
+                        "interval_minutes": interval,
+                        "auto_approve": auto_approve,
+                        "enabled": enabled,
+                    }
+                    result = _api_post("/autonomy/jobs", json=payload)
+                    if result.get("error"):
+                        st.error(f"Failed: {result['error']}")
+                    else:
+                        st.success(f"Created job #{result.get('id')}")
+                        st.rerun()
+
+        st.divider()
+
+        # Quick actions
+        st.markdown("**Quick Actions**")
+        if st.button("🔄 Refresh Jobs", use_container_width=True):
+            st.rerun()
+
+        # Run all due jobs now
+        if st.button("▶️ Run All Due Jobs Now", use_container_width=True):
+            with st.spinner("Triggering jobs..."):
+                triggered = 0
+                for job in active_jobs:
+                    result = _api_post(f"/autonomy/jobs/{job['id']}/run")
+                    if result.get("ok"):
+                        triggered += 1
+                st.success(f"Triggered {triggered} job(s)")
+                st.rerun()
+
+    # ── RIGHT: Job list ──
+    with col_right:
+        st.markdown("**Active Jobs**")
+
+        if not jobs:
+            st.info("No autonomous jobs yet. Create one on the left.")
+        else:
+            for job in jobs:
+                job_id = job.get("id")
+                name = job.get("name", f"Job #{job_id}")
+                mode = job.get("mode", "?")
+                enabled_flag = job.get("enabled", False)
+                status = job.get("status", "idle")
+                last_run = job.get("last_run_at", "Never")
+                last_error = job.get("last_error", "")
+                interval_min = job.get("interval_minutes", "?")
+
+                # Status indicator
+                if status == "running":
+                    status_icon = "🟡"
+                elif not enabled_flag:
+                    status_icon = "⚪"
+                elif last_error:
+                    status_icon = "🔴"
+                else:
+                    status_icon = "🟢"
+
+                with st.expander(f"{status_icon} {name}  ·  `{mode}`  ·  every {interval_min}m"):
+                    col_j1, col_j2 = st.columns([3, 1])
+
+                    with col_j1:
+                        st.markdown(f"**Goal:** {job.get('goal', 'N/A')}")
+                        st.markdown(f"**Last run:** {last_run}")
+                        if last_error:
+                            st.error(f"Last error: {last_error}")
+                        st.markdown(f"Auto-approve: {'Yes' if job.get('auto_approve') else 'No'}")
+
+                    with col_j2:
+                        # Toggle enable/disable
+                        if enabled_flag:
+                            if st.button("Disable", key=f"disable_{job_id}", use_container_width=True):
+                                _api_post(f"/autonomy/jobs/{job_id}", json={"enabled": False})
+                                st.rerun()
+                        else:
+                            if st.button("Enable", key=f"enable_{job_id}", use_container_width=True):
+                                _api_post(f"/autonomy/jobs/{job_id}", json={"enabled": True})
+                                st.rerun()
+
+                        if st.button("Run Now", key=f"run_{job_id}", use_container_width=True):
+                            with st.spinner("Running..."):
+                                result = _api_post(f"/autonomy/jobs/{job_id}/run")
+                                if result.get("ok"):
+                                    st.success("Completed")
+                                else:
+                                    st.error(f"Failed: {result.get('error', 'Unknown')}")
+                                st.rerun()
+
+                        if st.button("Delete", key=f"delete_{job_id}", use_container_width=True):
+                            _api_delete(f"/autonomy/jobs/{job_id}")
+                            st.success("Deleted")
+                            st.rerun()
+
+    st.divider()
+
+    # ── Watchers section ──
+    st.markdown("**Workspace Watchers**")
+    watchers_data = _api_get("/autonomy/watchers", params={"limit": 50})
+    watchers = watchers_data.get("items", []) if isinstance(watchers_data, dict) else []
+
+    if watchers:
+        watcher_rows = []
+        for w in watchers:
+            watcher_rows.append({
+                "ID": w.get("id"),
+                "Name": w.get("name", "?"),
+                "Type": (w.get("metadata") or {}).get("watcher_type", "?"),
+                "Interval": f"{w.get('interval_minutes', '?')}m",
+                "Enabled": "Yes" if w.get("enabled") else "No",
+                "Last Run": w.get("last_run_at", "Never"),
+            })
+        st.dataframe(pd.DataFrame(watcher_rows), use_container_width=True, hide_index=True)
+    else:
+        st.info("No watchers configured.")
 
 
 def performance_metrics():
@@ -826,5 +1010,102 @@ with st.sidebar:
     st.caption(f"Updated: {datetime.now().strftime('%H:%M:%S')}")
 
 # Main execution
+def login_form():
+    st.markdown("### Login", unsafe_allow_html=True)
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+    if st.session_state["authenticated"]:
+        if st.button("Logout"):
+            st.session_state["authenticated"] = False
+            st.rerun()
+        return True
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        # Simple hardcoded credentials for demo
+        if username == "admin" and password == "admin":
+            st.session_state["authenticated"] = True
+            st.success("Logged in successfully!")
+            st.rerun()
+        else:
+            st.error("Invalid credentials.")
+    return False
+
+def data_explorer():
+    st.markdown("### Data Upload & Exploration", unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("Upload CSV or Excel file", type=["csv", "xlsx", "xls"])
+    if uploaded_file is not None:
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_excel(uploaded_file)
+            st.success(f"Loaded {uploaded_file.name} ({df.shape[0]} rows, {df.shape[1]} columns)")
+            st.dataframe(df)
+            st.markdown("#### Quick Data Summary")
+            st.write(df.describe(include="all"))
+            st.markdown("#### Column Types")
+            st.write(df.dtypes)
+        except Exception as e:
+            st.error(f"Error loading file: {e}")
+
+def show_notifications():
+    # Example: show a notification if a backend service is down or a task completes
+    if "notification" in st.session_state and st.session_state["notification"]:
+        msg, level = st.session_state["notification"]
+        if level == "success":
+            st.success(msg)
+        elif level == "error":
+            st.error(msg)
+        elif level == "warning":
+            st.warning(msg)
+        else:
+            st.info(msg)
+        if st.button("Dismiss notification"):
+            st.session_state["notification"] = None
+
+def model_training_tab():
+    st.markdown("### Interactive Model Training", unsafe_allow_html=True)
+    if "training" not in st.session_state:
+        st.session_state["training"] = False
+        st.session_state["progress"] = 0
+    model_name = st.text_input("Model Name", "demo_model")
+    epochs = st.number_input("Epochs", min_value=1, max_value=100, value=10)
+    if not st.session_state["training"]:
+        if st.button("Start Training"):
+            st.session_state["training"] = True
+            st.session_state["progress"] = 0
+            st.session_state["notification"] = (f"Started training model '{model_name}' for {epochs} epochs.", "info")
+            st.rerun()
+    else:
+        st.info(f"Training '{model_name}'... Epoch {st.session_state['progress']+1} of {epochs}")
+        progress_bar = st.progress(st.session_state["progress"] / epochs)
+        if st.button("Simulate Next Epoch"):
+            st.session_state["progress"] += 1
+            if st.session_state["progress"] >= epochs:
+                st.session_state["training"] = False
+                st.session_state["notification"] = (f"Model '{model_name}' training complete!", "success")
+            st.rerun()
+
+def main():
+    if not login_form():
+        st.stop()
+    show_notifications()
+    # Main dashboard after login
+    tabs = st.tabs([
+        "Dashboard",
+        "Data Explorer",
+        "Model Training",
+        "More (original tabs)",
+    ])
+    with tabs[0]:
+        main_dashboard()
+    with tabs[1]:
+        data_explorer()
+    with tabs[2]:
+        model_training_tab()
+    with tabs[3]:
+        st.info("All original dashboard features are available after login.")
+
 if __name__ == "__main__":
     main_dashboard()

@@ -5311,35 +5311,165 @@ def _basic_brain(message: str) -> str:
     raw = str(message or "").strip()
     msg = raw.lower()
     if not raw:
-        return "I'm here. We can chat normally, or you can ask me to run a tool."
-    if msg in {"hi", "hello", "hey", "yo", "sup"}:
-        return "Hey. We can talk normally. What's on your mind?"
-    if "help" in msg:
+        return "I'm here. What do you need?"
+
+    # Greetings
+    if msg in {"hi", "hello", "hey", "yo", "sup", "greetings"}:
+        return "Hey. I'm Jarvis. What can I help you with?"
+    if "good morning" in msg:
+        return "Morning. What are we working on?"
+    if "good night" in msg:
+        return "Night. I'll be here if you need me."
+
+    # Identity
+    if "who are you" in msg or "what are you" in msg:
         return (
-            "I can chat, think through next steps, and use tools when you ask. "
-            "For direct actions, use `/tool <name> <json_args>`, or ask me what you want to do."
+            "I'm Jarvis — a local AI agent. I can run tools, manage tasks, "
+            "remember things, browse the web, and help you get stuff done."
         )
-    if "who are you" in msg:
-        return "I'm Jarvis. I can chat, help you reason through problems, and run tools when needed."
+
+    # Capabilities
     if "what can you do" in msg or "what do you do" in msg:
         return (
-            "I can chat, help you reason through a problem, and point you to tool actions when needed. "
-            "If you want something concrete, just ask normally or use a `/tool ...` command."
+            "I can do a lot locally: run shell commands, read/write files, "
+            "browse the web, manage tasks and goals, send emails, check databases, "
+            "and remember things long-term. I also have quantum simulation tools. "
+            "What do you need?"
         )
-    if "can we just talk" in msg or "open chat" in msg or "talk normally" in msg:
+
+    # Help
+    if msg == "help" or "how do you work" in msg:
         return (
-            "Yes, absolutely. We can have a normal conversation. Tell me what you want to talk about."
+            "Just talk to me naturally. I can:\n"
+            "• Run tools: shell commands, file ops, web browsing, email, etc.\n"
+            "• Remember things — just say 'remember that...'\n"
+            "• Manage tasks — say 'todo: ...' or 'task: ...'\n"
+            "• Check system status, list files, ping the database\n"
+            "• Search the web, read files, write files\n"
+            "What do you want to do?"
         )
-    if raw.startswith("/tool"):
-        return "Tool command received. If it didn't run, check the tool name and JSON args."
+
+    # Time
+    if "what time" in msg or "current time" in msg or "what's the time" in msg:
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        return f"Current UTC time: {now.strftime('%Y-%m-%d %H:%M:%S')}"
+
+    # System info
+    if "system info" in msg or "system status" in msg:
+        import platform, sys
+        return (
+            f"System info:\n"
+            f"• Python {sys.version.split()[0]}\n"
+            f"• Platform: {platform.system()} {platform.release()}\n"
+            f"• Architecture: {platform.machine()}"
+        )
+
+    # File operations
+    if "list files" in msg or "show files" in msg or "what files" in msg:
+        return (
+            "I can list files for you. Tell me a path like 'list files in data' "
+            "or 'show files in models'. I can also read and write files."
+        )
+
+    # Database
+    if "database" in msg or re.search(r"\bdb\b", msg):
+        return (
+            "I can check database connectivity and run queries. "
+            "The configured database is SQLite at ./jarvis.db. "
+            "Want me to run a health check?"
+        )
+
+    # Web / search
+    if "search" in msg or "look up" in msg or "find" in msg:
+        query = raw
+        for prefix in ["search for", "search", "look up", "find"]:
+            if msg.startswith(prefix):
+                query = raw[len(prefix):].strip()
+                break
+        if query and query != msg:
+            return f"I can search the web for '{query}'. Want me to do that now?"
+        return "I can search the web for you. What do you want to look up?"
+
+    # Weather
+    if "weather" in msg:
+        return (
+            "I can check the weather for you. I'll need a location — "
+            "just say 'weather in [city]' and I'll look it up."
+        )
+
+    # Remember / memory
+    if "remember" in msg or "save this" in msg or "store this" in msg:
+        return (
+            "I can save that to long-term memory. "
+            "Just say 'remember that [what you want me to remember]' and I'll store it."
+        )
+    if "what do you remember" in msg or "what do you know" in msg:
+        return (
+            "I keep long-term memories in a local database. "
+            "I can search them by topic. Want me to show you what I know about something?"
+        )
+
+    # Tasks
+    if "task" in msg or "todo" in msg or "to-do" in msg or "to do" in msg:
+        return (
+            "I can manage tasks for you. Say 'todo: [task]' to create one, "
+            "or 'show my tasks' to see what's open."
+        )
+
+    # Shell / commands
+    if "run" in msg and ("command" in msg or "shell" in msg or "script" in msg):
+        return (
+            "I can run shell commands. Just tell me what you want to run. "
+            "Note: shell commands require JARVIS_ALLOW_SHELL=true to be enabled."
+        )
+
+    # Code / programming
+    if "code" in msg or "programming" in msg or "python" in msg or "script" in msg:
+        return (
+            "I can help with code — write scripts, debug issues, explain concepts, "
+            "or run Python code. What are you working on?"
+        )
+
+    # Quantum
+    if "quantum" in msg:
+        return (
+            "I have quantum simulation tools: superposition, entanglement, "
+            "measurement, and more. These are simulations running locally. "
+            "Want me to run a quantum demo?"
+        )
+
+    # Jokes / fun
+    if "joke" in msg or "funny" in msg:
+        return (
+            "Why do programmers prefer dark mode? Because light attracts bugs.\n"
+            "Want to hear another one?"
+        )
+    if "thank" in msg:
+        return "Anytime. What else?"
+    if "bye" in msg or "goodbye" in msg or "see you" in msg:
+        return "See you. I'll be here."
+
+    # Questions
     if "?" in raw:
         return (
-            f"I can help with that. On `{raw}`, give me a bit more context "
-            "or ask it more directly and I'll do my best to work through it with you."
+            f"Good question. On '{raw}' — I can help with that. "
+            "Give me a bit more detail about what you're looking for."
         )
+
+    # Tool command
+    if raw.startswith("/tool"):
+        return "Tool command received. If it didn't run, check the tool name and JSON args."
+
+    # Default — acknowledge and offer help
     return (
-        f"I hear you: `{raw}`. I'm here with you. "
-        "If you want, keep talking normally and I'll help as best I can."
+        f"Got it. Here's what I can do:\n"
+        "• Run tools (shell, files, web, email, database)\n"
+        "• Manage tasks and remember things\n"
+        "• Check system status and list files\n"
+        "• Search the web\n"
+        "• Help with code and scripts\n"
+        "What do you need?"
     )
 
 
@@ -11012,6 +11142,14 @@ def run_autonomy_job(job_id: int):
     return {"ok": True, "job_id": job_id, "result": result}
 
 
+@router.delete("/autonomy/jobs/{job_id}")
+def delete_autonomy_job(job_id: int):
+    ok = _get_task_memory().delete_autonomous_job(job_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="autonomous job not found")
+    return {"ok": True, "id": job_id}
+
+
 @router.post("/benchmark/llm")
 def benchmark_llm(payload: AgentLlmBenchmarkRequest):
     runtime_before = _effective_ollama_runtime()
@@ -11143,10 +11281,88 @@ async def agent_chat_stream(payload: AgentChatRequest):
     _get_memory().append(session_id, StoredMessage(
         role="user", text=payload.message))
 
+    msg_trimmed = payload.message.strip()
+    msg_lower = msg_trimmed.lower()
+
+    # Built-in commands that don't need an LLM — emit delta events so the JS UI updates
+    if (
+        "what tools" in msg_lower
+        or "available tools" in msg_lower
+        or msg_lower.strip() in {"tools", "tool list", "help tools", "list tools"}
+    ):
+        names = ", ".join(sorted(_TOOLS.keys()))
+        reply = (
+            "Available tools: "
+            + names
+            + ".\n"
+            + "Note: `shell_run` requires JARVIS_ALLOW_SHELL=true; `repo_write_file` requires JARVIS_ALLOW_REPO_WRITE=true; `write_file` writes under /data and requires JARVIS_ALLOW_WRITE=true."
+        )
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
+        done_payload = {"session_id": session_id, "reply": reply, "timestamp": _now_iso(), "plan": plan}
+        async def _builtin_tools():
+            for part in reply.split(" "):
+                yield f"event: delta\ndata: {json.dumps({'text': part + ' '})}\n\n"
+                await asyncio.sleep(0)
+            yield f"event: done\ndata: {json.dumps(done_payload)}\n\n"
+        return StreamingResponse(_builtin_tools(), media_type="text/event-stream")
+
+    if msg_lower.strip() in {"status", "status check", "system status", "health check", "how are you"}:
+        import platform, sys
+        reply = (
+            f"Jarvis status: online.\n"
+            f"Python {sys.version.split()[0]} on {platform.system()}.\n"
+            f"Tools available: {len(_TOOLS)}.\n"
+            f"Session: {session_id[:8]}."
+        )
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
+        done_payload = {"session_id": session_id, "reply": reply, "timestamp": _now_iso(), "plan": plan}
+        async def _builtin_status():
+            for part in reply.split(" "):
+                yield f"event: delta\ndata: {json.dumps({'text': part + ' '})}\n\n"
+                await asyncio.sleep(0)
+            yield f"event: done\ndata: {json.dumps(done_payload)}\n\n"
+        return StreamingResponse(_builtin_status(), media_type="text/event-stream")
+
+    if msg_lower.strip() in {"help", "what can you do", "what do you do", "capabilities"}:
+        reply = (
+            "I'm Jarvis. I can:\n"
+            "- Chat and reason through problems\n"
+            "- Run tools: " + ", ".join(sorted(_TOOLS.keys())) + "\n"
+            "- Remember things in long-term memory\n"
+            "- Manage tasks and goals\n"
+            "- Browse the web, run shell commands, send emails, and more\n"
+            "Just ask naturally or use the quick-action buttons below."
+        )
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
+        done_payload = {"session_id": session_id, "reply": reply, "timestamp": _now_iso(), "plan": plan}
+        async def _builtin_help():
+            for part in reply.split(" "):
+                yield f"event: delta\ndata: {json.dumps({'text': part + ' '})}\n\n"
+                await asyncio.sleep(0)
+            yield f"event: done\ndata: {json.dumps(done_payload)}\n\n"
+        return StreamingResponse(_builtin_help(), media_type="text/event-stream")
+
+    if "who are you" in msg_lower or "what are you" in msg_lower:
+        reply = (
+            "I'm Jarvis — an AI agent running locally. "
+            "I can chat, run tools, remember things, and help you get things done. "
+            f"I have {len(_TOOLS)} tools available."
+        )
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
+        done_payload = {"session_id": session_id, "reply": reply, "timestamp": _now_iso(), "plan": plan}
+        async def _builtin_who():
+            for part in reply.split(" "):
+                yield f"event: delta\ndata: {json.dumps({'text': part + ' '})}\n\n"
+                await asyncio.sleep(0)
+            yield f"event: done\ndata: {json.dumps(done_payload)}\n\n"
+        return StreamingResponse(_builtin_who(), media_type="text/event-stream")
+
     provider = os.getenv("LLM_PROVIDER", "").strip().lower()
     if not provider:
         if is_openai_configured():
             provider = "openai"
+        elif is_groq_configured():
+            provider = "groq"
         elif is_ollama_configured():
             provider = "ollama"
         else:
@@ -11591,6 +11807,57 @@ def agent_chat(payload: AgentChatRequest):
             plan=plan,
         )
 
+    if msg_lower.strip() in {"status", "status check", "health check", "how are you"}:
+        import platform as _platform, sys as _sys
+        reply = (
+            f"Jarvis status: online.\n"
+            f"Python {_sys.version.split()[0]} on {_platform.system()}.\n"
+            f"Tools available: {len(_TOOLS)}.\n"
+            f"Session: {session_id[:8]}."
+        )
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
+        return AgentChatResponse(
+            session_id=session_id,
+            reply=reply,
+            tool_result=None,
+            timestamp=_now_iso(),
+            plan=plan,
+        )
+
+    if msg_lower.strip() in {"help", "what can you do", "what do you do", "capabilities"}:
+        reply = (
+            "I'm Jarvis. I can:\n"
+            "- Chat and reason through problems\n"
+            "- Run tools: " + ", ".join(sorted(_TOOLS.keys())) + "\n"
+            "- Remember things in long-term memory\n"
+            "- Manage tasks and goals\n"
+            "- Browse the web, run shell commands, send emails, and more\n"
+            "Just ask naturally or use the quick-action buttons."
+        )
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
+        return AgentChatResponse(
+            session_id=session_id,
+            reply=reply,
+            tool_result=None,
+            timestamp=_now_iso(),
+            plan=plan,
+        )
+
+    if "who are you" in msg_lower or "what are you" in msg_lower:
+        reply = (
+            "I'm Jarvis — an AI agent running locally. "
+            "I can chat, run tools, remember things, and help you get things done. "
+            f"I have {len(_TOOLS)} tools available."
+        )
+        _get_memory().append(session_id, StoredMessage(role="assistant", text=reply))
+        return AgentChatResponse(
+            session_id=session_id,
+            reply=reply,
+            tool_result=None,
+            timestamp=_now_iso(),
+            plan=plan,
+        )
+
     if (
         "system info" in msg_lower or "system status" in msg_lower
     ) and "tool" not in msg_lower:
@@ -11615,7 +11882,7 @@ def agent_chat(payload: AgentChatRequest):
     if (
         "what tools" in msg_lower
         or "available tools" in msg_lower
-        or msg_lower.strip() in {"tools", "tool list", "help tools"}
+        or msg_lower.strip() in {"tools", "tool list", "help tools", "list tools"}
     ):
         names = ", ".join(sorted(_TOOLS.keys()))
         reply = (

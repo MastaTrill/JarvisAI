@@ -51,7 +51,13 @@ def ollama_model() -> str:
 
 
 def is_ollama_configured() -> bool:
-    return bool(ollama_model())
+    if not ollama_model():
+        return False
+    try:
+        models = ollama_list_models(timeout_s=3)
+        return len(models) > 0
+    except Exception:
+        return False
 
 
 def _summarize_ollama_error(attempted: List[str], exc: Exception) -> str:

@@ -3436,6 +3436,12 @@ class AgentTaskMemory:
             conn.commit()
             return int(cur.rowcount) > 0
 
+    def delete_autonomous_job(self, job_id: int) -> bool:
+        with self._connect() as conn:
+            cur = conn.execute("DELETE FROM autonomous_jobs WHERE id = ?", (job_id,))
+            conn.commit()
+            return int(cur.rowcount) > 0
+
 
 def json_dumps(value: Any) -> str:
     import json

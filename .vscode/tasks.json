@@ -4,15 +4,7 @@
 		{
 			"type": "shell",
 			"label": "func: host start",
-			"windows": {
-				"command": "& '${workspaceFolder}\\${config:azureFunctions.pythonVenv}\\Scripts\\Activate.ps1'; & 'C:\\Program Files\\Microsoft\\Azure Functions Core Tools\\func.exe' host start"
-			},
-			"osx": {
-				"command": "source ${workspaceFolder}/${config:azureFunctions.pythonVenv}/bin/activate && func host start"
-			},
-			"linux": {
-				"command": "source ${workspaceFolder}/${config:azureFunctions.pythonVenv}/bin/activate && func host start"
-			},
+			"command": ".venv-func\\Scripts\\activate; & 'C:\\Program Files\\Microsoft\\Azure Functions Core Tools\\func.exe' host start",
 			"problemMatcher": [],
 			"isBackground": true,
 			"dependsOn": "pip install (functions)"
@@ -42,20 +34,6 @@
 			},
 			"linux": {
 				"command": "pwsh -NoProfile -File scripts/smoke-local.ps1"
-			},
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: up local",
-			"type": "shell",
-			"osx": {
-				"command": "pwsh -NoProfile -File scripts/dev-up.ps1"
-			},
-			"windows": {
-				"command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\dev-up.ps1"
-			},
-			"linux": {
-				"command": "pwsh -NoProfile -File scripts/dev-up.ps1"
 			},
 			"problemMatcher": []
 		}

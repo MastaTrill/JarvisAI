@@ -691,12 +691,16 @@
                 </div>
             </form>
             <div class="action-strip">
-                <button class="action-chip" type="button" id="btnVoice"><i class="fas fa-microphone"></i> Hold to
-                    Talk</button>
-                <button class="action-chip" type="button" onclick="insertSample('status check')">Status check</button>
-                <button class="action-chip" type="button" onclick="insertSample('list tools')">List tools</button>
+                <button class="action-chip" type="button" id="btnVoice"><i class="fas fa-microphone"></i> Hold to Talk</button>
+                <button class="action-chip" type="button" onclick="insertSample('status check')">Status</button>
+                <button class="action-chip" type="button" onclick="insertSample('list tools')">Tools</button>
+                <button class="action-chip" type="button" onclick="insertSample('help')">Help</button>
+                <button class="action-chip" type="button" onclick="insertSample('what time is it')">Time</button>
+                <button class="action-chip" type="button" onclick="insertSample('tell me a joke')">Joke</button>
+                <button class="action-chip" type="button" onclick="insertSample('system status')">System</button>
+                <button class="action-chip" type="button" onclick="insertSample('list files in data')">Files</button>
+                <button class="action-chip" type="button" onclick="insertSample('db status')">Database</button>
                 <button class="action-chip" type="button" onclick="insertSample('run briefing')">Briefing</button>
-                <button class="action-chip" type="button" onclick="insertSample('next action')">Next action</button>
             </div>
             <div class="voice-hud mono" id="voiceHud" aria-live="polite">
                 <span id="voiceTimer">00:00.0</span>
