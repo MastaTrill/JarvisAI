@@ -6,13 +6,21 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-# HuggingFace Transformers
-try:
-    from transformers import pipeline, AutoModelForSequenceClassification, AutoTokenizer
-except (ImportError, OSError):
-    pipeline = None
-    AutoModelForSequenceClassification = None
-    AutoTokenizer = None
+pipeline = None
+AutoModelForSequenceClassification = None
+AutoTokenizer = None
+
+def _get_transformers():
+    global pipeline, AutoModelForSequenceClassification, AutoTokenizer
+    if pipeline is None:
+        try:
+            from transformers import pipeline as _pipeline, AutoModelForSequenceClassification as _model, AutoTokenizer as _tokenizer
+            pipeline = _pipeline
+            AutoModelForSequenceClassification = _model
+            AutoTokenizer = _tokenizer
+        except (ImportError, OSError):
+            pass
+    return pipeline
 
 # Optuna for AutoML
 try:
@@ -30,9 +38,10 @@ class HFTextRequest(BaseModel):
 
 @router.post("/ml/hf-text-classify")
 def hf_text_classify(req: HFTextRequest):
-    if pipeline is None:
+    _pipeline = _get_transformers()
+    if _pipeline is None:
         raise HTTPException(status_code=503, detail="Transformers not installed")
-    clf = pipeline("sentiment-analysis", model=req.model)
+    clf = _pipeline("sentiment-analysis", model=req.model)
     result = clf(req.text)
     return {"result": result}
 

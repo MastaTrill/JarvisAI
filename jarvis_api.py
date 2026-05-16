@@ -7,7 +7,6 @@ Provides endpoints for model management, training, data upload, system monitorin
 # Standard library imports
 from jobs_persistent import create_job, update_job_status, get_job
 from models_registry import create_model, get_models, activate_model
-from src.interpretability.model_explainer import ModelInterpreter
 from agent_api import router as agent_router
 from models_versioning import router as versioning_orm_router
 from automation_api import router as automation_router
@@ -85,27 +84,65 @@ from starlette.responses import Response
 asyncio.iscoroutinefunction = inspect.iscoroutinefunction
 
 
-# First-party imports
+# First-party imports (lazy-loaded to avoid heavy torch/pandas import at module level)
+SimpleNeuralNetwork = None
+SentimentClassifier = None
+AdvancedNeuralNetwork = None
+EnhancedDataProcessor = None
+extract_keywords = None
+analyze_sentiment = None
+generate_summary = None
+ModelInterpreter = None
 
-try:
-    from src.models.numpy_neural_network import SimpleNeuralNetwork
-    from src.models.sentiment_classifier import SentimentClassifier
-    from src.models.advanced_neural_network import AdvancedNeuralNetwork
-    from src.data.enhanced_processor import EnhancedDataProcessor
-    from src.text_processing import (
-        extract_keywords,
-        analyze_sentiment,
-        generate_summary,
-    )
-except (ImportError, OSError) as e:
-    logging.warning("Import warning: %s", e)
-    SimpleNeuralNetwork = None
-    SentimentClassifier = None
-    AdvancedNeuralNetwork = None
-    EnhancedDataProcessor = None
-    extract_keywords = None
-    analyze_sentiment = None
-    generate_summary = None
+
+def _get_src_models():
+    global SimpleNeuralNetwork, SentimentClassifier, AdvancedNeuralNetwork
+    if SimpleNeuralNetwork is None:
+        try:
+            from src.models.numpy_neural_network import SimpleNeuralNetwork as _nn
+            from src.models.sentiment_classifier import SentimentClassifier as _sc
+            from src.models.advanced_neural_network import AdvancedNeuralNetwork as _ann
+            SimpleNeuralNetwork = _nn
+            SentimentClassifier = _sc
+            AdvancedNeuralNetwork = _ann
+        except (ImportError, OSError) as e:
+            logging.warning("Import warning (src.models): %s", e)
+    return SimpleNeuralNetwork
+
+
+def _get_enhanced_processor():
+    global EnhancedDataProcessor
+    if EnhancedDataProcessor is None:
+        try:
+            from src.data.enhanced_processor import EnhancedDataProcessor as _ep
+            EnhancedDataProcessor = _ep
+        except (ImportError, OSError) as e:
+            logging.warning("Import warning (EnhancedDataProcessor): %s", e)
+    return EnhancedDataProcessor
+
+
+def _get_text_processing():
+    global extract_keywords, analyze_sentiment, generate_summary
+    if extract_keywords is None:
+        try:
+            from src.text_processing import extract_keywords as _ek, analyze_sentiment as _as, generate_summary as _gs
+            extract_keywords = _ek
+            analyze_sentiment = _as
+            generate_summary = _gs
+        except (ImportError, OSError) as e:
+            logging.warning("Import warning (text_processing): %s", e)
+    return extract_keywords, analyze_sentiment, generate_summary
+
+
+def _get_model_interpreter():
+    global ModelInterpreter
+    if ModelInterpreter is None:
+        try:
+            from src.interpretability.model_explainer import ModelInterpreter as _mi
+            ModelInterpreter = _mi
+        except (ImportError, OSError) as e:
+            logging.warning("Import warning (ModelInterpreter): %s", e)
+    return ModelInterpreter
 
 # Configure logging
 _log_level = getattr(logging, os.environ.get(
@@ -364,7 +401,7 @@ async def get_global_feature_importance(model_name: str):
             status_code=400, detail="No training data available for model"
         )
     feature_names = list(x_data.columns) if hasattr(x_data, "columns") else []
-    interpreter = ModelInterpreter(model, feature_names)
+    interpreter = _get_model_interpreter()(model, feature_names)
     shap_result = interpreter.explain_with_shap(x_data.values)
     return {
         "feature_names": feature_names,
@@ -395,7 +432,7 @@ async def get_local_explanation(model_name: str, instance_idx: int = 0):
             status_code=400, detail="No training data available for model"
         )
     feature_names = list(x_data.columns) if hasattr(x_data, "columns") else []
-    interpreter = ModelInterpreter(model, feature_names)
+    interpreter = _get_model_interpreter()(model, feature_names)
     lime_result = interpreter.explain_with_lime(
         x_data.values, instance_idx=instance_idx
     )
@@ -426,7 +463,7 @@ async def get_counterfactuals(model_name: str, instance_idx: int = 0):
             status_code=400, detail="No training data available for model"
         )
     feature_names = list(x_data.columns) if hasattr(x_data, "columns") else []
-    interpreter = ModelInterpreter(model, feature_names)
+    interpreter = _get_model_interpreter()(model, feature_names)
     shap_result = interpreter.explain_with_shap(x_data.values)
     shap_values = shap_result.get("shap_values", [])
     instance = x_data.values[instance_idx]
@@ -775,7 +812,7 @@ async def _train_model_background(
 ):
     """Background task for model training."""
     try:
-        processor = EnhancedDataProcessor(project_name=model_name)
+        processor = _get_enhanced_processor()(project_name=model_name)
         df = None
         training_status[model_name] = {
             "status": "training",
@@ -813,6 +850,7 @@ async def _train_model_background(
         input_size = x_train.shape[1]
         training_status[model_name]["progress"] = 30
         if model_type == "advanced":
+            _ann = _get_src_models()
             model = AdvancedNeuralNetwork(
                 input_size=input_size,
                 hidden_sizes=config.get("hidden_sizes", [64, 32]),
@@ -825,6 +863,7 @@ async def _train_model_background(
                 learning_rate=config.get("learning_rate", 0.001),
             )
         else:
+            _nn = _get_src_models()
             model = SimpleNeuralNetwork(
                 input_size=input_size,
                 hidden_sizes=config.get("hidden_sizes", [64, 32]),
@@ -957,7 +996,7 @@ async def upload_data(
             buffer.write(content)
 
         # Process the data
-        processor = EnhancedDataProcessor()
+        processor = _get_enhanced_processor()()
 
         if file.filename.endswith(".csv"):
             df = processor.load_data(str(file_path), "csv")
@@ -1003,7 +1042,7 @@ async def validate_data(filename: str, _current_user: User = Depends(get_current
         raise HTTPException(status_code=404, detail="File not found")
 
     try:
-        processor = EnhancedDataProcessor()
+        processor = _get_enhanced_processor()()
 
         if filename.endswith(".csv"):
             df = processor.load_data(str(file_path), "csv")
@@ -1803,16 +1842,19 @@ async def analyze_text(
 
     # Perform requested operations
     if "summary" in request.operations:
-        results["summary"] = generate_summary(
+        _ek, _as, _gs = _get_text_processing()
+        results["summary"] = _gs(
             request.text, request.max_length or 150)
         operations_performed.append("summary")
 
     if "sentiment" in request.operations:
-        results["sentiment"] = analyze_sentiment(request.text)
+        _ek, _as, _gs = _get_text_processing()
+        results["sentiment"] = _as(request.text)
         operations_performed.append("sentiment")
 
     if "keywords" in request.operations:
-        results["keywords"] = extract_keywords(
+        _ek, _as, _gs = _get_text_processing()
+        results["keywords"] = _ek(
             request.text, request.num_keywords or 10)
         operations_performed.append("keywords")
 
@@ -1871,6 +1913,7 @@ _sentiment_classifier_lock = None
 
 def _get_sentiment_classifier():
     """Get or create the sentiment classifier instance with thread safety."""
+    _get_src_models()
     if SentimentClassifier is None:
         raise HTTPException(
             status_code=503, detail="Sentiment classifier not available")
