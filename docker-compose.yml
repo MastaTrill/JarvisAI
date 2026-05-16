@@ -92,8 +92,6 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      ollama:
-        condition: service_started
       redis:
         condition: service_healthy
       postgres:
