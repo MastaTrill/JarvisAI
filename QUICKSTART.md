@@ -18,12 +18,20 @@ Welcome to Jarvis! This guide will help you get started, understand the platform
    ```
 4. **Run the platform:**
    ```sh
-   python api.py
+   python main_api.py
+   ```
+   Or with uvicorn:
+   ```sh
+   uvicorn main_api:app --host 0.0.0.0 --port 8000 --reload
    ```
    Or with Docker:
    ```sh
-   docker build -t jarvis .
-   docker run -p 8000:8000 --env-file .env jarvis
+   docker build -t jarvisai .
+   docker run -p 8000:8000 --env-file .env jarvisai
+   ```
+   Or with Docker Compose (recommended):
+   ```sh
+   docker compose up --build -d
    ```
 5. **Access the API/docs:**
    - Open [http://localhost:8000/docs](http://localhost:8000/docs) for the interactive API.

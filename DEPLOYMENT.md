@@ -258,7 +258,7 @@ resource postgresqlServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-
 
 ### 3. Authentication
 
-Update CORS and authentication settings in `api.py`:
+Update CORS and authentication settings in `jarvis_api.py`:
 
 ```python
 # Configure allowed origins

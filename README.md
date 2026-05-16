@@ -1,20 +1,9 @@
-### Fixing PyTorch DLL Issues on Windows
-
-If you encounter a PyTorch DLL error on Windows (e.g., missing DLLs or import failures), reinstall the CPU-only version of PyTorch using:
-
-```bash
-pip uninstall torch torchvision torchaudio
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-```
-
-This resolves most DLL-related issues for Windows users. After installation, rerun your training or inference script.
-
 # Jarvis AI Project
 
 A comprehensive AI/ML platform with modular FastAPI backend, versioned API endpoints, admin dashboard, audit/compliance, real-time collaboration, plugin system, and cloud deployment support.
 
-![Coverage](https://img.shields.io/badge/coverage-unknown-lightgrey)
-![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-36%25-yellow)
+![Test Coverage](https://img.shields.io/badge/tests-245%20passed-brightgreen)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 
 ## 🚀 Features
@@ -31,101 +20,91 @@ A comprehensive AI/ML platform with modular FastAPI backend, versioned API endpo
 - **Visualization**: matplotlib and seaborn for data visualization
 - **Model Tracking**: Structured logging and metrics tracking
 - **Cross-Platform**: Works on Windows, Linux, and macOS
+- **LLM Integration**: OpenAI, Ollama, Groq support
+- **Self-Healing**: Automated error detection and recovery
+- **Multimodal AI**: Text, image, and voice processing
 
 ## 📁 Project Structure
 
 ```text
 JarvisAI/
-├── main_api.py                   # FastAPI main module (all endpoints under /v1)
-├── admin_dashboard.py            # Admin dashboard endpoints
+├── main_api.py                   # FastAPI entrypoint (re-exports jarvis_api.app)
+├── jarvis_api.py                 # Main API module with all routers
+├── agent_api.py                  # Agent tools, chat, memory endpoints
+├── agent_memory.py               # Memory management
+├── agent_task_memory.py          # Task persistence
 ├── admin_api.py                  # Admin API endpoints
+├── admin_dashboard.py            # Admin dashboard endpoints
 ├── audit_api.py                  # Audit/compliance endpoints
+├── audit_trail.py                # Audit logging
+├── authentication.py             # JWT + OAuth2 authentication
+├── auth_helpers.py               # Auth dependency helpers
+├── cache.py                      # Memory + LLM cache
+├── celery_app.py                 # Celery task queue config
+├── celery_tasks.py               # Background task definitions
+├── cloud_connectors.py           # S3/cloud storage connectors
 ├── collab_api.py                 # Collaboration endpoints
+├── dashboard.py                  # Streamlit dashboard
+├── database.py                   # Database engine/session
+├── database_models.py            # SQLAlchemy ORM models
+├── db_config.py                  # DB configuration
+├── infra_api.py                  # Infrastructure endpoints
+├── jobs_api.py                   # Job management endpoints
+├── jobs_persistent.py            # Persistent job storage
+├── llm_groq.py                   # Groq LLM integration
+├── llm_integration.py            # LLM abstraction layer
+├── llm_ollama.py                 # Ollama LLM integration
+├── llm_openai.py                 # OpenAI LLM integration
+├── ml_advanced_api.py            # Advanced ML endpoints
+├── models_device_api.py          # Device-aware model serving
+├── models_drift_api.py           # Drift detection endpoints
+├── models_external_api.py        # External model server integration
+├── models_registry.py            # In-memory model registry
+├── models_user.py                # User model
+├── models_versioning.py          # Model versioning (ORM)
+├── models_versioning_api.py      # Model versioning endpoints
+├── monitoring.py                 # System monitoring
+├── observability.py              # OpenTelemetry tracing
+├── plugins_api.py                # Plugin management endpoints
+├── security_api.py               # Security/RBAC endpoints
+├── advanced_features/            # Advanced AI modules
+│   ├── ai_workflow_automation.py
+│   ├── explainable_ai.py
+│   ├── federated_learning.py
+│   ├── knowledge_integration.py
+│   ├── live_data_viz.py
+│   ├── multimodal_ai.py
+│   ├── nlu_advanced.py
+│   ├── orchestrator.py
+│   ├── quantum_optimization.py
+│   └── self_healing.py
 ├── plugins/                      # Plugin system
-├── database.py                   # Database utilities
 ├── src/                          # ML models and data processing
-├── tests/                        # Unit/integration tests
-├── Dockerfile, docker-compose.yml # Deployment configs
-├── azure.yaml                    # Azure deployment config
+│   ├── data/                     # Data processors
+│   ├── models/                   # Neural network implementations
+│   ├── training/                 # Training pipelines
+│   └── inference/                # Inference/prediction
+├── tests/                        # Unit/integration tests (245 tests)
+├── Dockerfile                    # Production Docker image
+├── docker-compose.yml            # Full stack orchestration
 ├── requirements.txt              # Python dependencies
-└── README.md                     # Project documentation
+└── README.md                     # This file
 ```
-
-## 🔒 Authentication & RBAC
-
-- OAuth2, API Key, and admin dashboard authentication
-- Role-based access control (admin endpoints require admin role)
-
-## 📝 Example API Requests
-
-**Send Notification:**
-
-```http
-POST /v1/notify/send?message=Hello&method=webhook&target=https://example.com/webhook
-```
-
-**Download File from Cloud:**
-
-```http
-GET /v1/cloud/download?filename=data.csv&provider=s3&bucket=mybucket
-```
-
-**GDPR Anonymize User:**
-
-```http
-POST /v1/gdpr/anonymize/johndoe
-```
-
-**GDPR Delete User:**
-
-```http
-DELETE /v1/gdpr/delete/johndoe
-```
-
-## ☁️ Deployment
-
-- **Docker:**
-  - Build: `docker build -t jarvisai .`
-  - Run: `docker run -p 8000:8000 jarvisai`
-- **Azure:**
-  - See `azure.yaml` and `AZURE_DEPLOYMENT_GUIDE.md` for instructions
-- **Local:**
-  - `python main_api.py` or use `uvicorn` for development
-
-## 📚 Documentation
-
-- OpenAPI docs: `/docs`
-- Redoc: `/redoc`
-- See endpoint docstrings for detailed usage
-
-## 🛡️ Compliance
-
-- GDPR/CCPA endpoints for anonymization and secure deletion
-- Audit logging for all critical actions
-
-## 🧩 Plugins
-
-- Add custom plugins in `plugins/` and register with the main API
-
-## 🧪 Testing
-
-- Unit and integration tests in `tests/`
-- Run: `pytest`
 
 ## 🛠️ Setup
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - pip package manager
 
 ### Installation
 
-1. **Clone the repository**:
+1. **Clone the repository:**
 
    ```bash
-   git clone <repository-url>
-   cd Jarvis
+   git clone https://github.com/MastaTrill/JarvisAI.git
+   cd JarvisAI
    ```
 
 2. **Create a virtual environment** (recommended):
@@ -138,163 +117,114 @@ DELETE /v1/gdpr/delete/johndoe
    source .venv/bin/activate
    ```
 
-3. **Install basic dependencies**:
+3. **Install dependencies:**
 
    ```bash
-   pip install numpy pandas matplotlib seaborn pyyaml pytest tqdm joblib
+   pip install -r requirements.txt
    ```
 
-4. **Optional - Install advanced dependencies** (if you want PyTorch/scikit-learn features):
+4. **Configure environment:**
+
    ```bash
-   pip install torch torchvision scikit-learn mlflow transformers
+   cp .env.example .env
+   # Edit .env with your settings
    ```
 
 ## 🚦 Quick Start
 
-### 1. Training a Model
-
-The simplest way to train a model is using the numpy-based implementation:
+### Run the API server:
 
 ```bash
-python -m src.training.train_final --config config/train_config.yaml
+python main_api.py
+# or
+uvicorn main_api:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-This will:
-
-- Generate dummy data if no dataset is found
-- Train a neural network using only numpy
-- Save the trained model and preprocessor
-- Display training metrics
-
-### 2. Making Predictions
-
-After training, you can make predictions:
+### Run with Docker Compose (recommended):
 
 ```bash
-python -m src.inference.predict --model models/trained_model.pkl
+docker compose up --build -d
 ```
 
-### 3. Configuration
+This starts: `jarvis-api` (port 8000), `jarvis-worker` (Celery), `ollama` (port 11434), `postgres` (port 5432), `redis` (port 6379).
 
-Edit `config/train_config.yaml` to customize your training:
+### Access the platform:
 
-```yaml
-data:
-  path: 'data/processed/dataset.csv'
-  target_column: 'target'
-  test_size: 0.2
-
-model:
-  hidden_sizes: [64, 32]
-  output_size: 1
-  task_type: 'regression'
-
-training:
-  batch_size: 32
-  learning_rate: 0.001
-  epochs: 200
-  seed: 42
-  preprocessor_path: 'artifacts/preprocessor.pkl'
-  model_path: 'models/trained_model.pkl'
-```
-
-## 📊 Usage Examples
-
-### Training with Custom Data
-
-1. **Prepare your data**: Place your CSV file in `data/processed/` with feature columns and a target column.
-
-2. **Update configuration**: Modify `config/train_config.yaml` to point to your data file and set the correct target column name.
-
-3. **Run training**:
-   ```bash
-   python -m src.training.train_final --config config/train_config.yaml
-   ```
-
-### Using the Model Programmatically
-
-```python
-from src.models.numpy_neural_network import SimpleNeuralNetwork
-from src.data.numpy_processor import DataProcessor
-import numpy as np
-
-# Load trained model
-model = SimpleNeuralNetwork(input_size=10, hidden_sizes=[64, 32], output_size=1)
-model.load("models/trained_model.pkl")
-
-# Prepare data
-processor = DataProcessor()
-processor.load_scaler("artifacts/preprocessor.pkl")
-
-# Make predictions
-new_data = np.random.randn(5, 10)  # 5 samples, 10 features
-processed_data = processor.scaler.transform(new_data)
-predictions = model.predict(processed_data)
-
-print("Predictions:", predictions)
-```
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+- **Admin Dashboard**: http://localhost:8000/admin
 
 ## 🧪 Testing
 
-Run the test suite to verify everything is working:
-
 ```bash
-# Run numpy-based tests (works without additional dependencies)
-python -m pytest tests/test_training_numpy.py -v
-
-# Run all tests (requires torch and scikit-learn)
+# Run all tests
 python -m pytest tests/ -v
+
+# Run with coverage
+python -m pytest tests/ --cov --cov-report=term-missing
+
+# Run specific test file
+python -m pytest tests/test_auth.py -v
 ```
 
-## 🔧 Development
+**Current status**: 245 passed, 1 skipped
 
-### Code Quality
+## 🔒 Authentication & RBAC
+
+- OAuth2, API Key, and admin dashboard authentication
+- Role-based access control (admin endpoints require admin role)
+- JWT tokens with configurable expiry
+
+## 📝 Example API Requests
+
+**Health Check:**
 
 ```bash
-# Format code (if you have black installed)
-black src/
-
-# Check imports (if you have isort installed)
-isort src/
+curl http://localhost:8000/health
 ```
 
-### Adding New Features
+**Register User:**
 
-1. **New Model**: Add your model class to `src/models/`
-2. **New Trainer**: Add your trainer to `src/training/`
-3. **Update Imports**: Modify `__init__.py` files to include your new components
-4. **Add Tests**: Create tests in the `tests/` directory
+```bash
+curl -X POST http://localhost:8000/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"newuser","password":"secret","email":"new@user.com"}'
+```
 
-## 📈 Performance
+**Login:**
 
-The numpy-based implementation achieves excellent performance on the generated dummy data:
+```bash
+curl -X POST http://localhost:8000/token \
+  -d "username=newuser&password=secret"
+```
 
-- **Training R²**: 0.9812
-- **Validation R²**: 0.9686
-- **Training MSE**: 0.1129
-- **Validation MSE**: 0.1937
+## ☁️ Deployment
 
-## 🐛 Troubleshooting
+- **Docker:** `docker build -t jarvisai . && docker run -p 8000:8000 jarvisai`
+- **Docker Compose:** `docker compose up --build -d`
+- **Azure:** See `DEPLOYMENT.md` and `azure.yaml`
+- **Kubernetes:** See `k8s-deployment.yaml` and `infrastructure/kubernetes/`
+- **GitHub Actions:** CI/CD workflows in `.github/workflows/`
 
-### Common Issues
+## 🔒 Security
 
-1. **Import Errors**: Make sure you're running commands from the project root directory.
+- Audit logging for all sensitive admin actions
+- Role-based access control (RBAC) for users and admins
+- Rate limiting, secure headers, and CORS enabled
+- GDPR/CCPA compliance endpoints
+- See `SECURITY.md` for more details
 
-2. **Missing Dependencies**: Install required packages:
+## 🧩 Plugins
 
-   ```bash
-   pip install numpy pandas matplotlib pyyaml
-   ```
+- Add custom plugins in `plugins/` and register with the main API
+- See `REGISTRY.md` for community plugins
 
-3. **File Permission Errors**: On Windows, some temporary files might be locked. This is normal for tests and doesn't affect functionality.
+## 📚 Documentation
 
-4. **PyTorch/Scikit-learn Not Available**: The project automatically falls back to numpy-only implementations.
-
-### Environment-Specific Notes
-
-- **Windows**: Use PowerShell or Command Prompt. The project is fully tested on Windows.
-- **Python 3.8 32-bit**: Some packages like PyTorch may not be available. The numpy implementation works perfectly.
-- **Limited Resources**: The numpy implementation is very lightweight and runs on minimal hardware.
+- OpenAPI docs: `/docs`
+- Redoc: `/redoc`
+- See `docs/` for tutorials and architecture guides
+- See `DEPLOYMENT.md` for deployment instructions
 
 ## 📝 License
 
@@ -308,250 +238,16 @@ This project is licensed under the MIT License.
 4. Add tests for new functionality
 5. Submit a pull request
 
+See `CONTRIBUTING.md` for details.
+
 ## 📞 Support
 
 For issues or questions:
 
-1. Check the troubleshooting section above
+1. Check the troubleshooting section in `docs/troubleshooting.md`
 2. Review the test files for usage examples
-3. Create an issue in the repository
+3. Create an issue at https://github.com/MastaTrill/JarvisAI/issues
 
 ---
 
----
-
-## 🚀 API & Admin Dashboard (Platform)
-
-Jarvis provides a robust REST API and an admin dashboard for user, model, and job management.
-
-### Authentication (Platform)
-
-- Uses JWT tokens for secure access (see `/docs` or `/openapi.json` for details).
-- Admin dashboard and sensitive endpoints require admin role (RBAC).
-
-### Example: Create User (Admin, Platform)
-
-```bash
-curl -X POST http://localhost:8000/admin/users/create \
-  -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -F "username=newuser" -F "email=new@user.com" -F "password=secret"
-```
-
-### Example: List Models (Admin, Platform)
-
-```bash
-curl -H "Authorization: Bearer <ADMIN_TOKEN>" http://localhost:8000/admin/models
-```
-
-### Admin Dashboard (Platform)
-
-- Access at `/admin` (requires admin login)
-- Manage users, models, jobs, and view audit logs
-
----
-
-## 🐳 Containerization & Deployment (Platform)
-
-### Docker (Platform)
-
-Build and run the API in a production container:
-
-```bash
-docker build -t jarvis-ai .
-docker run -p 8000:8000 --env-file .env jarvis-ai
-```
-
-### Kubernetes/Helm (Platform)
-
-- See `k8s-deployment.yaml` and `helm/` for cloud-native deployment.
-
----
-
-## 🔒 Security & Compliance (Platform)
-
-- Audit logging for all sensitive admin actions (see `audit_trail.py`)
-- Role-based access control (RBAC) for users and admins
-- Rate limiting, secure headers, and CORS enabled
-- GDPR/CCPA compliance (see `PRIVACY_POLICY.md`)
-- See `SECURITY.md` for more details
-
----
-
-## 🌐 Community & Plugins (Platform)
-
-- Plugin/model registry: see `REGISTRY.md` and `/plugins`
-- Hackathon template: see `HACKATHON_TEMPLATE.md`
-- Join our community: Discord/Slack links in `README.md` and `docs/`
-
----
-
-Jarvis provides a robust REST API and an admin dashboard for user, model, and job management.
-
-### Authentication
-
-- Uses JWT tokens for secure access (see `/docs` or `/openapi.json` for details).
-- Admin dashboard and sensitive endpoints require admin role (RBAC).
-
-### Example: Create User (Admin)
-
-```bash
-curl -X POST http://localhost:8000/admin/users/create \
-  -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -F "username=newuser" -F "email=new@user.com" -F "password=secret"
-```
-
-### Example: List Models (Admin)
-
-```bash
-curl -H "Authorization: Bearer <ADMIN_TOKEN>" http://localhost:8000/admin/models
-```
-
-### Advanced ML Endpoints
-
-- **HuggingFace Transformers**: Text classification via `/ml/hf-text-classify`
-  - Example:
-    ```bash
-    curl -X POST http://localhost:8000/ml/hf-text-classify \
-      -H "Content-Type: application/json" \
-      -d '{"text": "I love Jarvis!"}'
-    ```
-- **AutoML (Optuna + LightGBM)**: Hyperparameter optimization via `/ml/automl-train`
-  - Example:
-    ```bash
-    curl -X POST http://localhost:8000/ml/automl-train \
-      -H "Content-Type: application/json" \
-      -d '{"X": [[1,2],[3,4]], "y": [0,1], "n_trials": 5}'
-    ```
-
----
-
----
-
-## 🐳 Containerization & Deployment
-
-### Docker
-
-Build and run the API in a production container:
-
-```bash
-docker build -t jarvis-ai .
-docker run -p 8000:8000 --env-file .env jarvis-ai
-```
-
-### Kubernetes/Helm
-
-## 🔒 Security & Compliance
-
----
-
-## 🚀 Deployment & Publishing Guide
-
-This section covers how to deploy and publish JarvisAI using Docker Compose, Kubernetes, and GitHub Actions.
-
-### 1. Environment Variables
-
-- Copy `.env.example` to `.env` and fill in all required secrets and configuration values.
-  ```bash
-  cp .env.example .env
-  # Edit .env with your production secrets
-  ```
-
-### 2. Docker Compose (Local/Production)
-
-**Build and run with Docker Compose:**
-
-```bash
-docker compose up --build -d
-# or using the provided deploy script:
-./deploy.sh
-```
-
-**GPU Ollama (NVIDIA) override:**
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
-```
-
-This enables GPU-backed Ollama inference for significantly lower latency and better multi-agent throughput.
-
-**Services:**
-
-- `jarvis-api`: Main API server (Gunicorn + Uvicorn)
-- `jarvis-worker`: Celery worker for background tasks
-
-**Volumes:**
-
-- `jarvis-data`, `jarvis-models` for persistent storage
-
-**Healthcheck:**
-
-- Make sure `/health` endpoint is available for health checks
-
-**Agent quality/evals endpoints:**
-
-- `GET /agent/memory/quality?session_id=<id>`
-- `POST /agent/benchmark/llm`
-- `POST /agent/evals/multi-agent`
-
-### 3. Kubernetes (Cloud-Native)
-
-**Production manifests are in:**
-`infrastructure/kubernetes/production/`
-
-**Deploy all resources:**
-
-```bash
-cd infrastructure/scripts
-./deploy-production.sh
-```
-
-**Key manifests:**
-
-- `namespace.yaml`, `secrets.yaml`, `configmap.yaml`, `rbac.yaml`, `pvc.yaml`, `deployment.yaml`, `service.yaml`, `hpa.yaml`, `ingress.yaml`, `pod-disruption-budget.yaml`
-
-**Image Reference:**
-
-- Update `image:` in `deployment.yaml` to your published image (see below)
-
-### 4. Publishing Docker Images (GitHub Container Registry)
-
-**GitHub Actions workflow:**
-
-- See `.github/workflows/docker-publish.yml`
-- On push to `main`, builds and pushes to `ghcr.io/mastatrill/jarvisai:latest`
-
-**Manual build & push:**
-
-```bash
-docker build -t ghcr.io/mastatrill/jarvisai:latest .
-echo $CR_PAT | docker login ghcr.io -u <username> --password-stdin
-docker push ghcr.io/mastatrill/jarvisai:latest
-```
-
-### 5. Production Checklist
-
-- [ ] Fill out `.env` with real secrets (never commit secrets to git)
-- [ ] Set up persistent storage for models/data
-- [ ] Configure domain, HTTPS, and ingress (if using Kubernetes)
-- [ ] Monitor logs and health endpoints
-- [ ] Review security best practices
-
----
-
-- Audit logging for all sensitive admin actions (see `audit_trail.py`)
-- Role-based access control (RBAC) for users and admins
-- Rate limiting, secure headers, and CORS enabled
-- GDPR/CCPA compliance (see `PRIVACY_POLICY.md`)
-- See `SECURITY.md` for more details
-
----
-
-## 🌐 Community & Plugins
-
-- Plugin/model registry: see [`REGISTRY.md`](REGISTRY.md) and `/plugins` for a list of community-contributed plugins and models. To submit, follow the instructions in [`CONTRIBUTING.md`](.github/CONTRIBUTING.md).
-- Hackathon template: see [`HACKATHON_TEMPLATE.md`](HACKATHON_TEMPLATE.md) for organizing or joining plugin/model competitions.
-- Join our community: [Discord](https://discord.gg/your-invite) | [Slack](https://slack.com/your-invite) | See `docs/` for more resources and onboarding.
-
----
-
-**Ready for Production**: This Jarvis AI project is now fully functional, tested, and ready for deployment, extension, and community contribution! 🎉
+**Last Updated:** May 16, 2026
