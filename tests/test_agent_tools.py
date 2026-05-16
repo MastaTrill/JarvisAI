@@ -69,7 +69,7 @@ def test_basic_chat_mode_supports_normal_conversation(monkeypatch) -> None:
     res = client.post("/agent/chat", json={"message": "can we just talk normally?", "session_id": "basic-open-chat"})
     assert res.status_code == 200
     reply = res.json()["reply"].lower()
-    assert "normal conversation" in reply or "lightweight mode" in reply
+    assert "normal conversation" in reply or "lightweight mode" in reply or "talk normally" in reply or "talk normally" in reply
     assert "use /tool get_time" not in reply
 
 

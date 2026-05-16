@@ -42,6 +42,7 @@ from fastapi.responses import (
     StreamingResponse,
 )
 from pydantic import BaseModel, Field
+from PIL import Image, ImageStat
 np = None
 WhisperModel = None
 pytesseract = None
