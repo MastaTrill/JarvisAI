@@ -76,9 +76,10 @@ def run_comparison(
     results = {}
     model_objects = {}
 
-    # Load models
+    # Load models (gracefully handle missing app.state.models)
+    models_state = getattr(app.state, "models", {})
     for name in body.model_names:
-        model = app.state.models.get(name)
+        model = models_state.get(name) if models_state else None
         if model:
             model_objects[name] = model
 
@@ -199,28 +200,6 @@ def comparison_history(
     ]
 
 
-@router.get("/{comparison_id}")
-def get_comparison(
-    comparison_id: str,
-    db=Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Get a specific comparison by ID."""
-    comp = db.query(ModelComparison).filter_by(id=comparison_id).first()
-    if not comp:
-        raise HTTPException(404, "Comparison not found")
-    return {
-        "id": comp.id,
-        "name": comp.name,
-        "models": comp.model_names,
-        "dataset": comp.dataset,
-        "results": comp.metrics,
-        "winner": comp.winner,
-        "notes": comp.notes,
-        "created_at": comp.created_at.isoformat() if comp.created_at else None,
-    }
-
-
 @router.get("/leaderboard")
 def model_leaderboard(
     metric: str = Query("accuracy", description="Metric to rank by"),
@@ -234,7 +213,6 @@ def model_leaderboard(
 
     session = DBSession()
     try:
-        # Get latest completed run per model
         runs = (
             session.query(ModelRun)
             .filter_by(status="completed")
@@ -274,3 +252,25 @@ def model_leaderboard(
         return {"metric": metric, "leaderboard": leaderboard[:limit]}
     finally:
         session.close()
+
+
+@router.get("/{comparison_id}")
+def get_comparison(
+    comparison_id: str,
+    db=Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a specific comparison by ID."""
+    comp = db.query(ModelComparison).filter_by(id=comparison_id).first()
+    if not comp:
+        raise HTTPException(404, "Comparison not found")
+    return {
+        "id": comp.id,
+        "name": comp.name,
+        "models": comp.model_names,
+        "dataset": comp.dataset,
+        "results": comp.metrics,
+        "winner": comp.winner,
+        "notes": comp.notes,
+        "created_at": comp.created_at.isoformat() if comp.created_at else None,
+    }

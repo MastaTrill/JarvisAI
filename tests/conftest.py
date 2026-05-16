@@ -75,8 +75,11 @@ def _ensure_tables():
     from jobs_persistent import Job  # side-effect: registers table
     from database_models import User  # side-effect: registers table
     from models_versioning import ModelVersion  # side-effect: registers table
+    from ab_testing import ABExperiment, ABEvent  # side-effect: registers tables
+    from benchmarking import BenchmarkRun  # side-effect: registers table
+    from model_comparison import ModelComparison  # side-effect: registers table
 
-    _ = ModelRegistry, Job, User, ModelVersion  # prevent unused warnings
+    _ = ModelRegistry, Job, User, ModelVersion, ABExperiment, ABEvent, BenchmarkRun, ModelComparison
 
     from db_config import Base as ConfigBase, engine as config_engine
     from database import Base as AppBase, engine as app_engine

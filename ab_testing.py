@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from enum import Enum
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, JSON, Text
 from sqlalchemy.orm import Session
@@ -244,7 +244,7 @@ def experiment_results(
 @router.post("/track")
 def track_event(
     body: EventTrack,
-    request,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Track an event for an experiment. Called by client-side or server-side."""
@@ -273,7 +273,7 @@ def track_event(
 @router.get("/{experiment_id}/variant")
 def get_variant(
     experiment_id: str,
-    request,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Get the assigned variant for the current user in an experiment."""

@@ -27,7 +27,6 @@ from authentication import verify_password
 from models_user import User, get_password_hash
 from database import get_db
 from db_config import SessionLocal
-from cloud_connectors import upload_to_cloud, download_from_cloud
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -78,6 +77,16 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
+
+
+# Cloud connector stubs (inlined from archived cloud_connectors.py)
+def upload_to_cloud(file_path: str, provider: str, bucket: str) -> str:
+    return f"Stub upload: {file_path} to {provider}:{bucket}"
+
+
+def download_from_cloud(filename: str, provider: str, bucket: str) -> str:
+    return f"Stub download: {filename} from {provider}:{bucket}"
+
 
 # SlowAPI still calls asyncio.iscoroutinefunction, which is deprecated on Python 3.14+.
 # Point it at inspect.iscoroutinefunction before importing slowapi to avoid warning noise.
