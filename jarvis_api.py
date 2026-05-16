@@ -282,6 +282,15 @@ app.include_router(agent_router)
 app.include_router(multimodal_router)
 app.include_router(advanced_demo_router)
 
+# A/B Testing, Benchmarking, Model Comparison
+from ab_testing import router as ab_router
+from benchmarking import router as benchmark_router
+from model_comparison import router as comparison_router
+
+app.include_router(ab_router)
+app.include_router(benchmark_router)
+app.include_router(comparison_router)
+
 # Example: wrap a critical function with self-healing logic
 def critical_backend_task(x):
     if x < 0:
