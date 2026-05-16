@@ -34,7 +34,7 @@ import os
 import json
 import base64
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Query, File, UploadFile, Form, HTTPException
 from fastapi.responses import (
     PlainTextResponse,
     JSONResponse,
@@ -42,58 +42,11 @@ from fastapi.responses import (
     StreamingResponse,
 )
 from pydantic import BaseModel, Field
-from PIL import Image, ImageStat
-
-import threading
-
-def _import_with_timeout(import_func, timeout_s=5):
-    result = [None]
-    def target():
-        try:
-            result[0] = import_func()
-        except Exception:
-            result[0] = None
-    t = threading.Thread(target=target, daemon=True)
-    t.start()
-    t.join(timeout=timeout_s)
-    return result[0]
-
-def _import_numpy():
-    try:
-        import numpy as mod
-        return mod
-    except Exception:
-        return None
-
-np = _import_with_timeout(_import_numpy)
-
-def _import_faster_whisper():
-    try:
-        from faster_whisper import WhisperModel as WM
-        return WM
-    except Exception:
-        return None
-
-WhisperModel = _import_with_timeout(_import_faster_whisper)
-
-def _import_pytesseract():
-    try:
-        import pytesseract as mod
-        return mod
-    except Exception:
-        return None
-
-pytesseract = _import_with_timeout(_import_pytesseract)
-
-def _import_playwright():
-    try:
-        from playwright.sync_api import TimeoutError as PTErr
-        from playwright.sync_api import sync_playwright as sp
-        return sp, PTErr
-    except Exception:
-        return None, Exception
-
-sync_playwright, PlaywrightTimeoutError = _import_with_timeout(_import_playwright, timeout_s=3) or (None, Exception)
+np = None
+WhisperModel = None
+pytesseract = None
+sync_playwright = None
+PlaywrightTimeoutError = Exception
 
 
 def _get_openwakeword_model():
