@@ -196,6 +196,10 @@ def ollama_chat_with_images(
         payload["format"] = "json"
     resp = _ollama_request("POST", "/api/chat", json=payload, timeout_s=timeout_s)
     data = resp.json()
+    # Handle model-does-not-support-vision errors gracefully
+    err = data.get("error")
+    if err and ("image" in str(err).lower() or "vision" in str(err).lower() or "does not support" in str(err).lower()):
+        return f"[Image input not supported by model '{model}': {err}]"
     message = data.get("message") or {}
     content = message.get("content")
     if isinstance(content, str):

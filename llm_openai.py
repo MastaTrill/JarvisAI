@@ -166,5 +166,11 @@ def vision_analyze(
             }
         ],
     }
-    response = client.create_response(payload)
-    return _extract_output_text(response)
+    try:
+        response = client.create_response(payload)
+        return _extract_output_text(response)
+    except Exception as e:
+        err_str = str(e).lower()
+        if "image" in err_str or "vision" in err_str or "does not support" in err_str:
+            return f"[Image input not supported by model '{model}': {e}]"
+        raise
