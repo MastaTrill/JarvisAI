@@ -302,6 +302,14 @@ app.include_router(ab_router)
 app.include_router(benchmark_router)
 app.include_router(comparison_router)
 
+# Document RAG
+from rag_system import router as rag_router
+app.include_router(rag_router)
+
+# Code Sandbox
+from code_sandbox import router as sandbox_router
+app.include_router(sandbox_router)
+
 # Example: wrap a critical function with self-healing logic
 def critical_backend_task(x):
     if x < 0:

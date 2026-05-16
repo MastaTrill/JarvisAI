@@ -315,6 +315,9 @@
             <div class="tab-bar">
                 <div class="tab active" data-tab="overview">Overview</div>
                 <div class="tab" data-tab="chat">Chat</div>
+                <div class="tab" data-tab="files">Files</div>
+                <div class="tab" data-tab="rag">Documents</div>
+                <div class="tab" data-tab="sandbox">Sandbox</div>
                 <div class="tab" data-tab="experiments">Experiments</div>
                 <div class="tab" data-tab="benchmarks">Benchmarks</div>
                 <div class="tab" data-tab="models">Models</div>
@@ -382,6 +385,72 @@
                 <div id="experimentsList">
                     <div class="terminal">Loading experiments...</div>
                 </div>
+            </div>
+
+            <!-- Files Tab -->
+            <div class="tab-content" id="tab-files">
+                <div class="panel-title">
+                    <h3>File Manager</h3>
+                    <button class="refresh-btn" onclick="fetchFiles()"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+                <div class="chat-commands" style="margin-bottom:12px">
+                    <button class="cmd-btn" onclick="showCreateFile()"><i class="fas fa-plus"></i> New File</button>
+                    <button class="cmd-btn" onclick="document.getElementById('fileUpload').click()"><i class="fas fa-upload"></i> Upload</button>
+                    <input type="file" id="fileUpload" style="display:none" onchange="uploadFile(this)" multiple />
+                </div>
+                <div id="createFileForm" style="display:none;margin-bottom:12px">
+                    <div class="chat-input-row">
+                        <input type="text" class="chat-input" id="newFileName" placeholder="filename.txt" />
+                        <button class="button chat-send" onclick="createFile()"><i class="fas fa-save"></i> Create</button>
+                    </div>
+                </div>
+                <div id="filesList" class="list" style="max-height:400px;overflow-y:auto">
+                    <div class="terminal">Loading files...</div>
+                </div>
+            </div>
+
+            <!-- RAG Documents Tab -->
+            <div class="tab-content" id="tab-rag">
+                <div class="panel-title">
+                    <h3>Document RAG</h3>
+                    <button class="refresh-btn" onclick="fetchRagDocs()"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+                <div class="chat-commands" style="margin-bottom:12px">
+                    <button class="cmd-btn" onclick="document.getElementById('ragUpload').click()"><i class="fas fa-file-upload"></i> Upload Document</button>
+                    <input type="file" id="ragUpload" style="display:none" onchange="uploadRagDoc(this)" multiple accept=".txt,.md,.html,.csv,.pdf,.py,.js,.ts,.json,.xml,.yaml,.yml,.log" />
+                    <button class="cmd-btn" onclick="reindexRag()"><i class="fas fa-sync-alt"></i> Re-index</button>
+                </div>
+                <div id="ragDocsList" class="list" style="max-height:200px;overflow-y:auto;margin-bottom:14px">
+                    <div class="terminal">No documents indexed yet.</div>
+                </div>
+                <div class="panel-title"><h3>Query Documents</h3></div>
+                <div class="chat-input-row" style="margin-bottom:10px">
+                    <input type="text" class="chat-input" id="ragQuery" placeholder="Ask a question about your documents..." onkeydown="if(event.key==='Enter')queryRag()" />
+                    <button class="button chat-send" onclick="queryRag()"><i class="fas fa-search"></i> Search</button>
+                </div>
+                <div id="ragResults" style="max-height:300px;overflow-y:auto"></div>
+            </div>
+
+            <!-- Sandbox Tab -->
+            <div class="tab-content" id="tab-sandbox">
+                <div class="panel-title">
+                    <h3>Code Sandbox</h3>
+                    <select id="sandboxLang" style="padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:0.74rem">
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="bash">Bash</option>
+                    </select>
+                </div>
+                <textarea id="sandboxCode" class="terminal" style="height:200px;resize:vertical;font-size:0.78rem" placeholder="Write code here...&#10;&#10;print('Hello, Jarvis!')"></textarea>
+                <div class="chat-commands" style="margin:8px 0">
+                    <button class="button" onclick="runSandbox()"><i class="fas fa-play"></i> Run</button>
+                    <button class="cmd-btn" onclick="document.getElementById('sandboxCode').value=''"><i class="fas fa-broom"></i> Clear</button>
+                    <span class="chat-status" id="sandboxStatus"></span>
+                </div>
+                <div class="panel-title"><h3>Output</h3></div>
+                <div id="sandboxOutput" class="terminal" style="height:150px;white-space:pre-wrap">Output will appear here...</div>
+                <div class="panel-title" style="margin-top:12px"><h3>History</h3></div>
+                <div id="sandboxHistory" style="max-height:200px;overflow-y:auto"></div>
             </div>
 
             <!-- Benchmarks Tab -->
@@ -666,12 +735,163 @@
             sendChat();
         }
 
+        function chatCommand(cmd) {
+            document.getElementById('chatInput').value = cmd;
+            sendChat();
+        }
+
+        // --- File Manager ---
+        async function fetchFiles() {
+            const el = document.getElementById("filesList");
+            try {
+                const resp = await fetch("/agent/tools/list_files", { method: "POST", headers: {"Content-Type": "application/json"}, body: "{}" });
+                const data = await resp.json();
+                if (data.result) {
+                    const files = JSON.parse(data.result);
+                    if (!files.length) { el.innerHTML = '<div class="terminal">No files found.</div>'; return; }
+                    let html = "";
+                    for (const f of files.slice(0, 100)) {
+                        html += `<div class="metric-row"><span class="metric-name mono" style="font-size:0.72rem">${f}</span></div>`;
+                    }
+                    el.innerHTML = html;
+                } else {
+                    el.innerHTML = '<div class="terminal">No files found.</div>';
+                }
+            } catch (e) {
+                el.innerHTML = '<div class="terminal">Failed: ' + e.message + '</div>';
+            }
+        }
+
+        function showCreateFile() {
+            const form = document.getElementById("createFileForm");
+            form.style.display = form.style.display === "none" ? "block" : "none";
+        }
+
+        async function createFile() {
+            const name = document.getElementById("newFileName").value.trim();
+            if (!name) return;
+            try {
+                await fetch("/agent/tools/write_file", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({path: "data/" + name, content: ""}) });
+                document.getElementById("newFileName").value = "";
+                fetchFiles();
+            } catch (e) { alert("Error: " + e.message); }
+        }
+
+        async function uploadFile(input) {
+            for (const file of input.files) {
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const b64 = reader.result.split(",")[1];
+                    await fetch("/agent/tools/write_file", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({path: "data/" + file.name, content: atob(b64)}) });
+                    fetchFiles();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // --- RAG Documents ---
+        async function fetchRagDocs() {
+            const el = document.getElementById("ragDocsList");
+            try {
+                const resp = await fetch("/rag/documents");
+                const data = await resp.json();
+                if (!data.length) { el.innerHTML = '<div class="terminal">No documents indexed yet.</div>'; return; }
+                let html = "";
+                for (const d of data) {
+                    const statusColor = d.status === "ready" ? "var(--accent2)" : d.status === "error" ? "var(--danger)" : "var(--warn)";
+                    html += `<div class="list-item">
+                        <strong>${d.filename} <span style="color:${statusColor};font-size:0.7rem">[${d.status}]</span></strong>
+                        <p class="mono" style="margin-top:4px">${d.file_type} | ${d.file_size} bytes | ${d.chunk_count} chunks</p>
+                    </div>`;
+                }
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = '<div class="terminal">Failed: ' + e.message + '</div>';
+            }
+        }
+
+        async function uploadRagDoc(input) {
+            for (const file of input.files) {
+                const formData = new FormData();
+                formData.append("file", file);
+                await fetch("/rag/upload", { method: "POST", body: formData });
+            }
+            setTimeout(fetchRagDocs, 2000);
+        }
+
+        async function reindexRag() {
+            await fetch("/rag/reindex", { method: "POST" });
+            setTimeout(fetchRagDocs, 1000);
+        }
+
+        async function queryRag() {
+            const query = document.getElementById("ragQuery").value.trim();
+            if (!query) return;
+            const el = document.getElementById("ragResults");
+            el.innerHTML = '<div class="terminal">Searching...</div>';
+            try {
+                const resp = await fetch("/rag/query", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({query, top_k: 5}) });
+                const data = await resp.json();
+                if (!data.results.length) { el.innerHTML = '<div class="terminal">No matching documents found.</div>'; return; }
+                let html = "";
+                for (const r of data.results) {
+                    html += `<div class="list-item">
+                        <strong>${r.filename} <span style="color:var(--accent2);font-size:0.7rem">score: ${r.score}</span></strong>
+                        <p style="margin-top:4px;font-size:0.78rem;color:var(--text)">${r.content}</p>
+                    </div>`;
+                }
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = '<div class="terminal">Failed: ' + e.message + '</div>';
+            }
+        }
+
+        // --- Code Sandbox ---
+        async function runSandbox() {
+            const code = document.getElementById("sandboxCode").value;
+            const lang = document.getElementById("sandboxLang").value;
+            const output = document.getElementById("sandboxOutput");
+            const status = document.getElementById("sandboxStatus");
+            output.textContent = "Running...";
+            status.textContent = "Executing...";
+            try {
+                const resp = await fetch("/sandbox/execute", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({code, language: lang, timeout: 30}) });
+                const data = await resp.json();
+                output.textContent = (data.output || "") + (data.error ? "\n\nERROR:\n" + data.error : "");
+                status.textContent = `${data.status} | ${data.duration_ms}ms | exit: ${data.exit_code}`;
+                fetchSandboxHistory();
+            } catch (e) {
+                output.textContent = "Error: " + e.message;
+                status.textContent = "Error";
+            }
+        }
+
+        async function fetchSandboxHistory() {
+            const el = document.getElementById("sandboxHistory");
+            try {
+                const resp = await fetch("/sandbox/history?limit=10");
+                const data = await resp.json();
+                if (!data.length) { el.innerHTML = '<div class="terminal">No executions yet.</div>'; return; }
+                let html = "";
+                for (const e of data) {
+                    const statusColor = e.status === "success" ? "var(--accent2)" : "var(--danger)";
+                    html += `<div class="metric-row">
+                        <span class="metric-name mono" style="font-size:0.7rem">${e.language} <span style="color:${statusColor}">[${e.status}]</span> ${e.duration_ms}ms</span>
+                    </div>`;
+                }
+                el.innerHTML = html;
+            } catch (e) { el.innerHTML = '<div class="terminal">Failed: ' + e.message + '</div>'; }
+        }
+
         // Initial load
         fetchHealth();
         fetchExperiments();
         fetchBenchmarks();
         fetchLeaderboard();
         fetchEndpoints();
+        fetchFiles();
+        fetchRagDocs();
+        fetchSandboxHistory();
     </script>
 </body>
 </html>
