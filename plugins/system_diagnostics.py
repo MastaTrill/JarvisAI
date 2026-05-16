@@ -2,7 +2,8 @@ import time
 import platform
 import datetime
 
-from fastapi import APIRouter
+import psutil
+from fastapi import APIRouter, Request
 
 router = APIRouter(tags=["Diagnostics"])
 
@@ -23,7 +24,6 @@ def system_info():
 @router.get("/system/resources")
 def system_resources():
     """Return current CPU, memory, and disk usage."""
-    import psutil
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage("/")
     return {
@@ -38,7 +38,7 @@ def system_resources():
 
 
 @router.get("/system/endpoints")
-def list_endpoints(request):
+def list_endpoints(request: Request):
     """Return all registered API endpoints with their methods."""
     from fastapi.routing import APIRoute
     endpoints = []

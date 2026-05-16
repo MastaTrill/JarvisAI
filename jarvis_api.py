@@ -287,9 +287,11 @@ app.include_router(ml_advanced_router)
 app.include_router(automation_router)
 app.include_router(versioning_orm_router)
 app.include_router(agent_router)
-
-app.include_router(multimodal_router)
 app.include_router(advanced_demo_router)
+
+# Plugins
+from plugins.system_diagnostics import router as diagnostics_router
+app.include_router(diagnostics_router)
 
 # A/B Testing, Benchmarking, Model Comparison
 from ab_testing import router as ab_router
