@@ -57,15 +57,25 @@ try:
 except Exception:  # pragma: no cover - optional dependency at runtime
     pytesseract = None
 try:
-    from openwakeword.model import Model as OpenWakeWordModel
-except Exception:  # pragma: no cover - optional dependency at runtime
-    OpenWakeWordModel = None
-try:
     from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
     from playwright.sync_api import sync_playwright
 except Exception:  # pragma: no cover - optional dependency at runtime
     sync_playwright = None
     PlaywrightTimeoutError = Exception
+
+
+def _get_openwakeword_model():
+    global _OpenWakeWordModel
+    if _OpenWakeWordModel is None:
+        try:
+            from openwakeword.model import Model as OpenWakeWordModel
+            _OpenWakeWordModel = OpenWakeWordModel
+        except Exception:
+            _OpenWakeWordModel = False
+    return _OpenWakeWordModel if _OpenWakeWordModel else None
+
+
+_OpenWakeWordModel = None
 
 from agent_memory import AgentMemory, StoredMessage
 from agent_task_memory import AgentTaskMemory
@@ -2621,7 +2631,7 @@ def _get_wakeword_config() -> Dict[str, Any]:
     cfg["threshold"] = max(
         0.05, min(float(cfg.get("threshold", 0.45) or 0.45), 0.99))
     cfg["chunk_ms"] = max(160, min(int(cfg.get("chunk_ms", 960) or 960), 4000))
-    cfg["available"] = bool(OpenWakeWordModel is not None and np is not None)
+    cfg["available"] = bool(_get_openwakeword_model() is not None and np is not None)
     cfg["available_models"] = _list_wakeword_models()
     return cfg
 
@@ -2656,10 +2666,10 @@ def _list_wakeword_models() -> List[str]:
     global _WAKEWORD_MODEL_NAMES
     if _WAKEWORD_MODEL_NAMES:
         return list(_WAKEWORD_MODEL_NAMES)
-    if OpenWakeWordModel is None or np is None:
+    if _get_openwakeword_model() is None or np is None:
         return []
     try:
-        model = OpenWakeWordModel()
+        model = _get_openwakeword_model()()
         _WAKEWORD_MODEL_NAMES = _extract_wakeword_model_names(model)
     except Exception:
         _WAKEWORD_MODEL_NAMES = []
@@ -2668,11 +2678,11 @@ def _list_wakeword_models() -> List[str]:
 
 def _get_wakeword_model() -> Tuple[Optional[Any], List[str]]:
     global _WAKEWORD_MODEL, _WAKEWORD_MODEL_NAMES
-    if OpenWakeWordModel is None or np is None:
+    if _get_openwakeword_model() is None or np is None:
         return None, []
     if _WAKEWORD_MODEL is None:
         try:
-            _WAKEWORD_MODEL = OpenWakeWordModel()
+            _WAKEWORD_MODEL = _get_openwakeword_model()()
             _WAKEWORD_MODEL_NAMES = _extract_wakeword_model_names(
                 _WAKEWORD_MODEL)
         except Exception:
