@@ -29,12 +29,7 @@
             --warn: #f59e0b;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             min-height: 100vh;
             color: var(--text);
@@ -47,29 +42,19 @@
             padding: 24px 16px 36px;
             overflow-x: hidden;
         }
-
         body::before {
             content: "";
             position: fixed;
             inset: 0;
-            background-image:
-                linear-gradient(rgba(52, 215, 255, 0.026) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(52, 215, 255, 0.024) 1px, transparent 1px);
+                background-image:
+                    linear-gradient(rgba(52, 215, 255, 0.026) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(52, 215, 255, 0.024) 1px, transparent 1px);
             background-size: 38px 38px;
             pointer-events: none;
             z-index: 0;
         }
-
-        .mono {
-            font-family: "JetBrains Mono", monospace;
-        }
-
-        .page {
-            width: min(1180px, 100%);
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
+        .mono { font-family: "JetBrains Mono", monospace; }
+        .page { width: min(1180px, 100%); margin: 0 auto; position: relative; z-index: 1; }
 
         .topbar {
             display: flex;
@@ -85,95 +70,36 @@
             backdrop-filter: blur(20px);
             margin-bottom: 16px;
         }
+        .eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+        .headline { font-size: clamp(1.4rem, 3vw, 2.4rem); font-weight: 700; line-height: 1; margin-top: 6px; }
+        .subcopy { margin-top: 8px; color: var(--muted); max-width: 660px; line-height: 1.55; font-size: 0.9rem; }
+        .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-        .eyebrow {
-            font-size: 0.72rem;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: var(--accent);
-        }
-
-        .headline {
-            font-size: clamp(1.7rem, 4vw, 2.9rem);
-            font-weight: 700;
-            line-height: 1;
-            margin-top: 6px;
-        }
-
-        .subcopy {
-            margin-top: 8px;
-            color: var(--muted);
-            max-width: 660px;
-            line-height: 1.55;
-            font-size: 0.95rem;
-        }
-
-        .topbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .chip,
-        .button,
-        .ghost {
+        .chip, .button, .ghost {
             border-radius: 12px;
             border: 1px solid var(--border);
             background: var(--panel2);
             color: var(--text);
             text-decoration: none;
         }
-
-        .chip {
-            padding: 8px 10px;
-            font-size: 0.72rem;
-            color: var(--muted);
-        }
-
-        .button,
-        .ghost {
+        .chip { padding: 8px 10px; font-size: 0.72rem; color: var(--muted); }
+        .button, .ghost {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 11px 14px;
-            font-size: 0.84rem;
+            padding: 10px 14px;
+            font-size: 0.82rem;
             font-weight: 700;
             cursor: pointer;
         }
+        .button { background: linear-gradient(135deg, rgba(52, 215, 255, 0.22), rgba(21, 195, 154, 0.2)); border-color: rgba(52, 215, 255, 0.42); }
+        .ghost:hover, .button:hover { border-color: var(--border-strong); color: var(--accent); }
 
-        .button {
-            background: linear-gradient(135deg, rgba(52, 215, 255, 0.22), rgba(21, 195, 154, 0.2));
-            border-color: rgba(52, 215, 255, 0.42);
-        }
-
-        .ghost:hover,
-        .button:hover {
-            border-color: var(--border-strong);
-            color: var(--accent);
-        }
-
-        .hero-grid,
-        .stats-grid,
-        .lower-grid {
-            display: grid;
-            gap: 16px;
-        }
-
-        .hero-grid {
-            grid-template-columns: 1.2fr 0.8fr;
-            margin-bottom: 16px;
-        }
-
-        .stats-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            margin-bottom: 16px;
-        }
-
-        .lower-grid {
-            grid-template-columns: 1fr 1fr;
-        }
+        .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; margin-bottom: 16px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .lower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .full-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px; }
 
         .panel {
             background: var(--panel);
@@ -183,7 +109,6 @@
             box-shadow: 0 0 0 1px rgba(52, 215, 255, 0.04), 0 24px 60px rgba(0, 0, 0, 0.34);
             backdrop-filter: blur(20px);
         }
-
         .panel-title {
             display: flex;
             align-items: center;
@@ -191,19 +116,11 @@
             gap: 10px;
             margin-bottom: 14px;
         }
-
-        .panel-title h2,
-        .panel-title h3 {
-            font-size: 0.96rem;
-            font-weight: 700;
-        }
-
-        .muted {
-            color: var(--muted);
-        }
+        .panel-title h2, .panel-title h3 { font-size: 0.96rem; font-weight: 700; }
+        .muted { color: var(--muted); }
 
         .focus-card {
-            min-height: 280px;
+            min-height: 260px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -211,373 +128,450 @@
                 radial-gradient(circle at 18% 18%, rgba(52, 215, 255, 0.14), transparent 34%),
                 linear-gradient(180deg, rgba(8, 18, 30, 0.9), rgba(5, 13, 23, 0.92));
         }
+        .focus-stack { display: grid; gap: 12px; }
+        .section-label { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+        .focus-title { font-size: clamp(1.3rem, 2.8vw, 2rem); line-height: 1.05; font-weight: 700; max-width: 520px; }
+        .focus-copy { color: var(--muted); line-height: 1.6; max-width: 560px; font-size: 0.9rem; }
+        .button-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 
-        .focus-stack {
-            display: grid;
-            gap: 12px;
-        }
-
-        .section-label {
-            font-size: 0.7rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--accent);
-        }
-
-        .focus-title {
-            font-size: clamp(1.4rem, 3vw, 2.2rem);
-            line-height: 1.05;
-            font-weight: 700;
-            max-width: 520px;
-        }
-
-        .focus-copy {
-            color: var(--muted);
-            line-height: 1.6;
-            max-width: 560px;
-            font-size: 0.95rem;
-        }
-
-        .button-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 18px;
-        }
-
-        .visual-core {
-            min-height: 280px;
-            display: grid;
-            place-items: center;
-            position: relative;
-            overflow: hidden;
-        }
-
+        .visual-core { min-height: 260px; display: grid; place-items: center; position: relative; overflow: hidden; }
         .visual-core::before {
-            content: "";
-            position: absolute;
-            inset: 12%;
-            border-radius: 50%;
-            border: 1px solid rgba(52, 215, 255, 0.18);
-            animation: spin 14s linear infinite;
+            content: ""; position: absolute; inset: 12%; border-radius: 50%;
+            border: 1px solid rgba(52, 215, 255, 0.18); animation: spin 14s linear infinite;
         }
-
         .visual-core::after {
-            content: "";
-            position: absolute;
-            inset: 20%;
-            border-radius: 50%;
-            border: 1px dashed rgba(21, 195, 154, 0.22);
-            animation: spin 10s linear infinite reverse;
+            content: ""; position: absolute; inset: 20%; border-radius: 50%;
+            border: 1px dashed rgba(21, 195, 154, 0.22); animation: spin 10s linear infinite reverse;
         }
-
         .core {
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
+            width: 100px; height: 100px; border-radius: 50%;
             background: radial-gradient(circle at 38% 34%, rgba(215, 247, 255, 0.92), rgba(52, 215, 255, 0.35) 42%, rgba(4, 14, 26, 0.88));
             box-shadow: 0 0 48px rgba(52, 215, 255, 0.35), 0 0 90px rgba(21, 195, 154, 0.14);
             animation: pulse 3.4s ease-in-out infinite;
         }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { transform: scale(0.95); opacity: 0.92; } 50% { transform: scale(1.04); opacity: 1; } }
 
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
+        .stat { display: grid; gap: 6px; }
+        .stat-label { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+        .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+        .stat-sub { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
 
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        .list { display: grid; gap: 10px; }
+        .list-item { padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel2); }
+        .list-item strong { display: block; font-size: 0.84rem; margin-bottom: 4px; }
+        .list-item p { color: var(--muted); font-size: 0.8rem; line-height: 1.5; }
 
-        @keyframes pulse {
-
-            0%,
-            100% {
-                transform: scale(0.95);
-                opacity: 0.92;
-            }
-
-            50% {
-                transform: scale(1.04);
-                opacity: 1;
-            }
-        }
-
-        .stat {
-            display: grid;
-            gap: 6px;
-        }
-
-        .stat-label {
-            font-size: 0.68rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .stat-sub {
-            font-size: 0.78rem;
-            color: var(--muted);
-            line-height: 1.45;
-        }
-
-        .list {
-            display: grid;
-            gap: 12px;
-        }
-
-        .list-item {
-            padding: 12px 14px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: var(--panel2);
-        }
-
-        .list-item strong {
-            display: block;
-            font-size: 0.84rem;
-            margin-bottom: 5px;
-        }
-
-        .list-item p {
-            color: var(--muted);
-            font-size: 0.82rem;
-            line-height: 1.5;
-        }
-
-        .status-line {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            font-size: 0.78rem;
-            color: var(--muted);
-        }
-
+        .status-line { display: flex; align-items: center; gap: 9px; font-size: 0.78rem; color: var(--muted); }
         .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--accent2);
-            box-shadow: 0 0 10px rgba(21, 195, 154, 0.5);
-            flex: 0 0 auto;
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--accent2); box-shadow: 0 0 10px rgba(21, 195, 154, 0.5); flex: 0 0 auto;
         }
-
-        .status-dot.warn {
-            background: var(--warn);
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
-        }
-
-        .status-dot.danger {
-            background: var(--danger);
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-        }
-
-        .runtime-box {
-            padding: 14px;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            background: rgba(5, 13, 23, 0.7);
-            display: grid;
-            gap: 10px;
-        }
+        .status-dot.warn { background: var(--warn); box-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
+        .status-dot.danger { background: var(--danger); box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
 
         .terminal {
-            font-size: 0.76rem;
-            line-height: 1.6;
-            color: var(--muted);
-            white-space: pre-wrap;
-            word-break: break-word;
+            font-size: 0.74rem; line-height: 1.6; color: var(--muted);
+            white-space: pre-wrap; word-break: break-word;
+            padding: 12px; border-radius: 10px;
+            background: rgba(5, 13, 23, 0.7);
+            border: 1px solid var(--border);
+            max-height: 200px; overflow-y: auto;
         }
 
-        @media (max-width: 980px) {
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(77, 169, 216, 0.1);
+        }
+        .metric-row:last-child { border-bottom: none; }
+        .metric-name { font-size: 0.82rem; color: var(--muted); }
+        .metric-value { font-size: 0.82rem; font-weight: 600; color: var(--text); }
 
-            .hero-grid,
-            .lower-grid,
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(77, 169, 216, 0.15);
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            transition: width 0.5s ease;
+        }
+        .progress-fill.warn { background: var(--warn); }
+        .progress-fill.danger { background: var(--danger); }
+
+        .refresh-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 4px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        .refresh-btn:hover { border-color: var(--border-strong); color: var(--accent); }
+
+        .tab-bar { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+        .tab {
+            padding: 6px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--panel2);
+            color: var(--muted);
+            font-size: 0.76rem;
+            cursor: pointer;
+        }
+        .tab.active { border-color: var(--accent); color: var(--accent); background: rgba(52, 215, 255, 0.1); }
+        .tab:hover { border-color: var(--border-strong); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        @media (max-width: 980px) {
+            .hero-grid, .lower-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
 
 <body>
     <div class="page">
+        <!-- Top Bar -->
         <header class="topbar">
             <div>
                 <div class="eyebrow mono">Jarvis Control Surface</div>
-                <h1 class="headline">No Alpine. No parser fights. Just a clean dashboard.</h1>
-                <p class="subcopy">The old reactive dashboard has been removed. This page is now a lightweight control
-                    surface with plain HTML and minimal vanilla JavaScript so it loads cleanly and stays stable.</p>
+                <h1 class="headline">Operations Dashboard</h1>
+                <p class="subcopy">Real-time system health, experiments, benchmarks, and model comparison.</p>
             </div>
             <div class="topbar-actions">
                 <div class="chip mono" id="clockChip">--:--:-- UTC</div>
-                <a class="ghost" href="/"><i class="fas fa-crosshairs"></i> Mission Core</a>
-                <button class="button" type="button" id="checkAgentBtn"><i class="fas fa-satellite-dish"></i> Ping
-                    Agent</button>
+                <button class="button" type="button" id="refreshAllBtn"><i class="fas fa-sync"></i> Refresh</button>
+                <a class="ghost" href="/docs"><i class="fas fa-book"></i> API Docs</a>
             </div>
         </header>
 
-        <section class="hero-grid">
-            <article class="panel focus-card">
-                <div class="focus-stack">
-                    <div class="section-label mono">Primary Focus</div>
-                    <div class="focus-title">Mission-first entry, stable dashboard fallback.</div>
-                    <p class="focus-copy">Root traffic stays anchored to the mission box, while this dashboard remains
-                        available as a low-risk overview page for status, launch points, and quick operator checks.</p>
-                    <div class="button-row">
-                        <a class="button" href="/"><i class="fas fa-terminal"></i> Open Mission Core</a>
-                        <a class="ghost" href="/docs"><i class="fas fa-book"></i> API Docs</a>
-                    </div>
-                </div>
-                <div class="status-line mono"><span class="status-dot" id="pageStatusDot"></span><span
-                        id="pageStatusText">Dashboard ready.</span></div>
-            </article>
-
-            <aside class="panel visual-core">
-                <div class="core"></div>
-            </aside>
-        </section>
-
+        <!-- System Stats Row -->
         <section class="stats-grid">
             <article class="panel stat">
-                <div class="stat-label mono">Primary Route</div>
-                <div class="stat-value">/</div>
-                <div class="stat-sub">Direct mission console remains the default landing surface.</div>
+                <div class="stat-label mono">CPU Usage</div>
+                <div class="stat-value" id="cpuValue">--</div>
+                <div class="progress-bar"><div class="progress-fill" id="cpuBar" style="width:0%"></div></div>
             </article>
             <article class="panel stat">
-                <div class="stat-label mono">Dashboard Route</div>
-                <div class="stat-value">/dashboard</div>
-                <div class="stat-sub">Now plain static HTML without Alpine or heavy client runtime dependencies.</div>
+                <div class="stat-label mono">Memory</div>
+                <div class="stat-value" id="memValue">--</div>
+                <div class="progress-bar"><div class="progress-fill" id="memBar" style="width:0%"></div></div>
             </article>
             <article class="panel stat">
-                <div class="stat-label mono">Chat Runtime</div>
-                <div class="stat-value" id="agentRuntimeValue">Checking</div>
-                <div class="stat-sub" id="agentRuntimeSub">Running a lightweight readiness check.</div>
+                <div class="stat-label mono">Disk</div>
+                <div class="stat-value" id="diskValue">--</div>
+                <div class="progress-bar"><div class="progress-fill" id="diskBar" style="width:0%"></div></div>
             </article>
             <article class="panel stat">
-                <div class="stat-label mono">Voice Input</div>
-                <div class="stat-value">Ready</div>
-                <div class="stat-sub">Browser mic input is allowed for same-origin pages via permissions policy.</div>
+                <div class="stat-label mono">API Endpoints</div>
+                <div class="stat-value" id="endpointCount">--</div>
+                <div class="stat-sub" id="endpointSub">Loading...</div>
             </article>
         </section>
 
-        <section class="lower-grid">
-            <article class="panel">
-                <div class="panel-title">
-                    <h2>Runtime Checks</h2>
-                    <span class="muted mono">Live</span>
-                </div>
-                <div class="list">
-                    <div class="runtime-box">
-                        <div class="status-line mono"><span class="status-dot" id="chatDot"></span><span
-                                id="chatLine">Chat endpoint not checked yet.</span></div>
-                        <div class="terminal mono" id="chatOutput">Press Ping Agent to run a chat readiness check.</div>
-                    </div>
-                    <div class="runtime-box">
-                        <div class="status-line mono"><span class="status-dot warn"></span><span>Voice output depends on
-                                local TTS runtime.</span></div>
-                        <div class="terminal mono">If espeak-ng is not installed, /agent/voice/speak returns a clean 503
-                            instead of crashing the page.</div>
-                    </div>
-                </div>
-            </article>
+        <!-- Main Content Tabs -->
+        <section class="panel">
+            <div class="tab-bar">
+                <div class="tab active" data-tab="overview">Overview</div>
+                <div class="tab" data-tab="experiments">Experiments</div>
+                <div class="tab" data-tab="benchmarks">Benchmarks</div>
+                <div class="tab" data-tab="models">Models</div>
+                <div class="tab" data-tab="endpoints">Endpoints</div>
+            </div>
 
-            <article class="panel">
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="tab-overview">
+                <div class="lower-grid">
+                    <div>
+                        <div class="panel-title"><h3>System Health</h3><button class="refresh-btn" onclick="fetchHealth()"><i class="fas fa-sync"></i></button></div>
+                        <div id="healthDetails">
+                            <div class="metric-row"><span class="metric-name">Database</span><span class="metric-value" id="dbStatus">Checking...</span></div>
+                            <div class="metric-row"><span class="metric-name">Redis</span><span class="metric-value" id="redisStatus">Checking...</span></div>
+                            <div class="metric-row"><span class="metric-name">Uptime</span><span class="metric-value" id="uptimeValue">--</span></div>
+                            <div class="metric-row"><span class="metric-name">Models Loaded</span><span class="metric-value" id="modelsLoaded">--</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="panel-title"><h3>Quick Actions</h3></div>
+                        <div class="list">
+                            <div class="list-item">
+                                <strong>Run API Benchmark</strong>
+                                <p>Benchmark the /health endpoint latency over 100 requests.</p>
+                                <button class="button" style="margin-top:8px" onclick="runQuickBenchmark()"><i class="fas fa-bolt"></i> Run Benchmark</button>
+                            </div>
+                            <div class="list-item">
+                                <strong>Agent Chat Check</strong>
+                                <p>Verify the agent chat endpoint is responsive.</p>
+                                <button class="button" style="margin-top:8px" onclick="checkAgent()"><i class="fas fa-satellite-dish"></i> Ping Agent</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Experiments Tab -->
+            <div class="tab-content" id="tab-experiments">
                 <div class="panel-title">
-                    <h3>What Changed</h3>
-                    <span class="muted mono">Static Surface</span>
+                    <h3>A/B Experiments</h3>
+                    <button class="refresh-btn" onclick="fetchExperiments()"><i class="fas fa-sync"></i> Refresh</button>
                 </div>
-                <div class="list">
-                    <div class="list-item">
-                        <strong>Alpine dashboard removed</strong>
-                        <p>The previous dashboard shell relied on Alpine expressions that were fighting CSP and runtime
-                            constraints. This page intentionally avoids that stack.</p>
-                    </div>
-                    <div class="list-item">
-                        <strong>Mission workflow preserved</strong>
-                        <p>The mission console at / remains the main operator surface, including hold-to-talk voice
-                            capture and streaming responses.</p>
-                    </div>
-                    <div class="list-item">
-                        <strong>Dashboard kept as overview only</strong>
-                        <p>This route now acts as a clean operations landing page with launch links and lightweight
-                            runtime visibility.</p>
-                    </div>
+                <div id="experimentsList">
+                    <div class="terminal">Loading experiments...</div>
                 </div>
-            </article>
+            </div>
+
+            <!-- Benchmarks Tab -->
+            <div class="tab-content" id="tab-benchmarks">
+                <div class="panel-title">
+                    <h3>Benchmark History</h3>
+                    <button class="refresh-btn" onclick="fetchBenchmarks()"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+                <div id="benchmarksList">
+                    <div class="terminal">Loading benchmarks...</div>
+                </div>
+            </div>
+
+            <!-- Models Tab -->
+            <div class="tab-content" id="tab-models">
+                <div class="panel-title">
+                    <h3>Model Leaderboard</h3>
+                    <button class="refresh-btn" onclick="fetchLeaderboard()"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+                <div id="leaderboardList">
+                    <div class="terminal">Loading leaderboard...</div>
+                </div>
+            </div>
+
+            <!-- Endpoints Tab -->
+            <div class="tab-content" id="tab-endpoints">
+                <div class="panel-title">
+                    <h3>Registered API Endpoints</h3>
+                    <button class="refresh-btn" onclick="fetchEndpoints()"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+                <div id="endpointsList">
+                    <div class="terminal">Loading endpoints...</div>
+                </div>
+            </div>
         </section>
     </div>
 
     <script>
-        const clockChip = document.getElementById("clockChip");
-        const checkAgentBtn = document.getElementById("checkAgentBtn");
-        const pageStatusDot = document.getElementById("pageStatusDot");
-        const pageStatusText = document.getElementById("pageStatusText");
-        const agentRuntimeValue = document.getElementById("agentRuntimeValue");
-        const agentRuntimeSub = document.getElementById("agentRuntimeSub");
-        const chatDot = document.getElementById("chatDot");
-        const chatLine = document.getElementById("chatLine");
-        const chatOutput = document.getElementById("chatOutput");
-
+        // Clock
         function tickClock() {
-            clockChip.textContent = new Date().toISOString().slice(11, 19) + " UTC";
+            document.getElementById("clockChip").textContent = new Date().toISOString().slice(11, 19) + " UTC";
         }
+        tickClock();
+        setInterval(tickClock, 1000);
 
-        function setChatState(kind, line, detail) {
-            chatDot.className = "status-dot" + (kind ? " " + kind : "");
-            chatLine.textContent = line;
-            chatOutput.textContent = detail;
-            pageStatusText.textContent = line;
-            pageStatusDot.className = "status-dot" + (kind ? " " + kind : "");
-        }
+        // Tab switching
+        document.querySelectorAll(".tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+                document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+                tab.classList.add("active");
+                document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
+            });
+        });
 
-        async function checkAgent() {
-            checkAgentBtn.disabled = true;
-            agentRuntimeValue.textContent = "Checking";
-            agentRuntimeSub.textContent = "Pinging /agent/chat with a lightweight request.";
-            setChatState("warn", "Checking agent runtime...", "Sending request to /agent/chat.");
+        // Refresh all
+        document.getElementById("refreshAllBtn").addEventListener("click", () => {
+            fetchHealth();
+            fetchExperiments();
+            fetchBenchmarks();
+            fetchLeaderboard();
+            fetchEndpoints();
+        });
 
+        // Fetch health dashboard
+        async function fetchHealth() {
             try {
-                const response = await fetch("/agent/chat", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify({ message: "dashboard readiness check" })
-                });
+                const resp = await fetch("/health/dashboard");
+                const data = await resp.json();
 
-                if (!response.ok) {
-                    const text = await response.text();
-                    throw new Error(text || ("HTTP " + response.status));
-                }
+                // CPU
+                const cpu = data.system.cpu_percent;
+                document.getElementById("cpuValue").textContent = cpu + "%";
+                document.getElementById("cpuBar").style.width = cpu + "%";
+                document.getElementById("cpuBar").className = "progress-fill" + (cpu > 80 ? " danger" : cpu > 60 ? " warn" : "");
 
-                const payload = await response.json();
-                agentRuntimeValue.textContent = "Online";
-                agentRuntimeSub.textContent = "Chat endpoint responded successfully.";
-                setChatState("", "Agent runtime online.", payload.reply || "No reply body returned.");
-            } catch (error) {
-                const message = (error && error.message) ? error.message : "Request failed";
-                agentRuntimeValue.textContent = "Issue";
-                agentRuntimeSub.textContent = "Chat endpoint did not return a clean success response.";
-                setChatState("danger", "Agent runtime check failed.", message);
-            } finally {
-                checkAgentBtn.disabled = false;
+                // Memory
+                const mem = data.system.memory_percent;
+                document.getElementById("memValue").textContent = mem + "%";
+                document.getElementById("memBar").style.width = mem + "%";
+                document.getElementById("memBar").className = "progress-fill" + (mem > 80 ? " danger" : mem > 60 ? " warn" : "");
+
+                // Disk
+                const disk = data.system.disk_percent;
+                document.getElementById("diskValue").textContent = disk + "%";
+                document.getElementById("diskBar").style.width = disk + "%";
+                document.getElementById("diskBar").className = "progress-fill" + (disk > 80 ? " danger" : disk > 60 ? " warn" : "");
+
+                // Endpoints
+                document.getElementById("endpointCount").textContent = data.api.total_endpoints;
+                const methods = data.api.methods;
+                document.getElementById("endpointSub").textContent =
+                    Object.entries(methods).map(([m, c]) => `${m}: ${c}`).join(" | ");
+
+                // Health details
+                document.getElementById("dbStatus").textContent = data.components.database;
+                document.getElementById("dbStatus").style.color = data.components.database === "connected" ? "var(--accent2)" : "var(--danger)";
+                document.getElementById("redisStatus").textContent = data.components.redis;
+                document.getElementById("redisStatus").style.color = data.components.redis === "connected" ? "var(--accent2)" : "var(--danger)";
+                document.getElementById("uptimeValue").textContent = data.uptime_seconds ? Math.round(data.uptime_seconds) + "s" : "--";
+                document.getElementById("modelsLoaded").textContent = data.components.models_loaded;
+            } catch (e) {
+                console.error("Health fetch failed:", e);
             }
         }
 
-        tickClock();
-        window.setInterval(tickClock, 1000);
-        checkAgentBtn.addEventListener("click", checkAgent);
-        checkAgent();
+        // Fetch experiments
+        async function fetchExperiments() {
+            const el = document.getElementById("experimentsList");
+            try {
+                const resp = await fetch("/experiments/list");
+                const data = await resp.json();
+                if (!data.length) {
+                    el.innerHTML = '<div class="terminal">No experiments yet. Create one via POST /experiments/create</div>';
+                    return;
+                }
+                let html = "";
+                for (const exp of data) {
+                    const statusColor = exp.status === "running" ? "var(--accent2)" : exp.status === "completed" ? "var(--accent)" : "var(--muted)";
+                    html += `<div class="list-item">
+                        <strong>${exp.name} <span style="color:${statusColor};font-size:0.72rem;margin-left:8px;">[${exp.status}]</span></strong>
+                        <p class="mono" style="margin-top:4px">ID: ${exp.id} | Variants: ${exp.variants.map(v => v.name).join(", ")} | Metric: ${exp.primary_metric}</p>
+                        ${exp.winner ? `<p style="color:var(--accent2);margin-top:4px"><i class="fas fa-trophy"></i> Winner: ${exp.winner}</p>` : ""}
+                    </div>`;
+                }
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = '<div class="terminal">Failed to load experiments: ' + e.message + '</div>';
+            }
+        }
+
+        // Fetch benchmarks
+        async function fetchBenchmarks() {
+            const el = document.getElementById("benchmarksList");
+            try {
+                const resp = await fetch("/benchmarks/history?limit=10");
+                const data = await resp.json();
+                if (!data.length) {
+                    el.innerHTML = '<div class="terminal">No benchmarks yet. Run one via POST /benchmarks/api</div>';
+                    return;
+                }
+                let html = "";
+                for (const b of data) {
+                    html += `<div class="list-item">
+                        <strong>${b.name || b.target}</strong>
+                        <p class="mono" style="margin-top:4px">Avg: ${b.avg_latency_ms}ms | P95: ${b.p95_latency_ms}ms | P99: ${b.p99_latency_ms}ms | RPS: ${b.requests_per_second}</p>
+                    </div>`;
+                }
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = '<div class="terminal">Failed to load benchmarks: ' + e.message + '</div>';
+            }
+        }
+
+        // Fetch leaderboard
+        async function fetchLeaderboard() {
+            const el = document.getElementById("leaderboardList");
+            try {
+                const resp = await fetch("/models/compare/leaderboard?metric=accuracy&limit=10");
+                const data = await resp.json();
+                if (!data.leaderboard.length) {
+                    el.innerHTML = '<div class="terminal">No model runs recorded yet. Train and complete a model run to see rankings.</div>';
+                    return;
+                }
+                let html = "";
+                data.leaderboard.forEach((m, i) => {
+                    const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
+                    html += `<div class="metric-row">
+                        <span class="metric-name">${medal} ${m.model_name} <span style="color:var(--muted);font-size:0.72rem">${m.model_type || ""}</span></span>
+                        <span class="metric-value">${m[data.metric] != null ? m[data.metric].toFixed(4) : "--"}</span>
+                    </div>`;
+                });
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = '<div class="terminal">Failed to load leaderboard: ' + e.message + '</div>';
+            }
+        }
+
+        // Fetch endpoints
+        async function fetchEndpoints() {
+            const el = document.getElementById("endpointsList");
+            try {
+                const resp = await fetch("/system/endpoints", { method: "GET" });
+                const data = await resp.json();
+                let html = "";
+                for (const ep of data.endpoints) {
+                    const methods = ep.methods.map(m => `<span style="color:var(--accent2)">${m}</span>`).join(" ");
+                    html += `<div class="metric-row">
+                        <span class="metric-name mono" style="font-size:0.74rem">${ep.path}</span>
+                        <span style="font-size:0.72rem">${methods}</span>
+                    </div>`;
+                }
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = '<div class="terminal">Failed to load endpoints: ' + e.message + '</div>';
+            }
+        }
+
+        // Quick benchmark
+        async function runQuickBenchmark() {
+            const btn = document.querySelector('button[onclick="runQuickBenchmark()"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
+            try {
+                const resp = await fetch("/benchmarks/api?endpoint=/health&iterations=100", { method: "POST" });
+                const data = await resp.json();
+                alert(`Benchmark complete!\nAvg: ${data.avg_latency_ms}ms\nP95: ${data.p95_latency_ms}ms\nP99: ${data.p99_latency_ms}ms\nRPS: ${data.requests_per_second}`);
+                fetchBenchmarks();
+            } catch (e) {
+                alert("Benchmark failed: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Run Benchmark';
+            }
+        }
+
+        // Check agent
+        async function checkAgent() {
+            const btn = document.querySelector('button[onclick="checkAgent()"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pinging...';
+            try {
+                const resp = await fetch("/agent/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: "dashboard readiness check" })
+                });
+                const data = await resp.json();
+                alert("Agent responded: " + (data.reply || "OK"));
+            } catch (e) {
+                alert("Agent check failed: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-satellite-dish"></i> Ping Agent';
+            }
+        }
+
+        // Initial load
+        fetchHealth();
+        fetchExperiments();
+        fetchBenchmarks();
+        fetchLeaderboard();
+        fetchEndpoints();
     </script>
 </body>
-
 </html>
