@@ -46,6 +46,32 @@ from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Tuple
 
+# Simple TTL cache for expensive endpoints
+_cache: Dict[str, Tuple[float, Any]] = {}
+_CACHE_TTL = 5.0  # seconds
+
+
+def _cache_get(key: str) -> Optional[Any]:
+    if key in _cache:
+        ts, val = _cache[key]
+        if time.time() - ts < _CACHE_TTL:
+            return val
+        del _cache[key]
+    return None
+
+
+def _cache_set(key: str, val: Any):
+    _cache[key] = (time.time(), val)
+
+
+def _cache_invalidate(prefix: str = ""):
+    if prefix:
+        for k in list(_cache.keys()):
+            if k.startswith(prefix):
+                del _cache[k]
+    else:
+        _cache.clear()
+
 # Third-party imports
 import numpy as np
 import requests
@@ -791,6 +817,9 @@ async def health_check(request: Request):
 async def health_dashboard(request: Request):
     """Detailed health dashboard with system stats, endpoint counts, and component status."""
     _ = request
+    cached = _cache_get("health_dashboard")
+    if cached:
+        return cached
     import psutil
 
     # System resources
@@ -830,6 +859,24 @@ async def health_dashboard(request: Request):
         },
         "components": components,
     }
+    _cache_set("health_dashboard", {
+        "status": "ok",
+        "timestamp": datetime.now().isoformat(),
+        "uptime_seconds": round(time.time() - request.app.state.start_time, 1) if hasattr(request.app.state, "start_time") else None,
+        "system": {
+            "cpu_percent": psutil.cpu_percent(interval=0.1),
+            "memory_percent": mem.percent,
+            "memory_available_mb": round(mem.available / (1024 ** 2)),
+            "disk_percent": disk.percent,
+            "disk_free_gb": round(disk.free / (1024 ** 3), 2),
+        },
+        "api": {
+            "total_endpoints": sum(route_methods.values()),
+            "methods": route_methods,
+        },
+        "components": components,
+    })
+    return result
 
 
 def _check_database():
