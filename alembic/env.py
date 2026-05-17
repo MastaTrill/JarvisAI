@@ -25,6 +25,14 @@ import models_registry  # noqa: F401
 import jobs_persistent  # noqa: F401
 import audit_trail  # noqa: F401
 import models_versioning  # noqa: F401
+
+# New feature modules
+import rag_system  # noqa: F401
+import code_sandbox  # noqa: F401
+import ab_testing  # noqa: F401
+import benchmarking  # noqa: F401
+import model_comparison  # noqa: F401
+import agent_config  # noqa: F401
 import logging
 
 
