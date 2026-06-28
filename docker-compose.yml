@@ -19,7 +19,7 @@ services:
     image: postgres:16-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-jarvis}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-jarvis_password}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB:-jarvisai}
     ports:
       - "5432:5432"
@@ -78,7 +78,7 @@ services:
       - JARVIS_APPROVAL_FOR_DESTRUCTIVE=${JARVIS_APPROVAL_FOR_DESTRUCTIVE:-false}
       - JARVIS_API_URL=${JARVIS_API_URL:-http://jarvis-api:8000}
       - JARVIS_SCHEDULER_POLL_S=${JARVIS_SCHEDULER_POLL_S:-15}
-      - JARVIS_QUANTUM_CREATOR_KEY=${JARVIS_QUANTUM_CREATOR_KEY:-AETHERON_QUANTUM_CREATOR_KEY_2025}
+      - JARVIS_QUANTUM_CREATOR_KEY=${JARVIS_QUANTUM_CREATOR_KEY:?Set JARVIS_QUANTUM_CREATOR_KEY}
     volumes:
       - ./:/home/jarvisuser/app
       - jarvis-data:/home/jarvisuser/app/data
@@ -127,7 +127,7 @@ services:
       - JARVIS_APPROVAL_FOR_DESTRUCTIVE=${JARVIS_APPROVAL_FOR_DESTRUCTIVE:-false}
       - JARVIS_API_URL=${JARVIS_API_URL:-http://jarvis-api:8000}
       - JARVIS_SCHEDULER_POLL_S=${JARVIS_SCHEDULER_POLL_S:-15}
-      - JARVIS_QUANTUM_CREATOR_KEY=${JARVIS_QUANTUM_CREATOR_KEY:-AETHERON_QUANTUM_CREATOR_KEY_2025}
+      - JARVIS_QUANTUM_CREATOR_KEY=${JARVIS_QUANTUM_CREATOR_KEY:?Set JARVIS_QUANTUM_CREATOR_KEY}
     volumes:
       - ./:/home/jarvisuser/app
       - jarvis-data:/home/jarvisuser/app/data

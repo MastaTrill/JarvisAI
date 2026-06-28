@@ -4,6 +4,10 @@ Jarvis AI API main module.
 Provides endpoints for model management, training, data upload, system monitoring.
 """
 
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+
 # Standard library imports
 from jobs_persistent import create_job, update_job_status, get_job
 from models_registry import create_model, get_models, activate_model
