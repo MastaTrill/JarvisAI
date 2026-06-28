@@ -8,8 +8,8 @@ from PIL import Image
 from uuid import uuid4
 from datetime import datetime, timedelta, timezone
 
-import agent_api
-import llm_ollama
+import src.api.agent_api as agent_api
+import src.ai.llm_ollama as llm_ollama
 import requests
 from src.api.agent_api import router
 

@@ -39,6 +39,7 @@ os.environ["TMPDIR"] = str(PROJECT_TEMP_DIR)
 tempfile.tempdir = str(PROJECT_TEMP_DIR)
 
 sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 import pytest
 from fastapi.testclient import TestClient
@@ -71,18 +72,18 @@ def _get_test_client():
 def _ensure_tables():
     """Create tables for both databases so tests don't hit 'no such table'."""
     # Import model modules so their tables are registered with Base.metadata
-    from models_registry import ModelRegistry  # side-effect: registers table
-    from jobs_persistent import Job  # side-effect: registers table
-    from database_models import User  # side-effect: registers table
-    from models_versioning import ModelVersion  # side-effect: registers table
+    from src.ml.models_registry import ModelRegistry  # side-effect: registers table
+    from src.ml.jobs_persistent import Job  # side-effect: registers table
+    from src.infra.database_models import User  # side-effect: registers table
+    from src.ml.models_versioning import ModelVersion  # side-effect: registers table
     from ab_testing import ABExperiment, ABEvent  # side-effect: registers tables
     from benchmarking import BenchmarkRun  # side-effect: registers table
-    from model_comparison import ModelComparison  # side-effect: registers table
+    from src.ml.model_comparison import ModelComparison  # side-effect: registers table
 
     _ = ModelRegistry, Job, User, ModelVersion, ABExperiment, ABEvent, BenchmarkRun, ModelComparison
 
-    from db_config import Base as ConfigBase, engine as config_engine
-    from database import Base as AppBase, engine as app_engine
+    from src.infra.db_config import Base as ConfigBase, engine as config_engine
+    from src.infra.database import Base as AppBase, engine as app_engine
 
     ConfigBase.metadata.create_all(bind=config_engine)
     AppBase.metadata.create_all(bind=app_engine)
@@ -137,8 +138,8 @@ def admin_auth_header():
     """Fixture that provides an auth header for an admin user."""
     header = _make_auth_header("adminuser", "adminpass", "admin@example.com")
 
-    from database import SessionLocal
-    from database_models import User as DBUser
+    from src.infra.database import SessionLocal
+    from src.infra.database_models import User as DBUser
 
     db = SessionLocal()
     user = db.query(DBUser).filter_by(username="adminuser").first()
