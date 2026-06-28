@@ -1,0 +1,188 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.5, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\dev\JarvisAI
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 14 items
+
+.venv-local\Scripts\python.exe : C:\dev\JarvisAI\.venv-local\Lib\site-packages\coverage\report_core.py:107: 
+CoverageWarning: Couldn't parse Python file 'C:\dev\JarvisAI\src\infra\celery_tasks.py' (couldnt-parse); see 
+https://coverage.readthedocs.io/en/7.14.3/messages.html#warning-couldnt-parse
+At line:1 char:59
++ ... memory://"; .venv-local\Scripts\python.exe -m pytest tests/test_cache ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\dev\JarvisAI...g-couldnt-parse:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  coverage._warn(msg, slug="couldnt-parse")
+tests\test_cache.py ..............                                       [100%]
+
+============================== warnings summary ===============================
+.venv-local\Lib\site-packages\fastapi\testclient.py:1
+  C:\dev\JarvisAI\.venv-local\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.5-final-0 _______________
+
+Name                                         Stmts   Miss  Cover
+----------------------------------------------------------------
+ab_testing.py                                  178    106    40%
+advanced_features\self_healing.py               32     20    38%
+audit_trail.py                                  19      6    68%
+automated_retraining_pipeline.py                33     33     0%
+benchmarking.py                                134     89    34%
+dashboard.py                                   401    401     0%
+diagnose_imports.py                             23     23     0%
+events_stream.py                                79     46    42%
+function_app.py                                 16     16     0%
+function_app_full.py                            16     16     0%
+jarvis_api.py                                 1115    784    30%
+jarvis_sdk.py                                  145    145     0%
+main_api.py                                      9      2    78%
+plugins\example_plugin.py                        4      1    75%
+plugins\system_diagnostics.py                   25     13    48%
+security\__init__.py                             2      2     0%
+security\enterprise_security.py                278    278     0%
+src\__init__.py                                  0      0   100%
+src\agents\__init__.py                           0      0   100%
+src\agents\agent_config.py                     122     47    61%
+src\agents\agent_memory.py                      66     50    24%
+src\agents\agent_task_memory.py               1352   1240     8%
+src\agents\orchestrate_all_workflows.py         21     21     0%
+src\ai\__init__.py                               0      0   100%
+src\ai\code_sandbox.py                         144     94    35%
+src\ai\llm_groq.py                              37     28    24%
+src\ai\llm_integration.py                      133    133     0%
+src\ai\llm_ollama.py                           188    163    13%
+src\ai\llm_openai.py                            86     70    19%
+src\ai\multimodal_ai.py                         56     49    12%
+src\ai\rag_system.py                           289    215    26%
+src\api\__init__.py                              0      0   100%
+src\api\admin_api.py                            98     62    37%
+src\api\admin_audit_api.py                      10     10     0%
+src\api\admin_dashboard.py                      66     36    45%
+src\api\advanced_demo_api.py                    17     10    41%
+src\api\agent_api.py                          5150   4125    20%
+src\api\audit_api.py                            32     14    56%
+src\api\automation_api.py                        7      2    71%
+src\api\collab_api.py                           39     22    44%
+src\api\infra_api.py                            18      4    78%
+src\api\jobs_api.py                             25     25     0%
+src\api\ml_advanced_api.py                      57     34    40%
+src\api\models_device_api.py                    31     18    42%
+src\api\models_drift_api.py                     24     11    54%
+src\api\models_external_api.py                  36     22    39%
+src\api\models_versioning_api.py                31     17    45%
+src\api\multimodal_api.py                       18     11    39%
+src\api\plugins_api.py                          35     18    49%
+src\api\security_api.py                         38     16    58%
+src\bio_interface\__init__.py                    9      9     0%
+src\bio_interface\memory_enhancement.py        223    223     0%
+src\bio_interface\neural_bridge.py             175    175     0%
+src\bio_interface\safety_protocols.py          208    208     0%
+src\bio_interface\thought_translation.py       208    208     0%
+src\core\__init__.py                             0      0   100%
+src\cv\__init__.py                               2      2     0%
+src\cv\advanced_computer_vision.py             304    304     0%
+src\cv\advanced_cv.py                            2      2     0%
+src\inference\__init__.py                        5      5     0%
+src\inference\predict.py                        45     45     0%
+src\infra\__init__.py                            0      0   100%
+src\infra\auth_helpers.py                       44     25    43%
+src\infra\authentication.py                    147     96    35%
+src\infra\cache.py                              93     30    68%
+src\infra\celery_app.py                          9      9     0%
+src\infra\database.py                          106     78    26%
+src\infra\database_models.py                   137      7    95%
+src\infra\db_config.py                          13      4    69%
+src\infra\messaging_connectors.py              110    110     0%
+src\infra\models_user.py                        19      7    63%
+src\infra\redis_config.py                        4      4     0%
+src\ml\__init__.py                               0      0   100%
+src\ml\analytics.py                             71     56    21%
+src\ml\jobs_persistent.py                       30     15    50%
+src\ml\model_comparison.py                     127     93    27%
+src\ml\model_registry.py                        46     46     0%
+src\ml\models_registry.py                       36     13    64%
+src\ml\models_versioning.py                     78     47    40%
+src\models\__init__.py                          15     15     0%
+src\models\advanced_neural_network.py          287    287     0%
+src\models\neural_network.py                    84     84     0%
+src\models\numpy_neural_network.py             106    106     0%
+src\models\sentiment_classifier.py              97     97     0%
+src\quantum\__init__.py                         21     21     0%
+src\quantum\consciousness_superposition.py     149    149     0%
+src\quantum\quantum_entanglement_ai.py         168    168     0%
+src\quantum\quantum_neural_networks.py         370    370     0%
+src\quantum\quantum_oracle.py                  163    163     0%
+src\quantum\quantum_processor.py               156    156     0%
+src\quantum\quantum_safety.py                  173    173     0%
+src\temporal\__init__.py                         7      7     0%
+src\temporal\causality_engine.py               281    281     0%
+src\temporal\temporal_ethics.py                274    274     0%
+src\temporal\time_analysis.py                  232    232     0%
+src\temporal\timeline_optimization.py          308    308     0%
+src\text_processing.py                          43     43     0%
+src\trainer.py                                  58     58     0%
+src\training\__init__.py                         8      8     0%
+src\training\advanced_training_system.py       320    320     0%
+src\training\numpy_trainer.py                   90     90     0%
+src\training\train.py                           68     68     0%
+src\training\train_final.py                     65     65     0%
+src\training\train_numpy_simple.py              56     56     0%
+src\training\train_simple.py                    75     75     0%
+src\training\trainer.py                         89     89     0%
+test_production_suite.py                        44     44     0%
+tests\__init__.py                                0      0   100%
+tests\conftest.py                               92     39    58%
+tests\test_ab_testing.py                        89     89     0%
+tests\test_admin_endpoints.py                   21     21     0%
+tests\test_agent_tools.py                     1105   1105     0%
+tests\test_ai_workflow_automation.py            10     10     0%
+tests\test_api_admin.py                         61     61     0%
+tests\test_api_basic.py                         23     23     0%
+tests\test_api_cloud_gpu.py                     19     19     0%
+tests\test_api_coverage.py                      93     93     0%
+tests\test_api_endpoints.py                     14     14     0%
+tests\test_api_jobs_metrics.py                  22     22     0%
+tests\test_auth.py                              62     62     0%
+tests\test_benchmarking.py                      57     57     0%
+tests\test_cache.py                             82      0   100%
+tests\test_data_numpy.py                        71     71     0%
+tests\test_database_models.py                   74     74     0%
+tests\test_end_to_end.py                        11     11     0%
+tests\test_explainable_ai.py                    11     11     0%
+tests\test_federated_learning.py                11     11     0%
+tests\test_genai_api.py                         21     21     0%
+tests\test_health.py                            11     11     0%
+tests\test_inference_numpy.py                   87     87     0%
+tests\test_integration_new.py                  167    167     0%
+tests\test_jarvis_sdk.py                       171    171     0%
+tests\test_knowledge_integration.py             11     11     0%
+tests\test_live_data_viz.py                     11     11     0%
+tests\test_model_comparison.py                  42     42     0%
+tests\test_models_registry.py                   76     76     0%
+tests\test_multimodal_api.py                    19     19     0%
+tests\test_nlu_advanced.py                      13     13     0%
+tests\test_orchestrator.py                      34     34     0%
+tests\test_quantum_optimization.py              11     11     0%
+tests\test_rag.py                               64     64     0%
+tests\test_sandbox.py                           68     68     0%
+tests\test_security_audit_plugins.py            57     57     0%
+tests\test_self_healing.py                      66     66     0%
+tests\test_train_numpy_simple.py                98     98     0%
+tests\test_train_simple.py                     152    152     0%
+tests\test_training_numpy.py                   106    106     0%
+tests\test_training_numpy_detailed.py          122    122     0%
+tests\test_versioning_jobs.py                   52     52     0%
+tests\test_xai_api.py                           16     16     0%
+tests\unit\__init__.py                           0      0   100%
+tests\unit\test_quantum.py                      10     10     0%
+train.py                                        57     57     0%
+verify_system_status.py                        164    164     0%
+----------------------------------------------------------------
+TOTAL                                        20427  17675    13%
+======================= 14 passed, 1 warning in 54.62s ========================
