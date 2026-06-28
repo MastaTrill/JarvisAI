@@ -8,8 +8,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from db_config import Base
-from jobs_persistent import create_job, update_job_status, get_job
+from src.infra.db_config import Base
+from src.ml.jobs_persistent import create_job, update_job_status, get_job
 from fastapi.testclient import TestClient
 from main_api import app
 

@@ -4,7 +4,7 @@ Persistent Job Management for Jarvis AI
 - CRUD utilities for job operations
 """
 
-from db_config import Base
+from src.infra.db_config import Base
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON
 from datetime import datetime, timezone
 

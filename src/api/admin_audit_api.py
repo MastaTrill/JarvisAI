@@ -5,9 +5,9 @@ Admin Audit Log API for Jarvis AI
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from db_config import get_db
+from src.infra.db_config import get_db
 from audit_trail import AuditTrail
-from models_user import require_role, User
+from src.infra.models_user import require_role, User
 
 router = APIRouter(prefix="/admin/audit", tags=["Audit"])
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form
 from typing import Optional
-from advanced_features.multimodal_ai import MultimodalAI
+from src.ai.multimodal_ai import MultimodalAI
 
 router = APIRouter()
 mm_ai = MultimodalAI()

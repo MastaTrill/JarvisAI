@@ -13,7 +13,8 @@ RUN useradd -m -d /home/jarvisuser jarvisuser
 ENV HOME=/home/jarvisuser \
     PATH="/home/jarvisuser/.local/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH="/home/jarvisuser/app/src:/home/jarvisuser/app"
 
 # Set work directory and permissions
 WORKDIR /home/jarvisuser/app

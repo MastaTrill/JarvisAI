@@ -18,10 +18,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String, Float, DateTime, JSON
 
-from db_config import Base as ConfigBase
-from database import get_db
-from auth_helpers import admin_required, get_current_user
-from models_user import User
+from src.infra.db_config import Base as ConfigBase
+from src.infra.database import get_db
+from src.infra.auth_helpers import admin_required, get_current_user
+from src.infra.models_user import User
 
 
 # --- Database Model ---

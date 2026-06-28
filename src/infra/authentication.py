@@ -20,8 +20,8 @@ from sqlalchemy.orm import Session
 import secrets
 import bcrypt
 
-from database import get_db
-from database_models import User
+from src.infra.database import get_db
+from src.infra.database_models import User
 
 # Security configuration — single source of truth for the whole app
 SECRET_KEY = os.environ.get("JARVIS_SECRET_KEY") or secrets.token_urlsafe(32)

@@ -6,8 +6,8 @@ Advanced Security Endpoints
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from models_user import User
-from auth_helpers import admin_required
+from src.infra.models_user import User
+from src.infra.auth_helpers import admin_required
 from datetime import datetime, timezone
 import secrets
 

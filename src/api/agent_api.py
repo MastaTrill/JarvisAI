@@ -63,16 +63,16 @@ def _get_openwakeword_model():
 
 _OpenWakeWordModel = None
 
-from agent_memory import AgentMemory, StoredMessage
-from agent_task_memory import AgentTaskMemory
-from llm_openai import (
+from src.agents.agent_memory import AgentMemory, StoredMessage
+from src.agents.agent_task_memory import AgentTaskMemory
+from src.ai.llm_openai import (
     chat_with_tools,
     is_openai_configured,
     _extract_first_function_call,
     _extract_output_text,
     vision_analyze as openai_vision_analyze,
 )
-from llm_ollama import (
+from src.ai.llm_ollama import (
     is_ollama_configured,
     ollama_chat,
     ollama_chat_stream,
@@ -82,7 +82,7 @@ from llm_ollama import (
     parse_tool_directive,
     strip_final_answer,
 )
-from llm_groq import (
+from src.ai.llm_groq import (
     is_groq_configured,
     groq_chat,
     groq_extract_tool_call,
@@ -674,7 +674,7 @@ def _tool_db_ping(_args: Dict[str, Any]) -> Dict[str, Any]:
     # Use the same engine the app config uses.
     from sqlalchemy import text
 
-    from db_config import engine
+    from src.infra.db_config import engine
 
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))

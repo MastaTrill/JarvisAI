@@ -1,14 +1,7 @@
-"""Compatibility API entrypoint.
+"""Compatibility API entrypoint."""
 
-This module re-exports the canonical FastAPI app defined in top-level
-``api.py`` so existing imports (tests, scripts, and tooling) continue to work
-while routes are maintained in one place.
-"""
-
-import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 os.environ.setdefault('OPENAI_API_KEY', '')
 os.environ.setdefault('GROQ_API_KEY', '')
 os.environ.setdefault('REDIS_URL', 'memory://')

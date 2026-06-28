@@ -7,10 +7,10 @@ Drift Detection Endpoints
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from db_config import get_db
-from models_registry import ModelRegistry
-from models_user import User
-from auth_helpers import admin_required
+from src.infra.db_config import get_db
+from src.ml.models_registry import ModelRegistry
+from src.infra.models_user import User
+from src.infra.auth_helpers import admin_required
 
 router = APIRouter(prefix="/models/drift", tags=["Drift Detection"])
 

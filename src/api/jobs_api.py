@@ -4,8 +4,8 @@ Job management API endpoints for admin dashboard
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from db_config import get_db
-from jobs_persistent import Job
+from src.infra.db_config import get_db
+from src.ml.jobs_persistent import Job
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 

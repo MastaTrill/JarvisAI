@@ -8,8 +8,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from db_config import Base
-from models_registry import create_model, get_models, activate_model
+from src.infra.db_config import Base
+from src.ml.models_registry import create_model, get_models, activate_model
 
 
 @pytest.fixture()

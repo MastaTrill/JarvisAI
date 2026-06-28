@@ -9,7 +9,7 @@ from contextlib import contextmanager
 import os
 from typing import Generator, Optional
 
-from database_models import Base
+from src.infra.database_models import Base
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./jarvis_ai.db")
@@ -86,8 +86,8 @@ def get_db_session():
 
 def create_default_users():
     """Create default users for the system"""
-    from database_models import User
-    from authentication import hash_password
+    from src.infra.database_models import User
+    from src.infra.authentication import hash_password
     import secrets
 
     default_users = [
@@ -178,7 +178,7 @@ class DatabaseManager:
     @staticmethod
     def get_table_stats():
         """Get statistics about database tables"""
-        from database_models import (
+        from src.infra.database_models import (
             User,
             ChatHistory,
             ModelRun,
@@ -209,7 +209,7 @@ class DatabaseManager:
     def cleanup_old_data(days: int = 30):
         """Clean up data older than specified days"""
         from datetime import datetime, timedelta, timezone
-        from database_models import (
+        from src.infra.database_models import (
             ChatHistory,
             PerformanceMetric,
             QuantumState,

@@ -6,8 +6,8 @@ Audit Trail & Compliance Dashboard Endpoints
 """
 
 from fastapi import APIRouter, Depends
-from models_user import User
-from auth_helpers import get_current_user
+from src.infra.models_user import User
+from src.infra.auth_helpers import get_current_user
 from datetime import datetime, timezone
 import csv
 import os

@@ -4,7 +4,7 @@ Persistent Model Registry for Jarvis AI
 - CRUD utilities for database operations
 """
 
-from db_config import Base
+from src.infra.db_config import Base
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime
 from datetime import datetime, timezone
 

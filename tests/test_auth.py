@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import pytest
 from datetime import timedelta
-from authentication import (
+from src.infra.authentication import (
     hash_password,
     verify_password,
     create_access_token,

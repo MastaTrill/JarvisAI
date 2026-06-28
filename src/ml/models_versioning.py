@@ -5,7 +5,7 @@ Model Versioning and Advanced Serving for Jarvis AI
 - Placeholder for GPU inference and external model server integration
 """
 
-from db_config import Base
+from src.infra.db_config import Base
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime
 from datetime import datetime, timezone
 
@@ -23,7 +23,7 @@ class ModelVersion(Base):
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from db_config import get_db
+from src.infra.db_config import get_db
 
 router = APIRouter(prefix="/model_versions", tags=["Model Versioning"])
 

@@ -19,8 +19,8 @@ from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from auth_helpers import get_current_user
-from models_user import User
+from src.infra.auth_helpers import get_current_user
+from src.infra.models_user import User
 
 
 router = APIRouter(prefix="/events", tags=["Real-time Events"])

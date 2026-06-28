@@ -33,7 +33,7 @@ def get_db() -> Generator[Session, None, None]:
 
 
 # Usage in models:
-# from db_config import Base
+# from src.infra.db_config import Base
 # class Model(Base):
 #     __tablename__ = "models"
 #     ...

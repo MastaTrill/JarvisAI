@@ -3,7 +3,7 @@ Tests for the LLM caching layer
 """
 
 import pytest
-from cache import MemoryCache, LLMCache, llm_cache
+from src.infra.cache import MemoryCache, LLMCache, llm_cache
 
 
 class TestMemoryCache:

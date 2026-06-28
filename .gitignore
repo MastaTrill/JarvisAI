@@ -117,3 +117,9 @@ node_modules/
 
 # Azure Blob Storage Emulator
 .azurite/
+
+# Archived/dead code (kept locally, not tracked)
+archive/
+
+# New src/ package structure
+src/**/__pycache__/

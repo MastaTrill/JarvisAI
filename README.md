@@ -2,9 +2,7 @@
 
 A comprehensive AI/ML platform with modular FastAPI backend, versioned API endpoints, admin dashboard, audit/compliance, real-time collaboration, plugin system, and cloud deployment support.
 
-![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-![Test Coverage](https://img.shields.io/badge/tests-315%20passed-brightgreen)
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![Build Status](https://github.com/MastaTrill/JarvisAI/actions/workflows/ci-cd.yml/badge.svg)
 
 ## 🚀 Features
 
@@ -24,71 +22,28 @@ A comprehensive AI/ML platform with modular FastAPI backend, versioned API endpo
 - **Self-Healing**: Automated error detection and recovery
 - **Multimodal AI**: Text, image, and voice processing
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 JarvisAI/
-├── main_api.py                   # FastAPI entrypoint (re-exports jarvis_api.app)
+├── main_api.py                   # FastAPI entrypoint
 ├── jarvis_api.py                 # Main API module with all routers
-├── agent_api.py                  # Agent tools, chat, memory endpoints
-├── agent_memory.py               # Memory management
-├── agent_task_memory.py          # Task persistence
-├── admin_api.py                  # Admin API endpoints
-├── admin_dashboard.py            # Admin dashboard endpoints
-├── audit_api.py                  # Audit/compliance endpoints
-├── audit_trail.py                # Audit logging
-├── authentication.py             # JWT + OAuth2 authentication
-├── auth_helpers.py               # Auth dependency helpers
-├── cache.py                      # Memory + LLM cache
-├── celery_app.py                 # Celery task queue config
-├── celery_tasks.py               # Background task definitions
-├── cloud_connectors.py           # S3/cloud storage connectors
-├── collab_api.py                 # Collaboration endpoints
-├── dashboard.py                  # Streamlit dashboard
-├── database.py                   # Database engine/session
-├── database_models.py            # SQLAlchemy ORM models
-├── db_config.py                  # DB configuration
-├── infra_api.py                  # Infrastructure endpoints
-├── jobs_api.py                   # Job management endpoints
-├── jobs_persistent.py            # Persistent job storage
-├── llm_groq.py                   # Groq LLM integration
-├── llm_integration.py            # LLM abstraction layer
-├── llm_ollama.py                 # Ollama LLM integration
-├── llm_openai.py                 # OpenAI LLM integration
-├── ml_advanced_api.py            # Advanced ML endpoints
-├── models_device_api.py          # Device-aware model serving
-├── models_drift_api.py           # Drift detection endpoints
-├── models_external_api.py        # External model server integration
-├── models_registry.py            # In-memory model registry
-├── models_user.py                # User model
-├── models_versioning.py          # Model versioning (ORM)
-├── models_versioning_api.py      # Model versioning endpoints
-├── monitoring.py                 # System monitoring
-├── observability.py              # OpenTelemetry tracing
-├── plugins_api.py                # Plugin management endpoints
-├── security_api.py               # Security/RBAC endpoints
+├── src/                          # Organized source packages
+│   ├── api/                      # API route modules (admin, agent, audit, etc.)
+│   ├── ai/                       # LLM integrations, RAG, code sandbox
+│   ├── agents/                   # Agent memory, config, orchestration
+│   ├── infra/                    # Database, cache, auth, celery
+│   ├── ml/                       # Model registry, versioning, analytics
+│   └── core/                     # Core utilities
+├── tests/                        # Unit/integration tests
 ├── advanced_features/            # Advanced AI modules
-│   ├── ai_workflow_automation.py
-│   ├── explainable_ai.py
-│   ├── federated_learning.py
-│   ├── knowledge_integration.py
-│   ├── live_data_viz.py
-│   ├── multimodal_ai.py
-│   ├── nlu_advanced.py
-│   ├── orchestrator.py
-│   ├── quantum_optimization.py
-│   └── self_healing.py
 ├── plugins/                      # Plugin system
-├── src/                          # ML models and data processing
-│   ├── data/                     # Data processors
-│   ├── models/                   # Neural network implementations
-│   ├── training/                 # Training pipelines
-│   └── inference/                # Inference/prediction
-├── tests/                        # Unit/integration tests (245 tests)
+├── infrastructure/               # IaC (Bicep, Terraform, K8s)
+├── helm/                         # Helm chart
 ├── Dockerfile                    # Production Docker image
 ├── docker-compose.yml            # Full stack orchestration
 ├── requirements.txt              # Python dependencies
-└── README.md                     # This file
+└── DEPLOYMENT.md                 # Deployment guide
 ```
 
 ## 🛠️ Setup

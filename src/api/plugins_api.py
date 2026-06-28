@@ -6,8 +6,8 @@ Plugin & Extension Marketplace Endpoints
 """
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from models_user import User
-from auth_helpers import admin_required, get_current_user
+from src.infra.models_user import User
+from src.infra.auth_helpers import admin_required, get_current_user
 from datetime import datetime, timezone
 import os
 

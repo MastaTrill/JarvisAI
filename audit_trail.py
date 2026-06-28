@@ -4,7 +4,7 @@ Audit Trail Template for Jarvis AI
 - Store audit logs in database or secure storage
 """
 
-from db_config import Base
+from src.infra.db_config import Base
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime, timezone
 
@@ -20,7 +20,7 @@ class AuditTrail(Base):
 
 
 # Utility to log audit events
-from db_config import SessionLocal
+from src.infra.db_config import SessionLocal
 
 
 def log_audit_event(user, action, target, details=None):

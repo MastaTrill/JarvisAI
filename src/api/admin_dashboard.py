@@ -11,13 +11,13 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
-from db_config import get_db as get_jobs_db
-from database import get_db as get_users_db
-from models_user import User, get_password_hash
-from auth_helpers import admin_required
+from src.infra.db_config import get_db as get_jobs_db
+from src.infra.database import get_db as get_users_db
+from src.infra.models_user import User, get_password_hash
+from src.infra.auth_helpers import admin_required
 from audit_trail import log_audit_event
-from models_registry import create_model, get_models
-from jobs_persistent import Job, get_job, update_job_status
+from src.ml.models_registry import create_model, get_models
+from src.ml.jobs_persistent import Job, get_job, update_job_status
 
 router = APIRouter(prefix="/admin/dashboard", tags=["AdminDashboard"])
 templates = Jinja2Templates(

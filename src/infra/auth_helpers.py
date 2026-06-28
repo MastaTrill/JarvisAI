@@ -16,12 +16,12 @@ except ImportError as exc:
     ) from exc
 
 
-from database import get_db as _get_user_db
+from src.infra.database import get_db as _get_user_db
 
 SECRET_KEY = os.environ.get("JARVIS_SECRET_KEY", "")
 if not SECRET_KEY:
     # Import from the canonical source so all modules share the same key
-    from authentication import SECRET_KEY  # noqa: F811
+    from src.infra.authentication import SECRET_KEY  # noqa: F811
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 

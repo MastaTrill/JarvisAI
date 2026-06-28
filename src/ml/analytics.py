@@ -15,8 +15,8 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Query
-from auth_helpers import admin_required
-from models_user import User
+from src.infra.auth_helpers import admin_required
+from src.infra.models_user import User
 
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])

@@ -12,7 +12,7 @@ import tiktoken
 import json
 from datetime import datetime
 
-from cache import llm_cache
+from src.infra.cache import llm_cache
 
 # Environment configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

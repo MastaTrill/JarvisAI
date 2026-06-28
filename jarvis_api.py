@@ -4,33 +4,29 @@ Jarvis AI API main module.
 Provides endpoints for model management, training, data upload, system monitoring.
 """
 
-import os
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
-
 # Standard library imports
-from jobs_persistent import create_job, update_job_status, get_job
-from models_registry import create_model, get_models, activate_model
-from agent_api import router as agent_router
-from models_versioning import router as versioning_orm_router
-from automation_api import router as automation_router
-from ml_advanced_api import router as ml_advanced_router
-from security_api import router as security_router
-from infra_api import router as infra_router
-from collab_api import router as collab_router
-from audit_api import router as audit_router
-from models_drift_api import router as drift_router
-from plugins_api import router as plugins_router
-from models_external_api import router as external_router
-from models_device_api import router as device_router
-from models_versioning_api import router as versioning_router
-from admin_api import router as admin_api_router
-from admin_dashboard import router as admin_router
-from auth_helpers import get_current_user
-from authentication import verify_password
-from models_user import User, get_password_hash
-from database import get_db
-from db_config import SessionLocal
+from src.ml.jobs_persistent import create_job, update_job_status, get_job
+from src.ml.models_registry import create_model, get_models, activate_model
+from src.api.agent_api import router as agent_router
+from src.ml.models_versioning import router as versioning_orm_router
+from src.api.automation_api import router as automation_router
+from src.api.ml_advanced_api import router as ml_advanced_router
+from src.api.security_api import router as security_router
+from src.api.infra_api import router as infra_router
+from src.api.collab_api import router as collab_router
+from src.api.audit_api import router as audit_router
+from src.api.models_drift_api import router as drift_router
+from src.api.plugins_api import router as plugins_router
+from src.api.models_external_api import router as external_router
+from src.api.models_device_api import router as device_router
+from src.api.models_versioning_api import router as versioning_router
+from src.api.admin_api import router as admin_api_router
+from src.api.admin_dashboard import router as admin_router
+from src.infra.auth_helpers import get_current_user
+from src.infra.authentication import verify_password
+from src.infra.models_user import User, get_password_hash
+from src.infra.database import get_db
+from src.infra.db_config import SessionLocal
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -294,8 +290,8 @@ app = FastAPI(
 )
 
 
-from advanced_features.multimodal_api import router as multimodal_router
-from advanced_features.advanced_demo_api import router as advanced_demo_router
+from src.api.multimodal_api import router as multimodal_router
+from src.api.advanced_demo_api import router as advanced_demo_router
 from advanced_features.self_healing import SelfHealingAI
 
 # Global self-healing instance and event log
@@ -326,18 +322,18 @@ app.include_router(diagnostics_router)
 # A/B Testing, Benchmarking, Model Comparison
 from ab_testing import router as ab_router
 from benchmarking import router as benchmark_router
-from model_comparison import router as comparison_router
+from src.ml.model_comparison import router as comparison_router
 
 app.include_router(ab_router)
 app.include_router(benchmark_router)
 app.include_router(comparison_router)
 
 # Document RAG
-from rag_system import router as rag_router
+from src.ai.rag_system import router as rag_router
 app.include_router(rag_router)
 
 # Code Sandbox
-from code_sandbox import router as sandbox_router
+from src.ai.code_sandbox import router as sandbox_router
 app.include_router(sandbox_router)
 
 # Real-time Events
@@ -345,11 +341,11 @@ from events_stream import router as events_router
 app.include_router(events_router)
 
 # Agent Personality & Model Routing
-from agent_config import router as agent_config_router
+from src.agents.agent_config import router as agent_config_router
 app.include_router(agent_config_router)
 
 # API Analytics
-from analytics import router as analytics_router
+from src.ml.analytics import router as analytics_router
 app.include_router(analytics_router)
 
 # Example: wrap a critical function with self-healing logic

@@ -14,8 +14,8 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Ensure tables are created
-from database_models import Base, User
-from db_config import Base as ConfigBase
+from src.infra.database_models import Base, User
+from src.infra.db_config import Base as ConfigBase
 import models_registry  # noqa: F401  # side-effect: registers tables
 import jobs_persistent  # noqa: F401  # side-effect: registers tables
 
@@ -24,10 +24,10 @@ _ = models_registry, jobs_persistent  # prevent unused-import warnings
 Base.metadata.create_all(bind=engine)
 ConfigBase.metadata.create_all(bind=engine)
 
-from models_user import get_password_hash
-from admin_dashboard import admin_required
-from database import get_db as users_get_db
-from db_config import get_db as jobs_get_db
+from src.infra.models_user import get_password_hash
+from src.api.admin_dashboard import admin_required
+from src.infra.database import get_db as users_get_db
+from src.infra.db_config import get_db as jobs_get_db
 from main_api import app
 from fastapi.testclient import TestClient
 import database

@@ -6,11 +6,11 @@ Model and Job Management Endpoints for Admin Dashboard (scaffold)
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from db_config import get_db
-from models_registry import ModelRegistry
-from jobs_persistent import Job
-from models_user import User
-from auth_helpers import admin_required
+from src.infra.db_config import get_db
+from src.ml.models_registry import ModelRegistry
+from src.ml.jobs_persistent import Job
+from src.infra.models_user import User
+from src.infra.auth_helpers import admin_required
 from pydantic import BaseModel
 from typing import Optional
 

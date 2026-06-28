@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 import agent_api
 import llm_ollama
 import requests
-from agent_api import router
+from src.api.agent_api import router
 
 
 def _client() -> TestClient:

@@ -56,6 +56,16 @@ Transform Jarvis AI into a comprehensive ML platform with advanced features, web
 - [x] **Enhanced dashboard UI** (real-time metrics, experiment management, benchmark results, model leaderboard, endpoint browser)
 - [x] **SDK/client library** (jarvis_sdk.py — full Python client with auth, models, experiments, benchmarks, system)
 
+### Phase 7: Code Quality & Maintainability ✅
+
+- [x] **Reorganized root modules** into `src/` packages (api, ai, agents, infra, ml)
+- [x] **Consolidated deployment guides** into single `DEPLOYMENT.md`
+- [x] **Removed dead code** from git tracking (archive/)
+- [x] **Removed hardcoded secrets** from docker-compose.yml
+- [x] **Consolidated requirements** files
+- [x] **Added coverage enforcement** in CI (60% minimum)
+- [ ] **Modernize frontend** — React/Vue SPA or formalize Streamlit as primary UI
+
 ## 🛠️ Technical Stack
 
 ### Core ML
@@ -98,6 +108,11 @@ Transform Jarvis AI into a comprehensive ML platform with advanced features, web
 
 | Date | Milestone |
 |------|-----------|
+| June 28, 2026 | Reorganized monolithic root into `src/` packages (api, ai, agents, infra, ml) |
+| June 28, 2026 | Consolidated 9 deployment guides into single `DEPLOYMENT.md` |
+| June 28, 2026 | Removed hardcoded secrets from docker-compose.yml |
+| June 28, 2026 | Removed archive/ from git tracking |
+| June 28, 2026 | Consolidated requirements files |
 | May 16, 2026 | Archived 46 stale docs + 48 orphaned Python files |
 | May 16, 2026 | Added A/B testing framework, benchmarking, model comparison |
 | May 16, 2026 | Added system diagnostics plugin, health dashboard endpoint |
@@ -107,4 +122,4 @@ Transform Jarvis AI into a comprehensive ML platform with advanced features, web
 ---
 
 _This roadmap is a living document and will evolve as we progress._
-_Last updated: May 16, 2026_
+_Last updated: June 28, 2026_

@@ -35,7 +35,7 @@ jobs:
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
       - name: Run tests with coverage
         run: |
-          python -m pytest tests/ --cov --cov-report=xml --cov-report=term -q
+          python -m pytest tests/ --cov --cov-report=xml --cov-report=term --cov-fail-under=60 -q
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4
@@ -54,10 +54,7 @@ jobs:
         run: pip install bandit
       - name: Run Bandit security scan
         run: |
-          bandit -r api.py authentication.py database.py database_models.py models_registry.py \
-            security_api.py audit_api.py plugins_api.py collab_api.py jobs_persistent.py \
-            models_versioning.py models_versioning_api.py auth_helpers.py db_config.py \
-            -ll --skip B101
+          bandit -r src/ -ll --skip B101
 
   docker:
     needs: [test, security]

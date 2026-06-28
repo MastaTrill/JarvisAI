@@ -18,7 +18,7 @@ from alembic.context import (
 # Ensure project root is in sys.path before importing db_config
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from db_config import Base
+from src.infra.db_config import Base
 
 # Import all models so Base.metadata includes their tables for autogenerate
 import models_registry  # noqa: F401
