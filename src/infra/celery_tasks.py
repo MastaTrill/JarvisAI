@@ -3,7 +3,7 @@ JarvisAI Celery Tasks
 Example background tasks for model training and data processing
 """
 
-from src.infra.celery_app import src.infra.celery_app
+from src.infra.celery_app import celery_app
 from celery.signals import worker_ready, worker_shutdown
 import time
 import os
