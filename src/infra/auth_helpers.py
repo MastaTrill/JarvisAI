@@ -34,7 +34,7 @@ def get_current_user(
 ):
     """Retrieve the current user from the JWT token."""
     # Import User here to avoid circular import
-    User = __import__("models_user").User
+    from src.infra.models_user import User
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
