@@ -88,6 +88,13 @@ def _ensure_tables():
     ConfigBase.metadata.create_all(bind=config_engine)
     AppBase.metadata.create_all(bind=app_engine)
 
+    # ab_testing and benchmarking use ConfigBase for models but get_db from database.py,
+    # so their tables must also exist on the app engine.
+    from sqlalchemy import MetaData
+    for table in ConfigBase.metadata.sorted_tables:
+        if table.key not in {t.key for t in AppBase.metadata.sorted_tables}:
+            table.create(bind=app_engine, checkfirst=True)
+
 
 @pytest.fixture(scope="session", autouse=True)
 def _disable_rate_limiter():
