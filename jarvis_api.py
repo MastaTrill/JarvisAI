@@ -253,9 +253,9 @@ async def lifespan(_app: FastAPI):
     for sub in ("uploads", "processed", "versions", "lineage"):
         _ensure_user_writable_dir(data_root / sub)
 
-    from database_models import Base as DBBase
-    from db_config import engine as db_engine, Base as ConfigBase
-    from database import engine as app_engine
+    from src.infra.database_models import Base as DBBase
+    from src.infra.db_config import engine as db_engine, Base as ConfigBase
+    from src.infra.database import engine as app_engine
 
     DBBase.metadata.create_all(bind=db_engine)
     ConfigBase.metadata.create_all(bind=db_engine)
@@ -659,7 +659,7 @@ def login(
     if not user or not verify_password(form_data.password, str(user.hashed_password)):
         raise HTTPException(
             status_code=401, detail="Incorrect username or password")
-    from authentication import create_access_token
+    from src.infra.authentication import create_access_token
 
     access_token = create_access_token(
         data={"sub": user.username},
