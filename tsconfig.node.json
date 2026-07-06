@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json", 
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "target": "ES2020"
+  },
+  "exclude": [
+    "vite.config.ts"
+  ]
+}

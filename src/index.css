@@ -1,0 +1,32 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Custom styles */
+:root {
+  --radius: 0.5rem;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}
+
+.sidebar-collapsed {
+  @apply w-16;
+}
+
+.sidebar-expanded {
+  @apply w-64;
+}
+
+.main-content-expanded {
+  @apply flex-1;
+}
+
+.main-content-collapsed {
+  @apply flex-1 pl-16;
+}
+
+.transition-all {
+  @apply transition-all duration-300 ease-in-out;
+}

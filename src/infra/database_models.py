@@ -37,6 +37,11 @@ class User(Base):
     api_key = Column(String(100), unique=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime)
+    
+    # MFA/TOTP fields
+    mfa_secret = Column(String(32), nullable=True)  # Base32 secret for TOTP
+    mfa_enabled = Column(Boolean, default=False)    # Whether MFA is enabled for user
+    # Backup codes would be stored in a separate table for security
 
     # Relationships
     chat_histories = relationship(
@@ -48,6 +53,22 @@ class User(Base):
 
     def __repr__(self):
         return f"<User(username='{self.username}', role='{self.role}')>"
+
+
+class MfaBackupCode(Base):
+    """Backup codes for MFA recovery"""
+    
+    __tablename__ = "mfa_backup_codes"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    code_hash = Column(String(64), nullable=False)  # Hashed backup code
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    used_at = Column(DateTime, nullable=True)
+    
+    # Relationship
+    user = relationship("User")
 
 
 class ChatHistory(Base):
