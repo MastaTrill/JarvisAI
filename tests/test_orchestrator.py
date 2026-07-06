@@ -1,5 +1,8 @@
 import unittest
-from advanced_features.orchestrator import AdvancedFeaturesOrchestrator
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'advanced_features'))
+from orchestrator import AdvancedFeaturesOrchestrator
 
 class TestAdvancedFeaturesOrchestrator(unittest.TestCase):
     def setUp(self):

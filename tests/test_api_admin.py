@@ -16,8 +16,8 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 # Ensure tables are created
 from src.infra.database_models import Base, User
 from src.infra.db_config import Base as ConfigBase
-import models_registry  # noqa: F401  # side-effect: registers tables
-import jobs_persistent  # noqa: F401  # side-effect: registers tables
+import src.ml.models_registry as models_registry  # noqa: F401  # side-effect: registers tables
+import src.ml.jobs_persistent as jobs_persistent  # noqa: F401  # side-effect: registers tables
 
 _ = models_registry, jobs_persistent  # prevent unused-import warnings
 
@@ -30,7 +30,7 @@ from src.infra.database import get_db as users_get_db
 from src.infra.db_config import get_db as jobs_get_db
 from main_api import app
 from fastapi.testclient import TestClient
-import database
+import src.infra.database as database
 
 
 def override_get_db():

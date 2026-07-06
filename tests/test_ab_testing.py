@@ -20,8 +20,8 @@ def _make_admin_headers():
         json={"username": uname, "password": "testpass123", "email": f"{uname}@test.com"},
     )
     # Make admin
-    from database import SessionLocal
-    from database_models import User as DBUser
+    from src.infra.database import SessionLocal
+    from src.infra.database_models import User as DBUser
 
     db = SessionLocal()
     user = db.query(DBUser).filter_by(username=uname).first()
