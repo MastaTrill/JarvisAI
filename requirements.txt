@@ -85,7 +85,9 @@ cryptography>=44.0.0
 # Async support
 aiohttp>=3.11.11
 onnxruntime>=1.19.2
-openwakeword>=0.6.0
+# Linux tflite-runtime required by openwakeword has no Python 3.12 wheel;
+# treat wake-word input as optional on Python >=3.12 until its ONNX path is certified.
+openwakeword>=0.6.0; python_version < "3.12" or sys_platform == "win32"
 
 # Web/Form handling
 python-multipart>=0.0.28
