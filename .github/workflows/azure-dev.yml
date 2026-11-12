@@ -21,6 +21,11 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      # Azure steps run only when OIDC credentials are configured; otherwise they are
+      # skipped with a notice instead of failing the job (fork PRs, unconfigured repos).
+      HAS_AZURE_CREDENTIALS: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+      IS_DEPLOY_EVENT: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout code
@@ -29,7 +34,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -41,10 +46,16 @@ jobs:
           pip install pytest pytest-cov
           pytest --cov=. --cov-report=xml --cov-report=html || true
 
+      - name: Azure credentials not configured - skipping Azure steps
+        if: env.HAS_AZURE_CREDENTIALS != 'true'
+        run: echo "::notice title=Azure skipped::AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID secrets are not set; skipping azd install, login, provision and deploy."
+
       - name: Install Azure Developer CLI
-        uses: Azure/setup-azd@v1.0.0
+        if: env.HAS_AZURE_CREDENTIALS == 'true' && env.IS_DEPLOY_EVENT == 'true'
+        uses: azure/setup-azd@v2
 
       - name: Log in to Azure (OIDC)
+        if: env.HAS_AZURE_CREDENTIALS == 'true' && env.IS_DEPLOY_EVENT == 'true'
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -52,7 +63,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Provision Infrastructure
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: env.HAS_AZURE_CREDENTIALS == 'true' && env.IS_DEPLOY_EVENT == 'true'
         run: |
           azd env set DATABASE_ADMIN_LOGIN ${{ secrets.DATABASE_ADMIN_LOGIN }}
           azd env set DATABASE_ADMIN_PASSWORD ${{ secrets.DATABASE_ADMIN_PASSWORD }}
@@ -63,14 +74,14 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy Application
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: env.HAS_AZURE_CREDENTIALS == 'true' && env.IS_DEPLOY_EVENT == 'true'
         run: azd deploy --no-prompt
         env:
           AZURE_ENV_NAME: ${{ env.AZURE_ENV_NAME }}
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Output deployment URL
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: env.HAS_AZURE_CREDENTIALS == 'true' && env.IS_DEPLOY_EVENT == 'true'
         run: |
           echo "Deployment completed!"
           azd show

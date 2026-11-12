@@ -99,7 +99,7 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 from pydantic import BaseModel, Field
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -842,7 +842,7 @@ async def health_dashboard(request: Request):
         "processors_loaded": len(processors),
     }
 
-    return {
+    result = {
         "status": "ok",
         "timestamp": datetime.now().isoformat(),
         "uptime_seconds": round(time.time() - request.app.state.start_time, 1) if hasattr(request.app.state, "start_time") else None,
@@ -859,23 +859,7 @@ async def health_dashboard(request: Request):
         },
         "components": components,
     }
-    _cache_set("health_dashboard", {
-        "status": "ok",
-        "timestamp": datetime.now().isoformat(),
-        "uptime_seconds": round(time.time() - request.app.state.start_time, 1) if hasattr(request.app.state, "start_time") else None,
-        "system": {
-            "cpu_percent": psutil.cpu_percent(interval=0.1),
-            "memory_percent": mem.percent,
-            "memory_available_mb": round(mem.available / (1024 ** 2)),
-            "disk_percent": disk.percent,
-            "disk_free_gb": round(disk.free / (1024 ** 3), 2),
-        },
-        "api": {
-            "total_endpoints": sum(route_methods.values()),
-            "methods": route_methods,
-        },
-        "components": components,
-    })
+    _cache_set("health_dashboard", result)
     return result
 
 
@@ -1607,9 +1591,23 @@ def register_model_db(
     _current_user: User = Depends(get_current_user),
 ):
     session = SessionLocal()
-    model = create_model(
-        session, model_name, description, accuracy if accuracy is not None else 0.0
-    )
+    try:
+        model = create_model(
+            session,
+            model_name,
+            description,
+            accuracy=accuracy if accuracy is not None else 0.0,
+        )
+    except IntegrityError:
+        session.rollback()
+        existing = get_models(session, name=model_name)
+        session.close()
+        if existing:
+            return {
+                "message": f"Model '{model_name}' already registered.",
+                "model": existing[0].name,
+            }
+        raise HTTPException(status_code=409, detail="Could not register model")
     session.close()
     # Audit log
     try:
@@ -2534,4 +2532,4 @@ def gdpr_delete(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8080, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=8080, reload=False)  # nosec B104 # dev/container entrypoint must listen on all interfaces

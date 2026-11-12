@@ -229,7 +229,7 @@ def benchmark_history(
     current_user: User = Depends(get_current_user),
 ):
     """Get recent benchmark results."""
-    from database import SessionLocal
+    from src.infra.database import SessionLocal
 
     db = SessionLocal()
     try:
@@ -265,7 +265,7 @@ def compare_benchmarks(
     current_user: User = Depends(get_current_user),
 ):
     """Compare two or more benchmark runs side by side."""
-    from database import SessionLocal
+    from src.infra.database import SessionLocal
 
     ids = [i.strip() for i in run_ids.split(",")]
     db = SessionLocal()

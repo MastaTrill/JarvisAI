@@ -424,7 +424,7 @@ class QuantumNeuralNetwork:
     def load_model(self, filepath: str):
         """Load quantum neural network"""
         with open(filepath, 'rb') as f:
-            model_data = pickle.load(f)
+            model_data = pickle.load(f)  # nosec B301 # loads a model artifact this class saved to a local operator-chosen path; never exposed to request input
         
         self.architecture = model_data['architecture']
         self.config = model_data['config']

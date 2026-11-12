@@ -78,6 +78,10 @@ Thumbs.db
 
 # Project specific
 data/
+# Track the src/data Python package despite the data/ rule.
+!src/data/
+!src/data/**
+src/data/**/__pycache__/
 models/*.pkl
 models/*.h5
 models/*.pt

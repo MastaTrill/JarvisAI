@@ -6,6 +6,7 @@ Model Versioning and Rollback Endpoints for Jarvis
 """
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from src.infra.db_config import get_db
 from src.ml.models_registry import ModelRegistry
@@ -31,12 +32,26 @@ def register_version(
         version=version,
         description=description,
         device=device,
-        registered_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc),
         parent_id=parent_id,
     )
     db.add(model)
-    db.commit()
-    db.refresh(model)
+    try:
+        db.commit()
+        db.refresh(model)
+    except IntegrityError:
+        db.rollback()
+        existing = (
+            db.query(ModelRegistry)
+            .filter(ModelRegistry.name == name, ModelRegistry.version == version)
+            .first()
+        )
+        if existing:
+            return {
+                "message": f"Model '{name}' version '{version}' already registered.",
+                "model": existing.id,
+            }
+        raise HTTPException(status_code=409, detail="Could not register model version")
     return {
         "message": f"Model '{name}' version '{version}' registered.",
         "model": model.id,
@@ -52,11 +67,15 @@ def list_versions(
     versions = (
         db.query(ModelRegistry)
         .filter(ModelRegistry.name == name)
-        .order_by(ModelRegistry.registered_at.desc())
+        .order_by(ModelRegistry.created_at.desc())
         .all()
     )
     return [
-        {"id": m.id, "version": m.version, "registered_at": m.registered_at.isoformat()}
+        {
+            "id": m.id,
+            "version": m.version,
+            "registered_at": m.created_at.isoformat() if m.created_at else None,
+        }
         for m in versions
     ]
 

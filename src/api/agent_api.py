@@ -26,7 +26,7 @@ from typing import Any, AsyncIterator, Callable, Dict, List, Optional, Tuple
 from uuid import uuid4
 import zipfile
 from urllib import request as urlrequest
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlparse
 import smtplib
 from email.mime.text import MIMEText
 
@@ -1908,6 +1908,21 @@ def _run_and_store_mission(
     return mission
 
 
+_ALLOWED_OUTBOUND_SCHEMES = frozenset({"http", "https"})
+
+
+def _urlopen_http(req: urlrequest.Request, *, timeout: float):
+    """Open an outbound HTTP(S) request, refusing file:, ftp:, data: or custom schemes.
+
+    Bandit B310 flags urlopen() because it also accepts non-HTTP schemes. Every
+    outbound call in this module goes through here so the scheme is validated once.
+    """
+    scheme = urlparse(req.full_url).scheme.lower()
+    if scheme not in _ALLOWED_OUTBOUND_SCHEMES:
+        raise ValueError(f"refusing outbound request with unsupported URL scheme: {scheme or '(none)'}")
+    return urlrequest.urlopen(req, timeout=timeout)  # nosec B310 # scheme restricted to http/https above
+
+
 def _github_headers(token: str) -> Dict[str, str]:
     return {
         "Accept": "application/vnd.github+json",
@@ -1932,7 +1947,7 @@ def _github_headers_optional(token: str) -> Dict[str, str]:
 
 def _github_api_json(url: str, *, token: str = "") -> Dict[str, Any]:
     req = urlrequest.Request(url=url, headers=_github_headers_optional(token))
-    with urlrequest.urlopen(req, timeout=10) as resp:
+    with _urlopen_http(req, timeout=10) as resp:
         return json.loads(resp.read().decode("utf-8") or "{}")
 
 
@@ -1970,7 +1985,7 @@ def _github_issue_create(payload: GitHubIssueCreateRequest) -> Dict[str, Any]:
         headers=_github_headers(token),
     )
     try:
-        with urlrequest.urlopen(req, timeout=10) as resp:
+        with _urlopen_http(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8") or "{}")
         return {
             "ok": True,
@@ -2017,7 +2032,7 @@ def _github_pull_review(payload: GitHubPullReviewRequest) -> Dict[str, Any]:
         headers=_github_headers(token),
     )
     try:
-        with urlrequest.urlopen(req, timeout=10) as resp:
+        with _urlopen_http(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8") or "{}")
         return {
             "ok": True,
@@ -2192,7 +2207,7 @@ def _calendar_event_create(payload: CalendarEventCreateRequest) -> Dict[str, Any
             },
         )
         try:
-            with urlrequest.urlopen(req, timeout=10) as resp:
+            with _urlopen_http(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode("utf-8") or "{}")
             return {"ok": True, "preview": False, "provider": "google", "event": data}
         except Exception as exc:
@@ -7186,7 +7201,7 @@ def _dispatch_webhook_notification(
         },
     )
     try:
-        with urlrequest.urlopen(req, timeout=5) as resp:
+        with _urlopen_http(req, timeout=5) as resp:
             status = int(getattr(resp, "status", 200))
         return {"sent": 200 <= status < 300, "status": status}
     except Exception as exc:
@@ -7446,7 +7461,7 @@ def _dispatch_briefing_mobile(
             url=push_url, data=body, method="POST", headers=headers
         )
     try:
-        with urlrequest.urlopen(req, timeout=5) as resp:
+        with _urlopen_http(req, timeout=5) as resp:
             status = int(getattr(resp, "status", 200))
         return {"sent": 200 <= status < 300, "status": status}
     except Exception as exc:

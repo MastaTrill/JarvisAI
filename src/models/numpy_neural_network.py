@@ -234,7 +234,7 @@ class SimpleNeuralNetwork:
     def load(cls, filepath: str) -> "SimpleNeuralNetwork":
         """Load model from file and return a new instance."""
         with open(filepath, "rb") as f:
-            model_data = pickle.load(f)
+            model_data = pickle.load(f)  # nosec B301 # loads a model artifact this class saved to a local operator-chosen path; never exposed to request input
 
         instance = cls(
             input_size=model_data["input_size"],

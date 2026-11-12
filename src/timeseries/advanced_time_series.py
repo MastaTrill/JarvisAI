@@ -969,9 +969,10 @@ class AdvancedTimeSeriesAnalyzer:
                     'exponential_smoothing': self.forecast_exponential_smoothing(ts_data, steps=10),
                     'lstm': self.forecast_lstm(ts_data, steps=10)
                 },
-                'recommendations': self._generate_ts_recommendations(report),
+                'recommendations': [],
                 'generated_at': datetime.now().isoformat()
             }
+            report['recommendations'] = self._generate_ts_recommendations(report)
             
             logger.info("📊 Comprehensive time series analysis report generated")
             return report

@@ -16,6 +16,7 @@ Version: 1.0.0
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple, Optional, Any, Union
 import logging
 from pathlib import Path

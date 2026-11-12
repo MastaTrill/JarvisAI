@@ -827,7 +827,7 @@ class AgentTaskMemory:
                 {clause}
                 ORDER BY id DESC
                 LIMIT ?
-                """,
+                """,  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 tuple(values + [lim]),
             ).fetchall()
             return [
@@ -938,7 +938,7 @@ class AgentTaskMemory:
             {clause}
             ORDER BY id DESC
             LIMIT ?
-        """
+        """  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
         values.append(limit)
         with self._connect() as conn:
             rows = conn.execute(sql, values).fetchall()
@@ -1006,7 +1006,7 @@ class AgentTaskMemory:
             {where}
             ORDER BY id DESC
             LIMIT ?
-        """
+        """  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
         with self._connect() as conn:
             rows = conn.execute(sql, values).fetchall()
             return [
@@ -1130,7 +1130,7 @@ class AgentTaskMemory:
                 UPDATE goal_schedules
                 SET {', '.join(updates)}
                 WHERE id = ?
-                """,
+                """,  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 values,
             )
             conn.commit()
@@ -1248,7 +1248,7 @@ class AgentTaskMemory:
             {clause}
             ORDER BY id DESC
             LIMIT ?
-        """
+        """  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
         values.append(lim)
         with self._connect() as conn:
             rows = conn.execute(sql, values).fetchall()
@@ -1434,7 +1434,7 @@ class AgentTaskMemory:
             {clause}
             ORDER BY id DESC
             LIMIT ?
-        """
+        """  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
         vals.append(lim)
         with self._connect() as conn:
             rows = conn.execute(sql, vals).fetchall()
@@ -1848,7 +1848,7 @@ class AgentTaskMemory:
                 ORDER BY CASE WHEN pw.status = 'active' THEN 0 WHEN pw.status = 'paused' THEN 1 ELSE 2 END,
                          pw.updated_at DESC, pw.id DESC
                 LIMIT ?
-                """,
+                """,  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 (lim,),
             ).fetchall()
             items = []
@@ -1954,7 +1954,7 @@ class AgentTaskMemory:
                 updates.append("updated_at = ?")
                 values.append(_now_iso())
                 values.append(int(workspace_id))
-                conn.execute(f"UPDATE project_workspaces SET {', '.join(updates)} WHERE id = ?", values)
+                conn.execute(f"UPDATE project_workspaces SET {', '.join(updates)} WHERE id = ?", values)  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
             if memory_ids is not None:
                 self._set_workspace_memories_conn(conn, int(workspace_id), memory_ids)
             conn.commit()
@@ -2187,7 +2187,7 @@ class AgentTaskMemory:
                 {where}
                 ORDER BY COALESCE(last_used_at, updated_at) DESC, id DESC
                 LIMIT ?
-                """,
+                """,  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 tuple(values + [lim]),
             ).fetchall()
             return [
@@ -2657,7 +2657,7 @@ class AgentTaskMemory:
                 ORDER BY CASE pr.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,
                          COALESCE(pr.due_at, pr.created_at) ASC, pr.id DESC
                 LIMIT ?
-                """,
+                """,  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 tuple(values + [lim]),
             ).fetchall()
             return [
@@ -2718,7 +2718,7 @@ class AgentTaskMemory:
         values.append(int(reminder_id))
         with self._connect() as conn:
             cur = conn.execute(
-                f"UPDATE proactive_reminders SET {', '.join(updates)} WHERE id = ?",
+                f"UPDATE proactive_reminders SET {', '.join(updates)} WHERE id = ?",  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 values,
             )
             conn.commit()
@@ -2760,7 +2760,7 @@ class AgentTaskMemory:
                 WHERE {clause}
                 ORDER BY {order_clause}
                 LIMIT ?
-                """,
+                """,  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 tuple(values + [lim]),
             ).fetchall()
             return [
@@ -2878,7 +2878,7 @@ class AgentTaskMemory:
                 {clause}
                 ORDER BY id DESC
                 LIMIT ?
-                """,
+                """,  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 tuple(values + [lim]),
             ).fetchall()
             items = [self._memory_with_scores(r) for r in rows]
@@ -2994,7 +2994,7 @@ class AgentTaskMemory:
             updates.append("last_accessed_at = ?")
             values.append(now)
             values.append(int(memory_id))
-            conn.execute(f"UPDATE long_term_memories SET {', '.join(updates)} WHERE id = ?", values)
+            conn.execute(f"UPDATE long_term_memories SET {', '.join(updates)} WHERE id = ?", values)  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
             conn.commit()
             return True
 
@@ -3181,7 +3181,7 @@ class AgentTaskMemory:
                 {where}
                 ORDER BY id DESC
                 LIMIT ?
-                """,
+                """,  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 tuple(values + [lim]),
             ).fetchall()
             return [
@@ -3297,7 +3297,7 @@ class AgentTaskMemory:
             values.append(now)
             values.append(job_id)
             conn.execute(
-                f"UPDATE autonomous_jobs SET {', '.join(updates)} WHERE id = ?",
+                f"UPDATE autonomous_jobs SET {', '.join(updates)} WHERE id = ?",  # nosec B608 # only fixed column/clause literals are interpolated; values are bound via ? params
                 values,
             )
             conn.commit()

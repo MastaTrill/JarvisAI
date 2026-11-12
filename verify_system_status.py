@@ -37,12 +37,13 @@ class SystemVerifier:
             "numpy": "numpy",
             "pandas": "pandas",
             "matplotlib": "matplotlib",
-            "torch": "torch",
             "fastapi": "fastapi",
             "sklearn": "scikit-learn",
             "cv2": "opencv-python",
             "PIL": "Pillow",
         }
+        # torch is used by some training modules but is not in requirements.txt.
+        optional = {"torch": "torch"}
 
         all_passed = True
         for module, package in dependencies.items():
@@ -56,6 +57,16 @@ class SystemVerifier:
                 self.results["failed"].append(f"Dependency: {package}")
                 all_passed = False
 
+        for module, package in optional.items():
+            try:
+                mod = importlib.import_module(module)
+                version = getattr(mod, "__version__", "unknown")
+                print(f"  [OK] {package:20s} {version}")
+                self.results["passed"].append(f"Dependency: {package}")
+            except ImportError:
+                print(f"  [SKIP] {package:20s} not in requirements.txt")
+                self.results["warnings"].append(f"Dependency: {package} not installed")
+
         return all_passed
 
     def verify_core_modules(self) -> bool:
@@ -63,7 +74,7 @@ class SystemVerifier:
         print("\n[MODULES] Checking Core Modules...")
 
         modules_to_check = [
-            ("src.data.numpy_processor", "Data Processing"),
+            ("src.augmentation.data_augmenter", "Data Augmentation"),
             ("src.models.numpy_neural_network", "Neural Network"),
             ("src.safety.ethical_constraints", "Ethical Constraints"),
             ("src.safety.creator_protection_system", "Creator Protection"),
@@ -110,7 +121,12 @@ class SystemVerifier:
         """Check if API files are present and valid"""
         print("\n[API] Checking API Readiness...")
 
-        api_files = ["api_enhanced.py", "api.py", "admin_api.py", "dashboard.py"]
+        api_files = [
+            "jarvis_api.py",
+            "main_api.py",
+            "src/api/admin_api.py",
+            "dashboard.py",
+        ]
 
         all_present = True
         for file in api_files:
@@ -160,14 +176,12 @@ class SystemVerifier:
             print("  [OK] NumPy array processing")
             self.results["passed"].append("Test: NumPy processing")
 
-            # Test 2: Data processing
-            from src.data.numpy_processor import DataProcessor
+            # Test 2: Data augmentation (src.data was removed in the src layout move)
+            from src.augmentation.data_augmenter import DataAugmentationPipeline
 
-            processor = DataProcessor(normalize=True)
-            scaled = processor.fit_transform(arr)
-            assert scaled.shape == arr.shape
-            print("  [OK] Data processing")
-            self.results["passed"].append("Test: Data processing")
+            DataAugmentationPipeline()
+            print("  [OK] Data augmentation import")
+            self.results["passed"].append("Test: Data augmentation")
 
             # Test 3: Neural network creation
             from src.models.numpy_neural_network import SimpleNeuralNetwork

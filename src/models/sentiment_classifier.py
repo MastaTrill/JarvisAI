@@ -184,7 +184,7 @@ class SentimentClassifier:
     def load_model(self, filepath: str) -> None:
         """Load a trained model from a file."""
         with open(filepath, "rb") as f:
-            model_data = pickle.load(f)
+            model_data = pickle.load(f)  # nosec B301 # loads a model artifact this class saved to a local operator-chosen path; never exposed to request input
 
         self.word_probs = model_data["word_probs"]
         self.class_probs = model_data["class_probs"]

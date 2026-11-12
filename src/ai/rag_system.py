@@ -452,8 +452,6 @@ def query_documents(
     current_user: User = Depends(get_current_user),
 ):
     """Query indexed documents using semantic search."""
-    global _index_built
-
     if not _index_built:
         _rebuild_index(db)
 

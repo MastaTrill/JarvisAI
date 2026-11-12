@@ -29,6 +29,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install --upgrade --upgrade-strategy eager -r requirements.txt
+          # tflite-runtime has no cp312+ wheels; install openwakeword without that dep
+          # and use onnxruntime (already in requirements.txt).
+          if python -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)'; then
+            pip install --no-deps 'openwakeword>=0.6.0'
+          fi
       - name: Lint (fatal errors only)
         run: |
           pip install flake8
@@ -60,9 +65,15 @@ jobs:
     needs: [test, security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    env:
+      HAS_DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD != '' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Docker Hub credentials not configured - skipping push
+        if: env.HAS_DOCKER_PASSWORD != 'true'
+        run: echo "::notice title=Docker push skipped::DOCKER_PASSWORD secret is not set; skipping Docker Hub login, build and push."
       - name: Build and push Docker image
+        if: env.HAS_DOCKER_PASSWORD == 'true'
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
