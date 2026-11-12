@@ -85,7 +85,10 @@ cryptography>=44.0.0
 # Async support
 aiohttp>=3.11.11
 onnxruntime>=1.19.2
-openwakeword>=0.6.0
+# openwakeword declares tflite-runtime on Linux, which has no wheels for
+# Python 3.12+. Keep it for 3.11 and older; CI installs it with --no-deps
+# on 3.12+ so the existing ONNX path (onnxruntime above) can be used.
+openwakeword>=0.6.0; python_version < "3.12"
 
 # Web/Form handling
 python-multipart>=0.0.28

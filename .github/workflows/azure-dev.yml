@@ -42,7 +42,7 @@ jobs:
           pytest --cov=. --cov-report=xml --cov-report=html || true
 
       - name: Install Azure Developer CLI
-        uses: Azure/setup-azd@v1.0.0
+        uses: azure/setup-azd@v2
 
       - name: Log in to Azure (OIDC)
         uses: azure/login@v2

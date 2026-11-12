@@ -29,6 +29,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install --upgrade --upgrade-strategy eager -r requirements.txt
+          # tflite-runtime has no cp312+ wheels; install openwakeword without that dep
+          # and use onnxruntime (already in requirements.txt).
+          if python -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)'; then
+            pip install --no-deps 'openwakeword>=0.6.0'
+          fi
       - name: Lint (fatal errors only)
         run: |
           pip install flake8

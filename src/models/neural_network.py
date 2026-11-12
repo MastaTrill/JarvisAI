@@ -162,7 +162,7 @@ class SimpleNeuralNetwork(BaseModel, nn.Module):
 
     def load(self, filepath: str) -> None:
         """Load model from file"""
-        checkpoint = torch.load(filepath)
+        checkpoint = torch.load(filepath, weights_only=True)
         self.load_state_dict(checkpoint['model_state_dict'])
         self.is_trained = checkpoint['is_trained']
         logger.info("Model loaded from %s", filepath)

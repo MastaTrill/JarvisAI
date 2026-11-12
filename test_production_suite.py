@@ -13,23 +13,23 @@ def test_core_imports():
     modules = [
         "main_api",
         "jarvis_api",
-        "agent_api",
-        "admin_api",
-        "audit_api",
-        "authentication",
-        "database",
-        "database_models",
-        "cache",
-        "celery_app",
-        "security_api",
-        "plugins_api",
-        "collab_api",
-        "jobs_persistent",
-        "models_registry",
-        "models_versioning",
-        "llm_groq",
-        "llm_ollama",
-        "llm_openai",
+        "src.api.agent_api",
+        "src.api.admin_api",
+        "src.api.audit_api",
+        "src.infra.authentication",
+        "src.infra.database",
+        "src.infra.database_models",
+        "src.infra.cache",
+        "src.infra.celery_app",
+        "src.api.security_api",
+        "src.api.plugins_api",
+        "src.api.collab_api",
+        "src.ml.jobs_persistent",
+        "src.ml.models_registry",
+        "src.ml.models_versioning",
+        "src.ai.llm_groq",
+        "src.ai.llm_ollama",
+        "src.ai.llm_openai",
     ]
     failed = []
     for name in modules:
@@ -60,18 +60,35 @@ def test_advanced_features_import():
     assert not failed, f"Failed imports:\n" + "\n".join(failed)
 
 
+def _route_paths(routes):
+    """Collect path attributes, including nested routers.
+
+    Starlette/FastAPI may include objects such as `_IncludedRouter`
+    that have no `path` of their own.
+    """
+    paths = []
+    for route in routes:
+        path = getattr(route, "path", None)
+        if path:
+            paths.append(path)
+        nested = getattr(route, "routes", None)
+        if nested:
+            paths.extend(_route_paths(nested))
+    return paths
+
+
 def test_fastapi_app():
     """FastAPI app should be created with all routers mounted."""
     from main_api import app
     assert app is not None
-    route_paths = [r.path for r in app.routes]
+    route_paths = _route_paths(app.routes)
     assert "/health" in route_paths, "Health endpoint missing"
 
 
 def test_database_tables():
     """Database models should define tables."""
-    from database import Base as AppBase
-    from db_config import Base as ConfigBase
+    from src.infra.database import Base as AppBase
+    from src.infra.db_config import Base as ConfigBase
     assert len(AppBase.metadata.tables) > 0, "No app tables defined"
     assert len(ConfigBase.metadata.tables) > 0, "No config tables defined"
 

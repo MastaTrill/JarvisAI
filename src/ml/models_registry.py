@@ -225,7 +225,17 @@ def create_model(
     **kwargs
 ) -> ModelRegistry:
     """Create a new model registry entry with enhanced versioning"""
-    
+    accuracy = kwargs.pop("accuracy", None)
+    # Legacy callers (tests and /models/register) passed accuracy as the 4th positional.
+    if isinstance(version, (int, float)) and not isinstance(version, bool):
+        if accuracy is None:
+            accuracy = float(version)
+        version = "1.0.0"
+    else:
+        version = str(version or "1.0.0")
+    if accuracy is not None:
+        kwargs.setdefault("accuracy", accuracy)
+
     # Parse semantic version if provided
     try:
         # Handle version string like "1.2.3" or "1.2.3-rc1"
@@ -412,21 +422,24 @@ def add_model_audit_entry(
 
 
 def activate_model(session, name: str):
-    """Activate a model (legacy function for backward compatibility)"""
-    # Find the active model by name (highest version that's active)
-    model = session.query(ModelRegistry).filter(
-        ModelRegistry.name == name,
-        ModelRegistry.active == True
-    ).first()
-    
-    if model:
-        # Deactivate all models with this name
-        session.query(ModelRegistry).filter(
-            ModelRegistry.name == name
-        ).update({"active": False})
-        
-        # Reactivate the specified model
-        model.active = True
-        session.commit()
-        return model
-    return None
+    """Activate a model and deactivate every other registry entry."""
+    model = (
+        session.query(ModelRegistry)
+        .filter(ModelRegistry.name == name)
+        .order_by(
+            ModelRegistry.version_major.desc(),
+            ModelRegistry.version_minor.desc(),
+            ModelRegistry.version_patch.desc(),
+            ModelRegistry.id.desc(),
+        )
+        .first()
+    )
+    if not model:
+        return None
+
+    session.query(ModelRegistry).update({"active": False})
+    session.refresh(model)
+    model.active = True
+    session.commit()
+    session.refresh(model)
+    return model

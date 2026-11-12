@@ -282,7 +282,7 @@ class EnterpriseMLFlowTracker:
             pos = np.arange(sorted_idx.shape[0]) + .5
             
             plt.barh(pos, np.array(importance_values)[sorted_idx], align='center')
-            plt.yticks(pos, np.array(fename)[sorted_idx])
+            plt.yticks(pos, np.array(feature_names)[sorted_idx])
             plt.xlabel('Relative Importance')
             plt.title(title)
             plt.tight_layout()
@@ -436,8 +436,8 @@ class EnterpriseMLFlowTracker:
                     "end": pd.to_datetime(runs_df["start_time"].max(), unit='ms').isoformat() if len(runs_df) > 0 else None
                 },
                 "status_distribution": (
-                    rp_df["status"].value_counts().to_dict() 
-                    if "status" in rp_df.columns else {}
+                    runs_df["status"].value_counts().to_dict()
+                    if "status" in runs_df.columns else {}
                 ),
                 "top_performing_runs": self._get_top_runs(runs_df),
                 "parameter_trends": self._analyze_parameter_trends(runs_df),
@@ -456,8 +456,8 @@ class EnterpriseMLFlowTracker:
             if metric in rp_df.columns:
                 # Filter out NaN values
                 valid_runs = rp_df.dropna(subset=[metric])
-                if len(vr_df) > 0:
-                    top_runs = vr_df.nlargest(min(tn, len(vr_df)), metric)[["run_id", "start_time", metric]]
+                if len(valid_runs) > 0:
+                    top_runs = valid_runs.nlargest(min(top_n, len(valid_runs)), metric)[["run_id", "start_time", metric]]
                     return top_runs.to_dict('records')
                 else:
                     return []
@@ -476,7 +476,7 @@ class EnterpriseMLFlowTracker:
             param_cols = [col for col in rp_df.columns if col.startswith('params.')]
             trends = {}
             
-            for col in pc:
+            for col in param_cols:
                 # Try to convert to numeric for trend analysis
                 try:
                     # Extract parameter name
@@ -487,7 +487,7 @@ class EnterpriseMLFlowTracker:
                         # Calculate trend (simple linear regression slope)
                         x = np.arange(len(ts))
                         slope = np.polyfit(x, ts.values, 1)[0] if len(ts) > 1 else 0
-                        trends[pa_name] = {
+                        trends[param_name] = {
                             "trend": "increasing" if slope > 0.01 else "decreasing" if slope < -0.01 else "stable",
                             "slope": float(slope),
                             "mean": float(np.mean(ts)),
@@ -538,7 +538,7 @@ class EnterpriseMLFlowTracker:
                         c2 = cm.columns[j]
                         cv = cm.iloc[i, j]
                         if abs(cv) > 0.3:  # Only report meaningful correlations
-                            coasins[f"{c1}_vs_{c2}"] = float(cv)
+                            correlations[f"{c1}_vs_{c2}"] = float(cv)
                 
                 return correlations
             else:
@@ -593,16 +593,17 @@ class ExperimentManager:
                 )
                 
                 if len(runs_df) > 0 and metric in runs_df.columns:
-                    best_run = rp_df.iloc[0]
+                    best_run = runs_df.iloc[0]
+                    latest = runs_df.sort_values("start_time", ascending=False)
                     comparison[exp_name] = {
                         "best_run_id": str(best_run["run_id"]),
                         "best_score": float(best_run[metric]),
                         "total_runs": len(runs_df),
                         "avg_score": float(runs_df[metric].mean()) if not runs_df[metric].isna().all() else None,
                         "latest_run": {
-                            "run_id": str(rps_df.iloc[0]["run_id"]) if len(rps_df) > 0 else None,
-                            "timestamp": pd.to_datetime(rps_df.iloc[0]["start_time"], unit='ms').isoformat() if len(rps_df) > 0 else None
-                        }
+                            "run_id": str(latest.iloc[0]["run_id"]),
+                            "timestamp": pd.to_datetime(latest.iloc[0]["start_time"], unit="ms").isoformat(),
+                        },
                     }
             
             return comparison
@@ -644,16 +645,16 @@ class ExperimentNotebook:
             
             # Add parameters
             params = {k: v for k, v in run.data.params.items() if not k.startswith("mlflow.")}
-            if len(p) > 0:
-                for param, value in list(p.items())[:10]:  # Limit to first 10
+            if len(params) > 0:
+                for param, value in list(params.items())[:10]:  # Limit to first 10
                     # Format numeric values nicely
                     if isinstance(value, float):
                         formatted_value = f"{value:.4f}"
                     else:
                         formatted_value = str(value)
                     card += f"- **{param}**: {formatted_value}\n"
-                if len(p) > 10:
-                    cal = len(p) - 10
+                if len(params) > 10:
+                    cal = len(params) - 10
                     card += f"- *...and {cal} more parameters*\n"
             else:
                 card += "- No parameters logged\n"
@@ -661,23 +662,23 @@ class ExperimentNotebook:
             card += "\n## Performance Metrics\n"
             
             # Add metrics
-            metrics = {k: v for k, v in rp.data.metrics.items() if not k.startswith("mlflow.")}
-            if len(mts) > 0:
-                for metric, value in list(mts.items())[:10]:  # Limit to first 10
+            metrics = {k: v for k, v in run.data.metrics.items() if not k.startswith("mlflow.")}
+            if len(metrics) > 0:
+                for metric, value in list(metrics.items())[:10]:  # Limit to first 10
                     # Format numeric values nicely
                     if isinstance(value, float):
                         formatted_value = f"{value:.4f}"
                     else:
                         formatted_value = str(value)
                     card += f"- **{metric}**: {formatted_value}\n"
-                if len(mts) > 10:
-                    cal = len(mts) - 10
+                if len(metrics) > 10:
+                    cal = len(metrics) - 10
                     card += f"- *...and {cal} more metrics*\n"
             else:
                 card += "- No metrics logged\n"
             
             # Add tags
-            tgs = {k: v for k, v in rp.data.tags.items() if not k.startswith("mlflow.")}
+            tgs = {k: v for k, v in run.data.tags.items() if not k.startswith("mlflow.")}
             if len(tgs) > 0:
                 card += "\n## Metadata\n"
                 for tag, value in list(tgs.items())[:5]:  # Limit to first 5
@@ -814,7 +815,7 @@ class EnterpriseModelRegistry:
                     lineage_path,
                     artifact_path="lineage"
                 )
-                os.remove(lp)
+                os.remove(lineage_path)
             
             logger.info(f"Registered model: {model_name} v{model_version.version}")
             return model_version.version
@@ -836,9 +837,9 @@ class EnterpriseModelRegistry:
                     "lineage/model_lineage.json"
                 )
                 
-                with open(lp, "r") as f:
+                with open(local_path, "r") as f:
                     lineage_data = json.load(f)
-                os.remove(lo)
+                os.remove(local_path)
                 
                 return lineage_data
             except:

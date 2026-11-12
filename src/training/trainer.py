@@ -239,7 +239,7 @@ class Trainer:
         Args:
             filepath: Path to the saved model
         """
-        self.model.load_state_dict(torch.load(filepath, map_location=self.device))
+        self.model.load_state_dict(torch.load(filepath, map_location=self.device, weights_only=True))
         logger.info(f"Model loaded from {filepath}")
     
     def get_training_history(self) -> Dict[str, list]:

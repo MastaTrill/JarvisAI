@@ -78,6 +78,14 @@ JarvisAI/
    pip install -r requirements.txt
    ```
 
+   On Python 3.12 or newer, also install openwakeword without its
+   `tflite-runtime` dependency (no wheels exist for those interpreters).
+   The package then uses `onnxruntime`, which is already in `requirements.txt`:
+
+   ```bash
+   pip install --no-deps 'openwakeword>=0.6.0'
+   ```
+
 4. **Configure environment:**
 
    ```bash
