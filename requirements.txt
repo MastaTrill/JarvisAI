@@ -23,7 +23,7 @@ plotly>=5.24.1
 
 # Data Processing
 opencv-python>=4.10.0
-Pillow>=11.0.0
+Pillow>=13.0.0
 pytesseract>=0.3.13
 requests>=2.33.0
 playwright>=1.52.0
@@ -80,7 +80,7 @@ slack_sdk>=3.33.4
 bandit>=1.8.0
 pip-audit>=2.7.3
 safety>=3.2.8
-cryptography>=44.0.0
+cryptography>=49.0.0
 
 # Async support
 aiohttp>=3.11.11
@@ -106,4 +106,7 @@ pyotp>=2.9.0
 qrcode[pil]>=7.4
 
 # OpenID Connect / OAuth2.0 dependencies
-authlib>=1.2.0
+authlib>=1.9.1
+mistune>=3.3.3 # not directly required, pinned by Snyk to avoid a vulnerability
+nbconvert>=7.17.2 # not directly required, pinned by Snyk to avoid a vulnerability
+tornado>=6.6rc1 # not directly required, pinned by Snyk to avoid a vulnerability
