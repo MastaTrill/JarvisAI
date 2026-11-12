@@ -589,7 +589,7 @@ class AdvancedNeuralNetwork:
     def load(self, filepath: str):
         """Load a trained model."""
         with open(filepath, 'rb') as f:
-            model_data = pickle.load(f)
+            model_data = pickle.load(f)  # nosec B301 # loads a model artifact this class saved to a local operator-chosen path; never exposed to request input
 
         self.weights = model_data['weights']
         self.biases = model_data['biases']

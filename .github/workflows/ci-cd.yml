@@ -65,9 +65,15 @@ jobs:
     needs: [test, security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    env:
+      HAS_DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD != '' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Docker Hub credentials not configured - skipping push
+        if: env.HAS_DOCKER_PASSWORD != 'true'
+        run: echo "::notice title=Docker push skipped::DOCKER_PASSWORD secret is not set; skipping Docker Hub login, build and push."
       - name: Build and push Docker image
+        if: env.HAS_DOCKER_PASSWORD == 'true'
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |

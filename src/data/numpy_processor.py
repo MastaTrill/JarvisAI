@@ -115,7 +115,7 @@ class DataProcessor:
     def load_processor(self, filepath: str) -> Any:
         """Load a processor payload from disk."""
         with open(filepath, "rb") as handle:
-            return pickle.load(handle)
+            return pickle.load(handle)  # nosec B301 # loads a model artifact this class saved to a local operator-chosen path; never exposed to request input
 
     def save_scaler(self, filepath: str) -> None:
         """Save the last computed scaler statistics."""

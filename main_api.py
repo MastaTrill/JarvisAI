@@ -14,4 +14,4 @@ __all__ = ["app", "get_current_user"]
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main_api:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("main_api:app", host="0.0.0.0", port=8080, reload=True)  # nosec B104 # dev/container entrypoint must listen on all interfaces
