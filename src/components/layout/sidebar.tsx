@@ -1,11 +1,8 @@
-import { 
-  Dashboard, 
-  Users, 
-  Database, 
-  ,
-  LogOut
-} from 'nav-react
-import NavLink  from 'lucide-react'
+import {
+  LayoutDashboard as Dashboard,
+  Users,
+  Database,
+} from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 interface SidebarProps {
