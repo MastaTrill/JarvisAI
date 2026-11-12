@@ -28,6 +28,8 @@ import zipfile
 from urllib import request as urlrequest
 from urllib.parse import quote_plus, urlparse
 import smtplib
+import ipaddress
+import socket
 from email.mime.text import MIMEText
 
 import os
@@ -1921,6 +1923,38 @@ def _urlopen_http(req: urlrequest.Request, *, timeout: float):
     if scheme not in _ALLOWED_OUTBOUND_SCHEMES:
         raise ValueError(f"refusing outbound request with unsupported URL scheme: {scheme or '(none)'}")
     return urlrequest.urlopen(req, timeout=timeout)  # nosec B310 # scheme restricted to http/https above
+
+
+def _is_public_ip(addr: str) -> bool:
+    ip = ipaddress.ip_address(addr.split("%", 1)[0])
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return ip.is_global and not ip.is_multicast
+
+
+def _assert_public_webhook_url(url: str) -> None:
+    """Refuse user-configured webhook targets that resolve to non-public addresses.
+
+    Webhook URLs come from operator/user config, so without this check they could be
+    pointed at loopback, private-network, link-local (cloud metadata) or other
+    internal endpoints (SSRF). Every resolved address must be globally routable.
+    Set JARVIS_ALLOW_PRIVATE_WEBHOOKS=1 to allow private targets for local development.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme.lower() not in _ALLOWED_OUTBOUND_SCHEMES:
+        raise ValueError(f"refusing webhook with unsupported URL scheme: {parsed.scheme or '(none)'}")
+    host = parsed.hostname
+    if not host:
+        raise ValueError("refusing webhook URL without a host")
+    if str(os.getenv("JARVIS_ALLOW_PRIVATE_WEBHOOKS") or "").strip() == "1":
+        return
+    try:
+        infos = socket.getaddrinfo(host, parsed.port or (443 if parsed.scheme.lower() == "https" else 80), proto=socket.IPPROTO_TCP)
+    except socket.gaierror as exc:
+        raise ValueError(f"refusing webhook: cannot resolve host {host}") from exc
+    addrs = {info[4][0] for info in infos}
+    if not addrs or not all(_is_public_ip(a) for a in addrs):
+        raise ValueError(f"refusing webhook to non-public address for host {host}")
 
 
 def _github_headers(token: str) -> Dict[str, str]:
@@ -7189,6 +7223,10 @@ def _dispatch_webhook_notification(
     url = str(url_override or config.get("webhook_url") or "").strip()
     if not url:
         return {"sent": False, "reason": "webhook_url missing"}
+    try:
+        _assert_public_webhook_url(url)
+    except ValueError as exc:
+        return {"sent": False, "error": str(exc)}
     body = json.dumps(payload).encode("utf-8")
     req = urlrequest.Request(
         url=url,
