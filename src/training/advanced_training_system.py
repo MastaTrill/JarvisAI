@@ -316,7 +316,11 @@ class ExperimentTracker:
     def _generate_experiment_id(self, experiment_name: str) -> str:
         """Generate a unique experiment ID."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        hash_suffix = hashlib.sha256(f"{experiment_name}_{timestamp}".encode()).hexdigest()[:8]
+        # Non-security unique suffix for experiment IDs only (not a digest of secrets).
+        hash_suffix = hashlib.md5(
+            f"{experiment_name}_{timestamp}".encode(),
+            usedforsecurity=False,
+        ).hexdigest()[:8]
         return f"{experiment_name}_{timestamp}_{hash_suffix}"
 
 
