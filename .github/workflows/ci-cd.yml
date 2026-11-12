@@ -77,21 +77,29 @@ jobs:
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo "${DOCKER_PASSWORD}" | docker login -u "MastaTriLL" --password-stdin
-          docker build -t "MastaTriLL/jarvis-ai:latest" .
-          docker push "MastaTriLL/jarvis-ai:latest"
+          echo "${DOCKER_PASSWORD}" | docker login -u "mastatrill" --password-stdin
+          docker build -t "mastatrill/jarvis-ai:latest" .
+          docker push "mastatrill/jarvis-ai:latest"
 
   deploy:
     needs: docker
+    # Kubernetes deploy is opt-in: set the repository variable K8S_DEPLOY_ENABLED=true
+    # once KUBECONFIG points at a cluster reachable from GitHub-hosted runners.
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    env:
+      K8S_DEPLOY_ENABLED: ${{ vars.K8S_DEPLOY_ENABLED == 'true' && secrets.KUBECONFIG != '' }}
     steps:
+      - name: Kubernetes deploy not enabled - skipping
+        if: env.K8S_DEPLOY_ENABLED != 'true'
+        run: echo "::notice title=Kubernetes deploy skipped::Set repo variable K8S_DEPLOY_ENABLED=true (and a KUBECONFIG secret for a cluster reachable from GitHub runners) to enable Helm deploys."
       - uses: actions/checkout@v4
+        if: env.K8S_DEPLOY_ENABLED == 'true'
       - name: Deploy to Kubernetes (Helm)
-        if: env.KUBECONFIG != ''
+        if: env.K8S_DEPLOY_ENABLED == 'true'
         env:
           KUBECONFIG: ${{ secrets.KUBECONFIG }}
         run: |
           echo "$KUBECONFIG" > kubeconfig
           export KUBECONFIG=$(pwd)/kubeconfig
-          helm upgrade --install jarvis-ai ./helm --set image.repository="MastaTriLL/jarvis-ai" --set image.tag=latest
+          helm upgrade --install jarvis-ai ./helm --set image.repository="mastatrill/jarvis-ai" --set image.tag=latest
