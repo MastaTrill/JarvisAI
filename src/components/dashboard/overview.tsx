@@ -15,7 +15,7 @@ export function DashboardOverview() {
         <Card className="h-[100px]">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <div className="text-sm    font-medium>Models Trained</h2>
+              <h2 className="text-sm font-medium">Models Trained</h2>
               <div className="flex h-8 w-8 items-center justify-center bg-blue-500/10 text-blue-500 rounded-md">
                 <TrendingUp className="h-4 w-4" />
               </div>

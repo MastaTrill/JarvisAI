@@ -11,6 +11,9 @@ downloads/
 eggs/
 .eggs/
 lib/
+# Keep the frontend helper module trackable (shadcn-style @/lib/utils)
+!src/lib/
+!src/lib/**
 lib64/
 parts/
 sdist/

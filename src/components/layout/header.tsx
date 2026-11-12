@@ -5,7 +5,7 @@ interface HeaderProps {
   onToggleSidebar: () => void
 }
 
-export function Header({ onToggleSidebar }: HeaderProps }: HeaderProps) {
+export function Header({ onToggleSidebar }: HeaderProps) {
   return (
     <header className="flex h-16 items-center justify-between px-6 bg-white border-b">
       <div className="flex items-center space-x-4">
