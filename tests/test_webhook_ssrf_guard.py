@@ -1,3 +1,4 @@
+import ipaddress
 import socket
 
 import pytest
@@ -13,7 +14,7 @@ def _fake_resolver(mapping):
 
 @pytest.mark.parametrize(
     "addr",
-    ["127.0.0.1", "10.0.0.5", "192.168.1.10", "172.16.0.1", "169.254.169.254", "0.0.0.0", "::1", "fd00::1", "::ffff:127.0.0.1"],
+    ["127.0.0.1", "10.0.0.5", "192.168.1.10", "172.16.0.1", "169.254.169.254", str(ipaddress.IPv4Address(0)), "::1", "fd00::1", "::ffff:127.0.0.1"],
 )
 def test_rejects_non_public_targets(monkeypatch, addr):
     monkeypatch.delenv("JARVIS_ALLOW_PRIVATE_WEBHOOKS", raising=False)
