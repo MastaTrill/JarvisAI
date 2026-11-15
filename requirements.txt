@@ -14,7 +14,7 @@ transformers>=4.46.0
 
 # ML Optimization
 optuna>=4.1.0
-lightgbm>=4.5.0
+lightgbm>=4.7.0
 
 # Data Visualization
 matplotlib>=3.9.2
