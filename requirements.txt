@@ -111,6 +111,6 @@ qrcode[pil]>=7.4
 # OpenID Connect / OAuth2.0 dependencies
 authlib>=1.9.1
 # Transitive pins from Snyk PR #21 (security fixes; not directly imported)
-mistune>=3.3.3
+mistune>=3.4.0
 nbconvert>=7.17.2
 tornado>=6.6.1
