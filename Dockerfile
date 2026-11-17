@@ -51,4 +51,4 @@ LABEL org.opencontainers.image.description="JarvisAI Aetheron Platform - Advance
 LABEL org.opencontainers.image.version="3.0.0"
 
 # Default command: use gunicorn with uvicorn workers for production
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "main_api:app"]
+CMD ["gunicorn", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "main_api:app"]
