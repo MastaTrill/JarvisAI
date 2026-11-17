@@ -13,7 +13,7 @@ jobs:
       matrix:
         python-version: ['3.11', '3.12']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -51,7 +51,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -68,7 +68,7 @@ jobs:
     env:
       HAS_DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Docker Hub credentials not configured - skipping push
         if: env.HAS_DOCKER_PASSWORD != 'true'
         run: echo "::notice title=Docker push skipped::DOCKER_PASSWORD secret is not set; skipping Docker Hub login, build and push."
@@ -93,7 +93,7 @@ jobs:
       - name: Kubernetes deploy not enabled - skipping
         if: env.K8S_DEPLOY_ENABLED != 'true'
         run: echo "::notice title=Kubernetes deploy skipped::Set repo variable K8S_DEPLOY_ENABLED=true (and a KUBECONFIG secret for a cluster reachable from GitHub runners) to enable Helm deploys."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.K8S_DEPLOY_ENABLED == 'true'
       - name: Deploy to Kubernetes (Helm)
         if: env.K8S_DEPLOY_ENABLED == 'true'
